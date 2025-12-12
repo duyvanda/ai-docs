@@ -8,7 +8,7 @@
 ---
 
 # 1. Tổng quan kiến trúc
-Hệ thống loại bỏ hoàn toàn tầng Controller/Service phức tạp ở Backend. Mọi logic nghiệp vụ nằm trong **PostgreSQL Stored Functions**.
+Mọi logic nghiệp vụ nằm trong **PostgreSQL Stored Functions**.
 ---
 
 # 2. Database Schema Design
