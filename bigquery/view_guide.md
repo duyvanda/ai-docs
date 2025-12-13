@@ -1,6 +1,6 @@
 # 📜 QUY TRÌNH PHÁT TRIỂN & CHUẨN HÓA CODE SQL (SQL WORKFLOW STANDARD)
 
-**Phiên bản:** 1.1 (Updated: Comment Policy)
+**Phiên bản:** 1.3 (Updated: Data Schema & Consistent Example)
 **Đối tượng áp dụng:** Data Analysts, Data Engineers, Backend Developers
 **Mục tiêu:** Đảm bảo code SQL dễ đọc, dễ bảo trì, tối ưu hiệu năng và thống nhất phong cách (The "Vibe" Code).
 
@@ -9,7 +9,7 @@
 ## 📅 Giai đoạn 1: Requirement Gathering (Thu thập yêu cầu)
 *Không viết code khi chưa rõ Output.*
 
-Trước khi bắt đầu, Data Owner phải trả lời được 3 câu hỏi:
+Trước khi bắt đầu, Data Owner phải trả lời được câu hỏi cốt lõi:
 1. **Business Goal:** Báo cáo này giải quyết vấn đề gì? (Tracking doanh thu, tìm lỗi, hay audit?)
 
 ---
@@ -23,53 +23,69 @@ Phác thảo luồng xử lý:
 
 ### 2. Định nghĩa Output
 Thống nhất Schema kết quả trả về:
-| Column Name | Data Type | Description / Logic |
+| Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `report_date` | Date | Ngày báo cáo |
-| `user_type` | String | 'New' nếu mua lần đầu, 'Returning' nếu quay lại |
-| `net_revenue` | Float | `(price * qty) - discount`. Không bao gồm VAT |
+| `report_month` | Date | Tháng báo cáo |
+| `user_tier` | String | Hạng thành viên (Gold, Silver...) |
+| `total_revenue` | Float | Tổng doanh thu thực |
+
+### 3. Data Schema (Ví dụ mô hình dữ liệu)
+Các bảng nguồn sẽ được sử dụng trong quy trình này:
+
+**Table 1: `F_SALES` (Fact Table - Giao dịch)**
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `sales_id` | String | PK - Mã đơn hàng |
+| `user_id` | Int | FK - Mã khách hàng |
+| `order_date`| Date | Ngày mua hàng |
+| `net_amount`| Float | Giá trị đơn hàng (Sau KM) |
+
+**Table 2: `D_USERS` (Dimension Table - Khách hàng)**
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `user_id` | Int | PK - Mã khách hàng |
+| `join_date` | Date | Ngày tạo tài khoản |
+| `user_tier` | String | Hạng (`Standard`, `Gold`, `VIP`) |
 
 ---
 
 ## 💻 Giai đoạn 3: Coding Guidelines (Quy tắc viết Code)
-*Áp dụng kiến trúc "CTE Pyramid".*
+*Áp dụng kiến trúc "CTE Pyramid" 4 tầng.*
 
 ### 1. Cấu trúc CTE chuẩn
 Tuyệt đối hạn chế Nested Subqueries. Sử dụng `WITH` (CTE) theo lớp:
-1.  **Base Layer:** Load data, filter rác, rename cột.
-2.  **Enrichment Layer:** Join bảng, tính toán công thức.
+
+1.  **Base Layer:** Load **dữ liệu thô (Raw Data)**. Apply filter logic, rename cột.
+2.  **Enrichment Layer:** Join bảng (Fact nối Dimension), tính toán logic nghiệp vụ (thuế, chiết khấu).
+    * *💡 Nếu logic đơn giản, có thể gộp Base & Enrichment.*
 3.  **Aggregation Layer:** Group by, SUM, COUNT.
 4.  **Final Layer:** Select cuối cùng, format số, sort.
 
 ### 2. Quy tắc đặt tên (Naming Convention)
-* **Tables/CTEs:** Snake_case (vd: `daily_revenue`, `active_users`).
-* **Aliases:** Ngắn gọn có nghĩa (`ord`, `usr`, `prod`). ❌ Không dùng `t1`, `t2`, `a`.
-* **Prefix cột:** Luôn chỉ rõ nguồn gốc cột khi Join (vd: `usr.email`, `ord.created_at`).
+* **Tables/CTEs:** Snake_case (vd: `base_sales`, `monthly_stats`).
+* **Aliases:** Ngắn gọn có nghĩa (`s` cho Sales, `u` cho Users). ❌ Không dùng `t1`, `t2`, `a`.
+* **Prefix cột:** Luôn chỉ rõ nguồn gốc cột khi Join (vd: `u.user_tier`, `s.order_date`).
 
-### 3. Quy tắc Comment (Documentation Policy) - 🆕
+### 3. Quy tắc Comment (Documentation Policy)
 **Nguyên tắc vàng:** Comment **"Tại sao" (Why)**, không comment **"Đang làm gì" (What)**.
 
-* **❌ Case 1: Code hiển nhiên ➡️ KHÔNG Comment.**
-    * *Ví dụ:* `WHERE status = 'active'` (Không cần chú thích "Lấy user active").
-* **✅ Case 2: Logic nghiệp vụ phức tạp ➡️ Dùng `/* ... */` trước CTE.**
-    * *Ví dụ:* Công thức tính thưởng, logic phân loại khách hàng VIP.
-* **⚠️ Case 3: Workaround / Fix Data bẩn ➡️ BẮT BUỘC Comment.**
-    * Nếu có đoạn code lạ (Hard-code ID, Distinct On...) để fix lỗi, phải ghi rõ lý do và Ticket ID.
-    * *Ví dụ:* `/* FIXME: Loại bỏ user test ID 999 theo yêu cầu ticket DATA-101 */`
+* **❌ Case 1: Hiển nhiên ➡️ KHÔNG Comment.** (Vd: `WHERE price > 0`)
+* **✅ Case 2: Logic phức tạp ➡️ Dùng `/* ... */` trước CTE.**
+* **⚠️ Case 3: Fix lỗi Data ➡️ BẮT BUỘC Comment kèm Ticket ID.**
+    * *Ví dụ:* `/* FIXME: Loại bỏ test user ID 999 (Ticket: DATA-101) */`
 
 ### 4. Quy tắc phòng thủ (Defensive Coding)
-* **Xử lý NULL:** Dùng `COALESCE` cho các cột tính toán.
-* **Phép chia:** Dùng `NULLIF(mau_so, 0)` để tránh lỗi chia cho 0.
+* **Xử lý NULL:** Dùng `COALESCE(col, 0)` cho các cột tính toán số học.
+* **Phép chia:** Dùng `NULLIF(mau_so, 0)` để tránh lỗi Division by zero.
 
 ---
 
 ## 🧪 Giai đoạn 4: Validation & Review (Kiểm thử)
 
 ### Checklist trước khi Merge/Deploy:
-- [ ] **Data Volume:** Số lượng dòng (Row count) hợp lý, không bị nổ dòng do Join.
+- [ ] **Data Volume:** Row count hợp lý, không bị nổ dòng do Join 1-n.
 - [ ] **Data Logic:** Không có số âm vô lý, không có NULL ở Primary Key.
 - [ ] **Cross-check:** Tổng số liệu khớp với Dashboard cũ/Kế toán.
-- [ ] **Comment Check:** Đã giải thích các đoạn logic "ảo thuật" chưa?
 
 ---
 
@@ -77,38 +93,71 @@ Tuyệt đối hạn chế Nested Subqueries. Sử dụng `WITH` (CTE) theo lớ
 
 ```sql
 /*
-  📂 Task: [Tên Task]
-  👤 Author: [Tên bạn]
+  📂 Task: [DATA-001] Monthly Revenue by User Tier
+  👤 Author: [Your Name]
+  --------------------------------------------------
+  Logic: Tính tổng doanh thu theo hạng thành viên mỗi tháng.
+  Chỉ tính các đơn hàng thành công (net_amount > 0).
 */
 
 WITH 
--- 1. BASE LAYER (Simple -> No comment needed)
-base_orders AS (
-    SELECT id, user_id, total, created_at 
-    FROM `raw.orders`
-    WHERE created_at >= '2024-01-01'
+-- ==========================================================
+-- 1. BASE LAYER (Raw Data Access)
+-- Load dữ liệu từ F_SALES và D_USERS
+-- ==========================================================
+base_sales AS (
+    SELECT sales_id, user_id, net_amount, order_date
+    FROM `F_SALES`
+    WHERE order_date >= '2024-01-01'
 ),
 
-/* 2. LOGIC LAYER
-   Logic: Tính doanh thu Net.
-   Lưu ý: Trừ thêm 5% phí sàn nếu là đơn hàng từ kênh Affiliate.
-*/
-enriched_data AS (
+base_users AS (
+    SELECT user_id, user_tier
+    FROM `D_USERS`
+),
+
+-- ==========================================================
+-- 2. ENRICHMENT LAYER (Business Logic & Joins)
+-- Join Fact với Dimension để lấy thông tin hạng thành viên
+-- ==========================================================
+enriched_transactions AS (
     SELECT
-        o.id,
-        CASE 
-            WHEN o.channel = 'affiliate' THEN o.total * 0.95
-            ELSE o.total 
-        END AS net_revenue
-    FROM base_orders o
+        s.sales_id,
+        s.order_date,
+        COALESCE(u.user_tier, 'Unknown') AS user_tier, -- Xử lý user không có hạng
+        s.net_amount
+    FROM base_sales s
+    LEFT JOIN base_users u 
+        ON s.user_id = u.user_id
 ),
 
-/* FIXME: Dữ liệu ngày 15/02 bị duplicate do lỗi hệ thống.
-   Dùng DISTINCT để làm sạch. (Ref: JIRA-BUG-002) 
-*/
-clean_data AS (
-    SELECT DISTINCT * FROM enriched_data
+-- ==========================================================
+-- 3. AGGREGATION LAYER (Grouping)
+-- Gom nhóm theo Tháng và Tier
+-- ==========================================================
+monthly_stats AS (
+    SELECT
+        DATE_TRUNC('month', order_date) AS report_month,
+        user_tier,
+        SUM(net_amount) AS total_revenue,
+        COUNT(sales_id) AS total_orders
+    FROM enriched_transactions
+    GROUP BY 1, 2
+),
+
+-- ==========================================================
+-- 4. FINAL LAYER (Formatting)
+-- Format số liệu, sort kết quả
+-- ==========================================================
+final_report AS (
+    SELECT
+        report_month,
+        user_tier,
+        total_orders,
+        -- Format số tiền (VD: làm tròn 2 số lẻ)
+        ROUND(total_revenue, 2) AS revenue
+    FROM monthly_stats
 )
 
--- 3. FINAL SELECT
-SELECT * FROM clean_data;
+SELECT * FROM final_report
+ORDER BY report_month DESC, revenue DESC;
