@@ -1,50 +1,51 @@
 ## TH1: Xử lý Duplicate (Nhân bản) Dữ liệu khi Join 1-N
 
-### 1. Vấn đề
-Khi Join **Bảng Cha** (1 dòng chứa: Plan, Ngân sách, Phí Ship...) với **Bảng Con** (N dòng chứa: Hoá đơn, Sản phẩm...), dữ liệu Bảng Cha sẽ bị lặp lại N lần.
--> **Hậu quả:** Khi tính tổng (**SUM**), kết quả sẽ bị sai (gấp N lần thực tế).
+### 1. Vấn đề thực tế (Ví dụ Đơn hàng & Phí Ship)
+Khi bạn Join bảng **Đơn hàng** (có Phí Ship 30k) với bảng **Chi tiết sản phẩm** (khách mua 3 món):
+* Dòng "Phí Ship 30k" sẽ bị lặp lại 3 lần theo từng món hàng.
+* **Hậu quả:** Khi tính tổng, sếp thấy tổng phí thu được là **90k** (Sai, gấp 3 lần thực tế).
 
-### 2. Giải pháp: Biến "Hiệu Lực" (`hieu_luc`)
-Tạo một cột cờ (Flag) hoạt động như công tắc:
-* **Giá trị 1:** Dòng đầu tiên -> Có **hiệu lực** tính toán.
-* **Giá trị 0:** Các dòng sau -> Không hiệu lực (về 0).
+### 2. Giải pháp: Biến "Hiệu Lực Tính" (`hieu_luc_tinh`)
+Tạo một cột cờ (Flag) hoạt động như công tắc bật/tắt:
+* **Giá trị 1:** Dòng đầu tiên -> Có **hiệu lực tính** (giữ nguyên giá trị).
+* **Giá trị 0:** Các dòng sau -> Không tính (trả về 0).
 
-### 3. Code triển khai (SQL tối ưu)
+### 3. Code triển khai (SQL)
 
 ```sql
-WITH RawData AS (
+WITH Du_Lieu_Tho AS (
     SELECT
-        A.id,
-        B.detail_id,
-        B.val_detail, -- Số liệu bảng con (Giữ nguyên)
-        A.val_master, -- Số liệu bảng cha (Bị lặp: Plan/Ship/Budget...)
+        D.ma_don_hang,
+        C.ten_san_pham,
+        C.gia_san_pham, -- Giá sản phẩm (Giữ nguyên)
+        D.phi_ship,     -- Phí ship (Bị lặp lại nhiều lần)
         
-        -- Tạo biến "Hiệu Lực": Dòng đầu là 1, dòng sau là 0
-        -- Dùng ORDER BY NULL để tối ưu tốc độ (không cần sort)
+        -- Tạo biến "Hiệu Lực Tính": Dòng đầu là 1, dòng sau là 0
+        -- Dùng ORDER BY NULL để chạy nhanh nhất (không cần sắp xếp)
         CASE 
-            WHEN ROW_NUMBER() OVER(PARTITION BY A.id ORDER BY NULL) = 1 
+            WHEN ROW_NUMBER() OVER(PARTITION BY D.ma_don_hang ORDER BY NULL) = 1 
             THEN 1 
             ELSE 0 
-        END as hieu_luc
-    FROM TableA_Master A
-    LEFT JOIN TableB_Detail B ON A.id = B.id
+        END as hieu_luc_tinh
+    FROM Don_Hang D
+    LEFT JOIN Chi_Tiet_Don_Hang C ON D.ma_don_hang = C.ma_don_hang
 )
 
 SELECT
-    id,
-    detail_id,
-    val_detail,
-    -- Công thức: [Số liệu gốc] * [Hiệu Lực]
-    val_master * hieu_luc as real_val_master
-FROM RawData;
+    ma_don_hang,
+    ten_san_pham,
+    gia_san_pham,
+    -- Công thức: [Phí Ship Gốc] * [Hiệu Lực Tính]
+    phi_ship * hieu_luc_tinh as phi_ship_thuc_te
+FROM Du_Lieu_Tho;
 ```
 
 ### 4. Kết quả minh hoạ
-Ví dụ ID #1 có Plan là 200, đi kèm 3 hoá đơn chi tiết:
+Ví dụ Đơn #101 mua 3 món (Áo, Quần, Mũ), Phí ship gốc là 30k.
 
-| ID | Chi tiết | Plan Gốc (Bị lặp) | Biến `hieu_luc` | Plan Thực Tế |
-| :--- | :--- | :--- | :--- | :--- |
-| #1 | Inv 1 | 200 | **1** | **200** |
-| #1 | Inv 2 | 200 | **0** | **0** |
-| #1 | Inv 3 | 200 | **0** | **0** |
-| **Tổng** | | **600 (Sai)**| | **200 (Đúng)** |
+| Mã Đơn | Sản Phẩm | Giá Sản Phẩm | Phí Ship Gốc | Biến `hieu_luc_tinh` | Phí Ship Thực Tế |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| #101 | Áo thun | 100k | 30k | **1** | **30k** |
+| #101 | Quần Jean | 200k | 30k | **0** | **0** |
+| #101 | Mũ lưỡi trai | 50k | 30k | **0** | **0** |
+| **Tổng** | | **350k**| **90k (Sai)** | | **30k (Đúng)** |
