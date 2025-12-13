@@ -2,15 +2,6 @@
 
 ## Hệ Thống Quản Lý Claim Chi Phí & Công Tác Phí (Cost Claim Management)
 
-| Mục | Chi tiết |
-| :--- | :--- |
-| **Dự án** | Meraplion BI - Cost Claim Module |
-| **Phiên bản** | 1.0 |
-| **Ngày cập nhật** | 12/12/2025 |
-| **Trạng thái** | Draft |
-
------
-
 ## 1\. Tổng quan (Overview)
 
 Hệ thống được xây dựng nhằm số hóa quy trình đăng ký, phê duyệt và thanh toán các khoản chi phí của khối Kinh doanh (Sales/TDV). Hệ thống bao gồm 2 mảng chính:
@@ -71,20 +62,9 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 
 3.  **Submit:**
     * User bấm nút "GỬI QL DUYỆT".
-    * **System Logic:** Nếu kênh là `CLC & INS`, hệ thống tự động tách thành 2 bản ghi riêng biệt dựa trên tỷ lệ.
-    * Gọi API `insert_form_claim_chi_phi`.
-
-4.  **Feedback:**
-    * Thành công: Hiển thị Alert xanh "Thao tác thành công".
-    * Thất bại: Hiển thị Alert đỏ kèm thông báo lỗi.
-
------
-3.  **Submit:**
-    * User bấm nút "GỬI QL DUYỆT".
-    * **Frontend Logic:** Nếu kênh là `CLC & INS`, FE tự động tách thành 2 dòng dữ liệu (1 dòng CLC, 1 dòng INS) dựa trên tỷ lệ đã chọn.
     * **Call API:** `insert_form_claim_chi_phi` (Method: POST).
 4.  **Feedback:**
-    * **Thành công:** Hiển thị Alert xanh: "Lưu dữ liệu thành công". Form tự động clear.
+    * **Thành công:** Hiển thị Alert xanh: kèm `success_message` từ server. Form tự động clear.
     * **Thất bại:** Hiển thị Alert đỏ kèm `error_message` từ server.
 
 ---
@@ -167,6 +147,72 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 ## 5. Thiết kế Cơ sở dữ liệu (Database Schema)
 
 Hệ thống sử dụng PostgreSQL với 4 bảng dữ liệu chính để quản lý quy trình Claim chi phí và Công tác phí.
+
+### Các table có sẵn của nền tảng: 
+
+## Table `d_hr_dsns` (bảng dữ liệu nhân sự)
+
+Lưu trữ thông tin nhân sự.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `msnvcsmmoi` | text | **PK** - Mã định danh (VD: CCP_202510_MR123) |
+| `phongdeptsummary` | text | Phòng bạn của nhân viên TP, MT, INS, etc |
+| `chucdanhengtitlesum` | text | Chức danh của nhân viên |
+| `hovatenfullname` | text | Tên của nhân viên |
+
+### Table: `d_users` (Danh sách User & Phân quyền)
+Bảng quản lý thông tin cây phân cấp nhân sự, được sử dụng để xác định cấp trên (`supid`) phục vụ logic phân quyền duyệt.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `manv` | text | **PK** - Mã nhân viên (Khớp với `d_hr_dsns`) |
+| `supid` | text | **Permission** - Mã nhân viên của người quản lý trực tiếp (Line Manager) |
+
+## View: `view_list_hcp` (Danh sách Bác sĩ & Phân quyền) View tổng hợp thông tin Bác sĩ/Dược sĩ (HCP) và thông tin phân công địa bàn. Đây là nguồn dữ liệu chính để lọc danh sách bác sĩ cho nhân viên Sales kênh HCP.
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| `ma_hcp_2` | text | **PK** - Mã định danh duy nhất của HCP (VD: HCP1000001734-P) |
+| `ten_hcp` | text | Họ và tên Bác sĩ / Dược sĩ |
+| `hco_bv` | text | Mã Bệnh viện / Phòng khám nơi HCP công tác |
+| `pubcustname` | text | Tên Bệnh viện / Phòng khám hiển thị |
+| `kenh_lam_viec` | text | Kênh hoạt động (CLC, INS, PCL...) |
+| `concat_crs_sup` | text | **Permission Column** - Chuỗi chứa danh sách mã nhân viên và quản lý phụ trách HCP này (VD: "MR0673,SUP001"). Hệ thống dùng hàm `strpos` để kiểm tra quyền truy cập. |
+| `status` | text | Trạng thái hoạt động (`active` / `inactive`) |
+
+## Table: `d_master_khachhang` (Danh sách Khách hàng Tổ chức)Bảng Master Data chứa danh sách Bệnh viện, Nhà thuốc, Phòng khám (HCO). Dùng để lọc khách hàng cho nhân viên Sales kênh OTC/ETC (TP, MT) hoặc lấy thông tin khách hàng chung.
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| `custid` | text | **PK** - Mã khách hàng (VD: 000214) |
+| `custname` | text | Tên khách hàng (VD: BV QUẬN TÂN PHÚ - SG) |
+| `mnv_supid` | text | **Permission Column** - Chuỗi kết hợp Mã NV và Mã SUP (VD: "MR0673,SUP001"). Dùng để xác định nhân viên nào được phép làm việc với khách hàng này. |
+| `channel` | text | Kênh bán hàng (Hospital, Pharmacy, Wholesaler...) |
+| `province` | text | Tỉnh/Thành phố của khách hàng (Hỗ trợ lọc theo vùng) |
+
+## Table: `d_tracking_cost_hcp_v2` (Lịch sử chi phí Marketing)Đây là bảng dữ liệu lịch sử được đồng bộ từ hệ thống Marketing, lưu trữ các khoản chi phí đã thực hiện cho từng HCP trong quá khứ. Bảng này được dùng để tính toán định mức "Ngân sách còn lại" (đặc biệt là cho quà Sinh nhật) nhằm tránh chi vượt trần.
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| `id` | text | **PK** - Mã định danh khoản chi |
+| `ma_hcp_2` | text | Mã định danh HCP (Dùng để map với `view_list_hcp`) |
+| `ten_hcp` | text | Tên Bác sĩ |
+| `hoat_dong` | text | Tên hoạt động/chương trình (VD: "Quà tặng sinh nhật 2024", "Hội nghị A") |
+| `chi_phi_thuc_hien_dong` | float8 | Số tiền thực tế đã chi |
+| `nam_thuc_hien` | int4 | Năm ghi nhận chi phí (VD: 2025) |
+| `thang_thuc_hien` | int4 | Tháng ghi nhận chi phí |
+
+### Table: `d_misa_invoice` (Hóa đơn điện tử)
+| Column Name | Type | Description |
+| :--- | :--- | :--- |
+| `id_duy_nhat_cua_hoa_don` | text | **PK** - GUID định danh hóa đơn |
+| `so_hoa_don` | text | Số hóa đơn |
+| `ngay_hoa_don` | timestamp | Ngày xuất hóa đơn |
+| `ten_nguoi_ban` | text | Tên đơn vị bán |
+| `tong_tien_thanh_toan` | float8 | Tổng giá trị hóa đơn |
+
+---
 
 ### Table 1: `form_claim_chi_phi` (Bảng chính - Kế hoạch quà tặng/Mời cơm)
 
@@ -271,11 +317,31 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   * **Standard:** Tuân thủ tuyệt đối write_get_function.md
   * **Mục đích:** Lấy toàn bộ dữ liệu danh mục (Master Data) để khởi tạo Form đăng ký kế hoạch.
   * **Nguyên tắc lọc dữ liệu:**
-    1.  **Thông tin nhân viên:** Lấy thông tin cơ bản và phòng ban (`phongdeptsummary`) của user đang đăng nhập để quyết định giao diện (Ví dụ: Nếu là TP/MT thì ẩn dropdown chọn HCP).
-    2.  **Lọc khách hàng (Customer Filter):** Chỉ tải danh sách Khách hàng/HCP thuộc địa bàn quản lý của nhân viên (`manv` nằm trong danh sách `concat_crs_sup`).
-    3.  **Lọc chương trình quà tặng (Program Filter):**
-          * Truy xuất bảng danh sách quà tặng.
-          * **Quy tắc:** Chỉ lấy các chương trình (dịp tặng quà) mà nhân viên này **được phân bổ** hoặc có quyền tham gia (Active). Loại bỏ các chương trình rác hoặc của vùng khác.
+    1. **Xác định ngữ cảnh (User Context):**
+        * Truy vấn bảng `d_hr_dsns` theo `manv` đầu vào.
+        * Lấy thông tin `phongdeptsummary` để xác định giao diện (Ví dụ: Nếu là 'HCP' thì hiện list bác sĩ, nếu là 'TP/MT' thì ẩn).
+
+
+    2. **Lọc danh sách Bác sĩ (`data_hcp`):**
+        * **Nguồn:** `view_list_hcp`.
+        * **Điều kiện:** Chỉ lấy nếu nhân viên thuộc phòng 'HCP'.
+        * **Logic phân quyền:** Kiểm tra `manv` của user có nằm trong chuỗi phân công `concat_crs_sup` của bác sĩ đó không (HCP phải thuộc địa bàn quản lý).
+        * **Trạng thái:** Chỉ lấy `status = 'active'`.
+
+
+    3. **Lọc danh sách Khách hàng (`data_kh_chung`):**
+        * **Trường hợp 1 (Phòng HCP):** Lấy danh sách `hco_bv` (Bệnh viện/PK) duy nhất (`DISTINCT`) từ danh sách bác sĩ đã lọc được ở bước 2.
+        * **Trường hợp 2 (Phòng TP/MT):** Truy vấn bảng `d_master_khachhang`. Lọc theo điều kiện `manv` và `supid` nằm trong thuộc địa bàn quản lý.
+
+
+    4. **Lọc danh mục Dịp/Nội dung (`lst_noi_dung` & `lst_noi_dung_giao_tiep`):**
+        * **Nguồn:** `form_claim_chi_phi_content_list`.
+        * **Điều kiện:** Chỉ lấy các dịp đang hoạt động (`trang_thai_dip = 1`).
+        * **Phân loại:** Tách thành 2 mảng dựa trên cột `qua_tang`:
+        * Mảng "Quà tặng" (cho dropdown Quà).
+        * Mảng "Giao tiếp - Mời cơm" (cho dropdown Mời cơm).
+
+
   * **JSON Input (`url_param`):**
     ```json
     {
@@ -367,19 +433,58 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 #### **Function:** `insert_form_claim_chi_phi`
 
-  * **Loại:** WRITE
-  * **Standard:** Tuân thủ tuyệt đối write_insert_function.md
-  * **Mục đích:** Xử lý logic kiểm tra và lưu dữ liệu khi Sales bấm "Gửi QL Duyệt".
-  * **Logic Validate (Server-side):**
-    1.  **Kiểm tra Sinh nhật:** Nếu nội dung là "Quà tặng sinh nhật" -\> Hệ thống tự động kiểm tra HCP đó có thông tin ngày sinh trong `view_list_hcp` hay không. Nếu không -\> Báo lỗi.
-    2.  **Kiểm tra Lịch sử (Duplication Check):** Kiểm tra trong bảng `d_tracking_cost_hcp_v2`. Nếu HCP này đã nhận quà của chương trình này trong năm nay -\> Báo lỗi "HCP đã nhận quà này rồi".
-    3.  **Kiểm tra Định mức (Budget Cap):** Tính tổng tiền đăng ký.
-          * Nếu phòng ban là HCP: Max **2.000.000 VNĐ** / suất.
-          * Nếu phòng ban là TP: Max **4.000.000 VNĐ** / suất.
-          * Khác: Max **50.000.000 VNĐ**.
-          * *Hành động:* Nếu vượt quá -\> Báo lỗi.
-    4.  **Tự động tính toán:**
-          * `thang_chi_phi`: Nếu là sinh nhật, tự động set về ngày 01 của tháng sinh HCP. Nếu là quà thường, set theo kỳ chi phí kế toán user chọn.
+* **Loại:** WRITE
+* **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
+* **Mục đích:** Xử lý logic tính toán ngân sách, kiểm tra tính hợp lệ của dữ liệu và lưu trữ kế hoạch chi phí vào hệ thống.
+* **Validation (Các quy tắc chặn lỗi):**
+    Hệ thống thực hiện kiểm tra tuần tự các điều kiện sau. Nếu vi phạm bất kỳ điều kiện nào, hệ thống dừng lại và trả về lỗi ngay lập tức:
+
+    1.  **Kiểm tra dữ liệu bắt buộc (Mandatory Check):**
+        * Nếu nhân viên thuộc phòng **HCP**, hệ thống bắt buộc user phải chọn Bác sĩ (trường `ten_hcp` không được để trống).
+        * *Thông báo lỗi:* `"Chưa chọn HCP"`.
+    2.  **Kiểm tra thông tin Sinh nhật (Data Integrity Check):**
+        * Nếu nội dung đăng ký là **"Chi phí quà tặng dịp sinh nhật"**, hệ thống sẽ tự động tra cứu ngày sinh của HCP trong view `view_list_hcp`.
+        * Nếu không tìm thấy thông tin tháng sinh (`p_thang_sinh` IS NULL) trong hệ thống.
+        * *Thông báo lỗi:* `"Khách hàng không có thông tin ngày sinh"`.
+    3.  **Kiểm tra trùng lặp (Duplication Check):**
+        * **Nguyên tắc:** Một HCP/Khách hàng không được nhận quà (hoặc mời cơm) quá 1 lần trong cùng một tháng cho cùng một loại hình.
+        * **Logic kiểm tra:** Hệ thống quét bảng `form_claim_chi_phi`, tìm kiếm xem có bản ghi nào thỏa mãn đồng thời các điều kiện sau:
+            * Cùng **Khách hàng/HCP** (`chon_hcp` hoặc `chon_kh_chung`).
+            * Cùng **Tháng chi phí** (`thang_chi_phi`) với phiếu đang tạo.
+            * Cùng **Phân loại** (`qua_tang` - Ví dụ: cùng là "Quà tặng").
+            * Trạng thái phiếu cũ **không phải là Từ chối** (`status != 'R'`).
+        * *Thông báo lỗi:* `"Dịp này khách hàng đã được nhận"`.
+    4.  **Kiểm tra vượt định mức ngân sách (Budget Threshold Check):**
+        * Hệ thống tính **Tổng tiền tích lũy** (Total Risk) bao gồm tổng của 3 nguồn:
+            * `(1) Current`: Số tiền đang đăng ký trong phiếu hiện tại.
+            * `(2) Pending/Approved`: Tổng số tiền của các phiếu khác đang chờ duyệt hoặc đã duyệt trong cùng tháng/kỳ (Loại trừ các phiếu bị Reject).
+            * `(3) Historical`: Chi phí lịch sử Marketing đã thực hiện (Truy vấn từ bảng `d_tracking_cost_hcp_v2` với điều kiện `nam_thuc_hien` = năm hiện tại VÀ `hoat_dong` chứa từ khóa "quà tặng"). **Lưu ý:** Mục (3) chỉ được cộng dồn nếu nội dung phiếu hiện tại là "Chi phí quà tặng dịp sinh nhật".
+        * So sánh Tổng tiền tích lũy với **Định mức trần (Cap)**:
+            * Nhóm HCP: **2.000.000 VNĐ** / suất.
+            * Nhóm TP: **4.000.000 VNĐ** / suất.
+            * Nhóm Khác: **50.000.000 VNĐ** / suất.
+        * *Thông báo lỗi:* `"Số tiền kế hoạch vượt định mức"`.
+
+* **Logic (Quy trình xử lý dữ liệu):**
+
+    1.  **Chuẩn bị dữ liệu (`data_nhap`):**
+        * Chuyển đổi dữ liệu JSON đầu vào thành bảng tạm.
+        * Tính toán số lượng HCP (`p_sl_hcp`) được chọn để làm cơ sở nhân ngân sách (chỉ áp dụng nếu là nhóm phòng ban HCP).
+
+    2.  **Tự động tính toán Thời gian ghi nhận chi phí (`thang_chi_phi`):**
+        * **Trường hợp Sinh nhật:**
+            * Lấy tháng sinh của HCP (`p_thang_sinh`) từ `view_list_hcp`.
+            * Nếu *Tháng sinh >= Tháng hiện tại*: Set `thang_chi_phi` = Ngày 01 của tháng sinh năm nay.
+            * Nếu *Tháng sinh < Tháng hiện tại*: Set `thang_chi_phi` = Ngày 01 của tháng sinh **năm sau**.
+        * **Trường hợp khác:** Sử dụng `ky_chi_phi_kt` do người dùng nhập (hoặc `thang_chi_phi` nếu có).
+
+    3.  **Tính toán và Tổng hợp:**
+        * Thực hiện logic truy vấn và cộng dồn dữ liệu từ 3 nguồn (Current, Pending, Historical) như mô tả ở phần Validation để ra con số cuối cùng so sánh với Cap.
+
+    4.  **Thực thi Lưu trữ (Insert):**
+        * Nếu tất cả các bước Validation đều vượt qua (Pass), hệ thống thực hiện lệnh `INSERT` dữ liệu đã được xử lý vào bảng `form_claim_chi_phi`.
+        * Trả về thông báo thành công.
+
   * **JSON Input (`body`):**
     ```json
     [
@@ -453,10 +558,19 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 #### **Function:** `get_form_claim_chi_phi_crm`
 
-  * **Loại:** READ
-  * **Standard:** Tuân thủ tuyệt đối write_get_function.md
-  * **Mục đích:** CRM lấy danh sách các khoản chi chờ duyệt (Status = 'H').
-  * **Nguyên tắc lọc dữ liệu:** Query bảng `form_claim_chi_phi` join với `d_users` để lấy danh sách nhân viên cấp dưới của `manv` đang login.
+* **Loại:** READ
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy danh sách các khoản chi phí đang ở trạng thái "Chờ duyệt" (`Status = 'H'`) thuộc thẩm quyền của user đang đăng nhập.
+* **Nguyên tắc lọc dữ liệu:**
+    1.  **Logic phân quyền:**
+        * Hệ thống xác định quyền truy cập bằng cách kiểm tra sự xuất hiện của Mã nhân viên đang đăng nhập (`p_manv`) trong chuỗi thông tin của phiếu.
+        * **Quy tắc:** Người dùng có quyền xem/duyệt phiếu này nếu họ chính là **Người tạo phiếu** HOẶC là **Quản lý trực tiếp** của người tạo phiếu.
+    2.  **Trạng thái:** Chỉ lấy các bản ghi có `status = 'H'` (Holding - Chờ duyệt).
+* **Data Enrichment (Xử lý dữ liệu đầu ra)::**
+    * `checked`: Mặc định là `true` (Tự động tích chọn sẵn trên giao diện duyệt).
+    * `duyet_so_ke_hoach`: Mặc định gán bằng `so_ke_hoach` (Hệ thống gợi ý số tiền duyệt bằng đúng số tiền nhân viên đề xuất).
+
+
   * **JSON Input (`url_param`):**
     ```json
     {
@@ -558,8 +672,13 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   * **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
   * **Mục đích:** Lấy danh sách các Plan (kế hoạch chi phí) đã được CRM duyệt bước đầu.
   * **Nguyên tắc lọc dữ liệu:**
-    1.  **Filter by User:** Chỉ lấy các bản ghi thuộc về nhân viên đang đăng nhập (`manv`).
-    2.  **Filter by Status:** Chỉ lấy các bản ghi có `status = 'C'` (Confirmed/Approved by Admin, waiting for Invoice).
+      1.  **Lọc theo trạng thái:**
+          * Hệ thống chỉ lấy các phiếu có trạng thái là **"Đã duyệt"** ('C').
+      2.  **Logic phân quyền:**
+          * **Quy tắc:** Người dùng có quyền xem phiếu này nếu họ chính là **Người tạo phiếu** HOẶC là **Quản lý trực tiếp** của người tạo phiếu.
+      3.  **Chuẩn bị dữ liệu hiển thị:**
+          * Hệ thống tự động lấy giá trị **Số tiền đã được duyệt** (`approved_so_ke_hoach`) gán vào trường **Số tiền đề nghị thanh toán** (`so_tien_claim`) để làm giá trị mặc định, giúp người dùng biết được hạn mức tối đa có thể claim.
+
   * **JSON Input (`url_param`):**
     ```json
     { "manv": "MR0673" }
@@ -605,12 +724,20 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 #### **Function:** `get_form_claim_chi_phi_hoa_don_misa`
 
-  * **Loại:** READ
-  * **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
-  * **Mục đích:** Lấy danh sách hóa đơn từ hệ thống Misa (`d_misa_invoice`) khả dụng để claim tiền.
-  * **Nguyên tắc lọc dữ liệu:**
-    1.  **Calculation:** Tính `tien_con_lai` = `tong_tien_thanh_toan` (tổng giá trị hóa đơn) - `so_tien_da_claim` (tổng tiền đã được map vào các phiếu khác).
-    2.  **Filter by Balance:** Chỉ lấy các hóa đơn có `tien_con_lai` \> 10,000 VNĐ (để tránh các số dư rác).
+* **Loại:** READ
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy danh sách hóa đơn Misa khả dụng (còn dư tiền) để nhân viên chọn.
+* **Nguyên tắc lọc dữ liệu:**
+    1.  **Tính số dư thực tế:**
+        * `Tiền còn lại` = `Tổng tiền gốc hóa đơn` - `Tổng tiền đã được claim ở các phiếu khác`.
+    2.  **Điều kiện hiển thị:**
+        * Số dư `Tiền còn lại` **>= 10.000 VNĐ** (Chặn hóa đơn rác hoặc đã dùng hết).
+        * `Ngày hóa đơn` >= Ngày 01 của **tháng trước** đến nay (Chặn hóa đơn quá hạn).
+    3.  **Sắp xếp & Hiển thị:**
+        * Ưu tiên: Ngày mới nhất -> Tên người bán -> Số tiền lớn nhất.
+        * Tạo chuỗi `ten_hien_thi` đầy đủ thông tin (Tên, MST, Số HĐ) để hiển thị lên Dropdown.
+
+
   * **JSON Input:** `{}` (Rỗng)
   * **JSON Output:**
     ```json
@@ -661,41 +788,41 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   * **JSON Input (`body` - Array containing 1 Object):**
       * *Lưu ý: Định dạng ngày tháng bắt buộc là DD-MM-YYYY.*
     <!-- end list -->
-    ```json
-    [
-        {
-            "khid": "CCP001",
-            "manv": "MR0673",
-            "status": "I",
-            "lst_chon_invoices": [
-                {
-                    "id_duy_nhat_cua_hoa_don": "INV_XYZ",
-                    "ten_nguoi_ban": "Cty TNHH ABC",
-                    "so_hoa_don": "0012345",
-                    "ngay_hoa_don": "12-10-2025", 
-                    "tong_tien_thanh_toan": 1000000,
-                    "so_tien_claim": 500000,
-                    "selected_time": "2025-10-12T10:00:00"
-                }
-            ]
-        }
-    ]
-    ```
+      ```json
+      [
+          {
+              "khid": "CCP001",
+              "manv": "MR0673",
+              "status": "I",
+              "lst_chon_invoices": [
+                  {
+                      "id_duy_nhat_cua_hoa_don": "INV_XYZ",
+                      "ten_nguoi_ban": "Cty TNHH ABC",
+                      "so_hoa_don": "0012345",
+                      "ngay_hoa_don": "12-10-2025", 
+                      "tong_tien_thanh_toan": 1000000,
+                      "so_tien_claim": 500000,
+                      "selected_time": "2025-10-12T10:00:00"
+                  }
+              ]
+          }
+      ]
+      ```
   * **JSON Output:**
-      * **Thành công:**
-        ```json
-        {
-            "status": "ok",
-            "success_message": "Đã nhận thành công"
-        }
-        ```
-      * **Thất bại:**
-        ```json
-        {
-            "status": "fail",
-            "error_message": "Số tiền đã vượt mức hóa đơn" 
-        }
-        ```
+    * **Thành công:**
+    ```json
+    {
+        "status": "ok",
+        "success_message": "Đã nhận thành công"
+    }
+    ```
+  * **Thất bại:**
+    ```json
+    {
+        "status": "fail",
+        "error_message": "Số tiền đã vượt mức hóa đơn" 
+    }
+    ```
 
 -----
 
@@ -814,27 +941,26 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 #### **Function:** `insert_form_cong_tac_phi`
 
-  * **Loại:** WRITE
-  * **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
-  * **Mục đích:** Tạo mới tờ trình công tác phí (Header), bao gồm cả phụ cấp và gắn danh sách hóa đơn chi phí phát sinh (Detail) trong cùng một lượt submit.
-  * **Validation (Thứ tự thực hiện theo Code):**
-    1.  **Check Invoice Duplication:** Kiểm tra xem bất kỳ `id_duy_nhat_cua_hoa_don` nào trong danh sách gửi lên đã tồn tại trong bảng `form_claim_chi_phi_hoa_don` hay chưa.
-          * **Điều kiện lỗi:** Nếu tìm thấy ít nhất 1 bản ghi trùng.
-          * **Thông báo lỗi:** `"Hóa đơn đã được chọn"`.
-  * **Logic:**
-    1.  **Chuẩn bị dữ liệu (`data_input`):**
-          * Parse JSON Input.
-          * Xử lý định dạng ngày tháng đa dạng:
-              * `ky_chi_phi_kt`: Format `YYYY-MM-DD`.
-              * `ngay_hoa_don`, `selected_time`: Format `DD-MM-YYYY`.
-              * `tu_ngay`, `den_ngay`, `inserted_at`: Format ISO Timestamp.
-          * Chuyển đổi `check_tm` sang kiểu boolean/int.
-    2.  **Insert Header (Luôn thực hiện):**
-          * Insert dữ liệu vào bảng `form_cong_tac_phi`. Lưu các thông tin chung: ngày đi, ngày đến, phụ cấp, tỉnh công tác...
-    3.  **Insert Detail (Có điều kiện):**
-          * Kiểm tra độ dài mảng `lst_chon_invoices`. Nếu có dữ liệu (`arr_length >= 1`):
-          * Insert vào bảng `form_claim_chi_phi_hoa_don`.
-          * Map `check_tm` thành `1` (true) để đánh dấu hóa đơn thuộc CTP.
+* **Loại:** WRITE
+* **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
+* **Mục đích:** Tạo mới một Tờ trình công tác phí. Hành động này bao gồm việc ghi nhận thông tin chuyến đi (Header) và gắn kèm các hóa đơn chi phí phát sinh như Vé xe, Khách sạn (Details) trong cùng một lần xử lý.
+* **Validation (Các quy tắc chặn lỗi):**
+    * **Kiểm tra quyền sử dụng hóa đơn:** Hệ thống kiểm tra xem hóa đơn đính kèm đã bị **người khác** sử dụng chưa.
+        * Nếu hóa đơn đã được nhân viên khác claim -> Báo lỗi `"Hóa đơn đã được chọn"`.
+        * Nếu hóa đơn do chính user hiện tại đã nhập trước đó (đang chỉnh sửa hoặc gửi lại) -> **Cho phép**.
+        * **Mục tiêu:** Ngăn chặn việc một hóa đơn được dùng để claim tiền 2 lần (Double Spending).
+        * *Thông báo lỗi:* `"Hóa đơn đã được chọn"`.
+
+* **Logic (Quy trình xử lý nghiệp vụ):**
+
+    1.  **Tiếp nhận và Chuẩn hóa dữ liệu:**
+        * Tự động chuẩn hóa các định dạng ngày tháng khác nhau (Ví dụ: Kỳ chi phí `YYYY-MM-DD` vs Ngày hóa đơn `DD-MM-YYYY`).
+    2.  **Lưu thông tin Tờ trình (Header):**
+        * Hệ thống tạo một bản ghi mới trong bảng `form_cong_tac_phi` chứa các thông tin chung của chuyến đi: Người đi, Thời gian (Từ ngày - Đến ngày), Địa điểm (Tỉnh), và các khoản phụ cấp (Ăn uống, Đi lại) do người dùng tự kê khai.
+    3.  **Lưu chi tiết Hóa đơn (Detail):**
+        * Kiểm tra xem tờ trình có đính kèm hóa đơn không. Nếu có (`arr_length >= 1`):
+            * Hệ thống thực hiện gắn các hóa đơn này vào hệ thống (`form_claim_chi_phi_hoa_don`).
+  
   * **JSON Input (`body` - Array wrapper):**
     ```json
     [
@@ -862,7 +988,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
                     "ten_nguoi_ban": "Nhà xe Thành Bưởi",
                     "ten_hien_thi": "Vé xe đi",
                     "cost_type": "transport",         // transport / hotel
-                    "check_tm": true,                 // true = Công tác phí
+                    "check_tm": true,
                     "tong_tien_thanh_toan": 500000,
                     "so_tien_claim": 500000,
                     "tien_con_lai": 0
@@ -877,98 +1003,95 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 #### **Function:** `get_form_claim_chi_phi_excel_form`
 
-  * **Loại:** READ
-  * **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
-  * **Mục đích:** Lấy toàn bộ dữ liệu thô (Raw Data) của các khoản chi phí **đã được duyệt (Status = 'D')** để Backend/Frontend render ra file Excel báo cáo thanh toán (Form BMKT013 và BMKT002).
+* **Loại:** READ
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy toàn bộ dữ liệu đã được duyệt (Status = 'D') để kết xuất ra 2 biểu mẫu Excel báo cáo thanh toán: **BMKT013** (Bảng kê chi tiết) và **BMKT002** (Giấy đề nghị thanh toán).
+* **Nguyên tắc lọc dữ liệu:**
+    1.  **Điều kiện tiên quyết:**
+        * Chỉ lấy các khoản chi của nhân viên đang đăng nhập (`manv`).
+        * Chỉ lấy các khoản đã hoàn tất quy trình duyệt (`status = 'D'`).
+        * Lọc theo khoảng thời gian (`fromDate` <= `ky_chi_phi_kt` <= `toDate`).
+    2.  **Logic tổng hợp cho biểu mẫu BMKT013 (Chi tiết tiếp khách):**
+        * Lấy chi tiết từ bảng `form_claim_chi_phi`.
+        * **Xử lý tên khách hàng:** Nếu kênh là TP/MT -> Lấy từ danh mục khách hàng (`d_master_khachhang`). Nếu là HCP -> Lấy tên Bệnh viện/Phòng khám.
+        * **Xử lý kênh:** Hiển thị kèm tỷ lệ split nếu có (Ví dụ: "CLC & INS (50:50)").
+    3.  **Logic tổng hợp cho biểu mẫu BMKT002 (Đề nghị thanh toán):**
+          **Nguyên tắc tổng hợp dữ liệu (Data Aggregation Logic):**
+
+          Dữ liệu trả về (đặc biệt là mảng `BMKT002`) được tổng hợp (UNION) từ 3 nguồn dữ liệu khác nhau với logic lọc riêng biệt:
+
+          | Nguồn dữ liệu | Loại chi phí | Logic lọc (Filter Criteria) | Logic hiển thị |
+          | :--- | :--- | :--- | :--- |
+          | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị chi tiết từng hóa đơn, người thụ hưởng, nội dung quà tặng. |
+          | **Nguồn 2**<br>(`ds_phu_cap_ctp`) | **Phụ cấp CTP**<br>(Đi lại + Ăn uống) | **Số tiền:** Tổng phụ cấp \> 0.<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Gom thành 1 dòng: "CTP THÁNG... từ... đến...".<br>Số hóa đơn = NULL. |
+          | **Nguồn 3**<br>(`ds_hoa_don_ctp`) | **Hóa đơn CTP**<br>(Vé xe, KS...) | **Điều kiện:** Phải có hóa đơn đi kèm (ID Not Null).<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Hiển thị chi tiết từng hóa đơn (Vé xe, KS) phát sinh trong chuyến đi. |
+
+        **Định dạng cột Nội dung (`noi_dung`):**
+              * Đối với các dòng là Công tác phí (CTP), hệ thống không lấy tên khoản mục đơn thuần mà tự động ghép chuỗi theo định dạng:
+                  `"CTP THÁNG : [MM-YYYY], từ : [Ngày đi] đến: [Ngày về]"`
+        **Cấu trúc Footer (JSON Keys):**
+          * Ngoài 2 mảng dữ liệu chính, hàm trả về các **Keys** riêng biệt để điền vào phần chân trang/chữ ký của biểu mẫu Excel:
+              * `tong_so_tien`: Tổng số tiền đã được định dạng có dấu phẩy (Ví dụ: "800,000").
+              * `so_tien_bang_chu`: Tổng số tiền được chuyển đổi thành chữ tiếng Việt (Ví dụ: "Tám trăm ngàn đồng").
+              * `ly_do_thanh_toan`: Chuỗi cố định `"Thanh toán chi phí giao tiếp tháng: [MM-YYYY]"`.
+              * `thoi_gian_de_nghi`: Gán mặc định là `"Trước ngày 20 tháng sau"`.
+              * `nguoi_nhan` & `nguoi_de_nghi`: Được ghép tự động theo công thức `[Mã NV] + " - " + [Họ tên]` (Ví dụ: "MR0673 - Nguyễn Văn A").
+
+    4.  **Xử lý Footer:**
+        * Tính tổng số tiền và tự động chuyển đổi số tiền thành chữ tiếng Việt (Ví dụ: "Một triệu đồng chẵn").
+
   * **JSON Input (`url_param`):**
     ```json
     {
-        "manv": "MR0673",
-        "fromDate": "2025-10-01", 
-        "toDate": "2025-10-01" // luôn bị ép = fromDate từ fontend
+        "from_date": "2025-11-01",
+        "to_date": "2025-11-01",
+        "manv": "MR1137",
+        "id": "20251212235209830"
     }
     ```
   * **JSON Output:**
     ```json
     {
-        "status": "ok",
-        
-        // ------------------------------------------------------------------
-        // SHEET BMKT013: Chi tiết chi phí tiếp khách
-        // ------------------------------------------------------------------
-        "BMKT013": [
-            {
-                "khu_vuc": "",                   
-                "supid": "SUP001",               
-                "tenquanlytt": "Nguyễn Văn Boss",
-                
-                // Hai trường này code SQL select lặp lại, FE có thể dùng hoặc bỏ qua
-                "supid_2": "SUP001",             
-                "tenquanlytt_2": "Nguyễn Văn Boss",
-
-                "ma_kh": "CUS_001",              
-                "ten_kh": "Công ty ABC",         
-                "ho_ten_nguoi_tiep": "Anh Khách",
-                "kenh": "OTC",                   
-                "noi_dung": "Mua quà trung thu", 
-                "so_khid": "CCP001",             
-                "de_xuat_kh": 500000,            
-                "duyet_kh": 500000,              
-                "ngay_thuc_hien": "2025-10-15",  
-                "tong_tien_thuc_hien": 500000,   
-                "so_hoa_don": "00123",           
-                "ghi_chu": "Ghi chú thêm"        
-            }
-        ],
-
-        // ------------------------------------------------------------------
-        // SHEET BMKT002: Tổng hợp đề nghị thanh toán
-        // ------------------------------------------------------------------
-        "BMKT002": [
-            {
-                "stt": 1,
-                "noi_dung": "Mua quà trung thu", 
-                "so_hoa_don": "00123",
-                "ngay_hoa_don": "2025-10-15",
-                "thoi_gian_de_nghi": "Trước ngày 20 tháng sau", 
-                "nguoi_nhan_tien": "MR0673 - Nguyễn Văn A", 
-                "ghi_chu": "Ghi chú từ Plan",    
-                "so_tien": 500000
-            },
-            {
-                "stt": 2,
-                "noi_dung": "CTP THÁNG :10-2025, từ : 01-10-2025 đến: 02-10-2025", 
-                "so_hoa_don": null,              
-                "ngay_hoa_don": null,
-                "thoi_gian_de_nghi": "Trước ngày 20 tháng sau",
-                "nguoi_nhan_tien": "MR0673 - Nguyễn Văn A",
-                "ghi_chu": "Công tác phí",       
-                "so_tien": 300000                
-            }
-        ],
-
-        // ------------------------------------------------------------------
-        // FOOTER: Thông tin tổng hợp
-        // ------------------------------------------------------------------
-        "tong_so_tien": "800,000",             
-        "so_tien_bang_chu": "Tám trăm ngàn đồng", 
-        "nguoi_de_nghi": "MR0673 - Nguyễn Văn A",
-        "department": "Phòng Kinh Doanh",
-        "ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 10-2025",
-        "nguoi_nhan": "MR0673 - Nguyễn Văn A",
-        "tong_so_tien": "2,000,000",
-        "so_tien_bang_chu": "Hai triệu đồng chẵn",
-        "nguoi_de_nghi": "MR0673 - Nguyễn Văn A",
-        "department": "Phòng Kinh Doanh"
+      "status": "ok",
+      "BMKT002": [
+        {
+          "stt": 1,
+          "ghi_chu": "abc",
+          "so_tien": 666666,
+          "noi_dung": "Chi phí quà tặng dịp sinh nhật",
+          "so_hoa_don": "000000397",
+          "ngay_hoa_don": "2025-12-12T00:00:00",
+          "nguoi_nhan_tien": "MR1137 - Vũ Mừng",
+          "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
+        }
+      ],
+      "BMKT013": [
+        {
+          "kenh": "CLC",
+          "ma_kh": "007987",
+          "supid": "MR1137",
+          "ten_kh": "PK NGUYỄN THỊ BÍCH NGỌC - SG",
+          "ghi_chu": "abc",
+          "khu_vuc": "",
+          "so_khid": "CCP20251212151104775",
+          "supid_2": "MR1137",
+          "duyet_kh": 666666,
+          "noi_dung": "Chi phí quà tặng dịp sinh nhật",
+          "de_xuat_kh": 666666,
+          "so_hoa_don": "000000397",
+          "tenquanlytt": "Vũ Mừng",
+          "tenquanlytt_2": "Vũ Mừng",
+          "ngay_thuc_hien": "2025-12-12",
+          "ho_ten_nguoi_tiep": "VÕ THỊ NGỌC TRÂM",
+          "tong_tien_thuc_hien": 666666
+        }
+      ],
+      "department": "HCP",
+      "nguoi_nhan": "MR1137 - Vũ Mừng",
+      "tong_so_tien": "666,666",
+      "nguoi_de_nghi": "MR1137 - Vũ Mừng",
+      "ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 11-2025",
+      "so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng"
     }
     ```
 
-#### **Nguyên tắc tổng hợp dữ liệu (Data Aggregation Logic):**
-
-Dữ liệu trả về (đặc biệt là mảng `BMKT002`) được tổng hợp (UNION) từ 3 nguồn dữ liệu khác nhau với logic lọc riêng biệt:
-
-| Nguồn dữ liệu | Loại chi phí | Logic lọc (Filter Criteria) | Logic hiển thị |
-| :--- | :--- | :--- | :--- |
-| **Nguồn 1**<br>(`lst_payment_1`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị chi tiết từng hóa đơn, người thụ hưởng, nội dung quà tặng. |
-| **Nguồn 2**<br>(`lst_payment_2`) | **Phụ cấp CTP**<br>(Đi lại + Ăn uống) | **Số tiền:** Tổng phụ cấp \> 0.<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Gom thành 1 dòng: "CTP THÁNG... từ... đến...".<br>Số hóa đơn = NULL. |
-| **Nguồn 3**<br>(`lst_payment_3`) | **Hóa đơn CTP**<br>(Vé xe, KS...) | **Điều kiện:** Phải có hóa đơn đi kèm (ID Not Null).<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Hiển thị chi tiết từng hóa đơn (Vé xe, KS) phát sinh trong chuyến đi. |
