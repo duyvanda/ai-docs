@@ -43,7 +43,7 @@ Dữ liệu được tích hợp với:
 **User Flow: Upload Chương Trình**
 
 1.  **Start:** Admin truy cập trang quản lý.
-2.  **Input:** Nhập Mã & Tên chương trình. Chọn file Excel (chứa danh sách KH, NV, Quà).
+2.  **Input:** Nhập Mã & Tên chương trình. Chọn file Excel (chứa danh sách KH, NV, Quà). Adding a reset mechanism and ensuring the input value is cleared when a new file is selected
 3.  **Submit:**
     * Admin bấm "Import".
     * **Call API:** `insert_theo_doi_tang_qua_admin_excel`.
@@ -155,8 +155,8 @@ Lưu trữ kết quả thực hiện của Sales.
       {
         "ma_chuong_trinh": "CT2025_01",
         "ma_khach_hang": "KH001",
-        "hinh_anh_1": "https://bi.meraplion.com/IMG/.../1.jpg",
-        "hinh_anh_2": "https://bi.meraplion.com/IMG/.../2.jpg",
+        "hinh_anh_1": "https://bi.meraplion.com/DMS/theo_doi_tang_qua_chung_tu/<index>_<ma_khach_hang>.jpg",
+        "hinh_anh_2": "https://bi.meraplion.com/DMS/theo_doi_tang_qua_chung_tu/<index>_<ma_khach_hang>.jpg",
         "hinh_anh_3": null,
         "hinh_anh_4": null,
         "hinh_anh_5": null,
