@@ -42,7 +42,7 @@ Dữ liệu được tích hợp với:
 
 **User Flow: Upload Chương Trình**
 
-1.  **Start:** Admin truy cập trang quản lý.
+1.  **Start:** Admin truy cập trang quản lý (/formcontrol/theo_doi_tang_qua/admin).
 2.  **Input:** Nhập Mã & Tên chương trình. Chọn file Excel (chứa danh sách KH, NV, Quà). Adding a reset mechanism and ensuring the input value is cleared when a new file is selected
 3.  **Submit:**
     * Admin bấm "Import".
@@ -50,7 +50,7 @@ Dữ liệu được tích hợp với:
 4.  **Feedback:** Thông báo số dòng import thành công/thất bại.
 
 ### 4.2. Phân hệ Sales - Thực hiện tặng quà
-
+**Start:** Sales truy cập trang thực hiện (/formcontrol/theo_doi_tang_qua/sales).
 **User Flow: Checklist & Báo cáo**
 
 1.  **View List:**
