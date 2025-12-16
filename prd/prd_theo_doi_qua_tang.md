@@ -98,6 +98,14 @@ Lưu trữ kết quả thực hiện của Sales.
 | `nguoi_tai_len` | text | Mã nhân viên Sales |
 | `thoi_gian_tai_len` | timestamp | Thời gian upload |
 
+### **Table 3: `d_master_khachhang`** (Transaction)
+Lưu trữ kết quả thực hiện của Sales.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `custid` | text | **PK** - Mã chương trình |
+| `custname` | text | Tên khách hàng |
+
 -----
 
 ## 6. API & Function Specifications (Chi tiết kỹ thuật)
@@ -195,6 +203,7 @@ Lưu trữ kết quả thực hiện của Sales.
           "ma_chuong_trinh": "CT2025_01",
           "ten_chuong_trinh": "Quà Tết 2025",
           "ma_khach_hang": "KH001",
+          "ten_khach_hang": "KH NV Số 001",
           "ma_nhan_vien": "SALE_A",
           "ma_qua_tang": "GIFT01",
           "ten_qua": "Hộp Bánh",
@@ -206,6 +215,7 @@ Lưu trữ kết quả thực hiện của Sales.
           "ma_chuong_trinh": "CT2025_01",
           "ten_chuong_trinh": "Quà Tết 2025",
           "ma_khach_hang": "KH002",
+          "ten_khach_hang": "KH NV Số 002",
           "ma_nhan_vien": "SALE_A",
           "ma_qua_tang": "GIFT01",
           "ten_qua": "Hộp Bánh",
