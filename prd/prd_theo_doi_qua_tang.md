@@ -103,7 +103,7 @@ Lưu trữ kết quả thực hiện của Sales.
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `custid` | text | **PK** - Mã chương trình |
+| `custid` | text | **PK** - Mã khách hàng |
 | `custname` | text | Tên khách hàng |
 
 -----
