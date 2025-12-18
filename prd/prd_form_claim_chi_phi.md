@@ -80,10 +80,10 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
     * **Chọn:** Tick vào checkbox ở đầu dòng các khoản muốn xử lý (`boolean`).
 4.  **Submit:**
     * Có phân quyền được duyệt dựa trên chức danh. CRM thì DUYỆT/DENY. CRS thì chỉ DENY.
-    * CRM bấm nút **CONFIRM** (Duyệt) hoặc **DENY** (Từ chối).
+    * CRM bấm nút **CONFIRM** (Duyệt) hoặc **DENY** (Từ chối) hoặc XÓA.
     * CRS bấm nút **DENY**. Không có quyền duyệt.
     * **Call API:** `insert_form_claim_chi_phi_crm` (Method: POST).
-    * **Payload:** Gửi danh sách các records đã tick kèm trạng thái mới (`C`: Confirmed hoặc `R`: Rejected).
+    * **Payload:** Gửi danh sách các records đã tick kèm trạng thái mới (`C`: Confirmed hoặc `R`: Rejected) hoặc `X`: Xóa.
 5.  **Feedback:** Reload lại bảng dữ liệu sau 2 giây.
 
 ---
@@ -624,8 +624,10 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
   * **Loại:** WRITE
   * **Standard:** Tuân thủ tuyệt đối write_insert_function.md
-  * **Mục đích:** CRM xác nhận duyệt (C) hoặc từ chối (R).
-  * **Logic:** Update bảng `form_claim_chi_phi` các trường `status`, `approved_so_ke_hoach`, `approved_manv`, `approved_at` dựa trên ID gửi lên.
+  * **Mục đích:** CRM xác nhận duyệt (C) hoặc từ chối (R) hoặc Xóa (X).
+  * **Logic:** 
+    - Update bảng `form_claim_chi_phi` các trường `status`, `approved_so_ke_hoach`, `approved_manv`, `approved_at` dựa trên ID gửi lên.
+    - Xóa các ID nếu trạng thái là X.
   * **JSON Input (`body` - Array):**
     ```json
     [
@@ -1017,6 +1019,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         * Lấy chi tiết từ bảng `form_claim_chi_phi`.
         * **Xử lý tên khách hàng:** Nếu kênh là TP/MT -> Lấy từ danh mục khách hàng (`d_master_khachhang`). Nếu là HCP -> Lấy tên Bệnh viện/Phòng khám.
         * **Xử lý kênh:** Hiển thị kèm tỷ lệ split nếu có (Ví dụ: "CLC & INS (50:50)").
+        * **Xử lý số kế hoạch và số duyệt:** Khi join với bảng `form_claim_chi_phi_hoa_don` bị đúp dòng => Chỉ Số kế hoạch/duyệt đầu tiên là có data, còn lại = 0.         
     3.  **Logic tổng hợp cho biểu mẫu BMKT002 (Đề nghị thanh toán):**
           **Nguyên tắc tổng hợp dữ liệu (Data Aggregation Logic):**
 
@@ -1031,7 +1034,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         **Định dạng cột Nội dung (`noi_dung`):**
               * Đối với các dòng là Công tác phí (CTP), hệ thống không lấy tên khoản mục đơn thuần mà tự động ghép chuỗi theo định dạng:
                   `"CTP THÁNG : [MM-YYYY], từ : [Ngày đi] đến: [Ngày về]"`
-        **Cấu trúc Footer (JSON Keys):**
+        **Cấu trúc Footer (JSON Keys) cho BMKT002:**
           * Ngoài 2 mảng dữ liệu chính, hàm trả về các **Keys** riêng biệt để điền vào phần chân trang/chữ ký của biểu mẫu Excel:
               * `tong_so_tien`: Tổng số tiền đã được định dạng có dấu phẩy (Ví dụ: "800,000").
               * `so_tien_bang_chu`: Tổng số tiền được chuyển đổi thành chữ tiếng Việt (Ví dụ: "Tám trăm ngàn đồng").
@@ -1088,12 +1091,15 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
           "tong_tien_thuc_hien": 666666
         }
       ],
-      "department": "HCP",
-      "nguoi_nhan": "MR1137 - Vũ Mừng",
-      "tong_so_tien": "666,666",
-      "nguoi_de_nghi": "MR1137 - Vũ Mừng",
-      "ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 11-2025",
-      "so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng"
+        "bmkt013_tong_tien_ke_hoach": "600,000",
+        "bmkt013_tong_tien_duyet": "500,000",
+
+        "bmkt002_department": "HCP",
+        "bmkt002_tong_so_tien": "666,666",
+        "bmkt002_nguoi_nhan": "MR1137 - Vũ Mừng",
+        "bmkt002_nguoi_de_nghi": "MR1137 - Vũ Mừng",
+        "bmkt002_ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 11-2025",
+        "bmkt002_so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng"
     }
     ```
 
