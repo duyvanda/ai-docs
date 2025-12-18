@@ -391,7 +391,7 @@ Truy vấn bảng public.nvbc_reward_type để lấy ra c_monthly, c_quarterly_
 * **Method:** POST  
 * **Mục đích:** Lưu thông tin quà tặng user đã chọn vào hệ thống.  
 * **Logic:**  
-  1. Nhận mảng dữ liệu chứa chuỗi quà (value).  
+  1. Nhận mảng dữ liệu chứa chuỗi quà (value) Quà 1 | Quà 2 | Quà 3.  
   2. Insert vào bảng nvbc_reward_item.  
   3. Backend trả về message thành công/thất bại.  
 * **JSON Input (body):** *Lưu ý: Input là một Array (Mảng)*  
@@ -400,8 +400,8 @@ Truy vấn bảng public.nvbc_reward_type để lấy ra c_monthly, c_quarterly_
   [  
       {  
           "phone": "0909xxxxxx",  
-          "value": "Túi đựng mỹ phẩm...|Máy sấy tóc...",  
-          "reward_type": "",  
+          "value": "Túi đựng mỹ phẩm...|Máy sấy tóc...| Quà tặng 3",  
+          "reward_type": "xth_monthly_reward",  
           "inserted_at": "2025-12-16 11:00:00"  
       }  
   ]
