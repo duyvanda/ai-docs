@@ -83,7 +83,7 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
     * CRM bấm nút **CONFIRM** (Duyệt) hoặc **DENY** (Từ chối) hoặc XÓA.
     * CRS bấm nút **DENY**. Không có quyền duyệt.
     * **Call API:** `insert_form_claim_chi_phi_crm` (Method: POST).
-    * **Payload:** Gửi danh sách các records đã tick kèm trạng thái mới (`C`: Confirmed hoặc `R`: Rejected) hoặc `X`: Xóa.
+    * **Payload:** Gửi danh sách các records đã tick kèm trạng thái mới (`C`: Confirmed hoặc `R`: Rejected hoặc `X`: Xóa).
 5.  **Feedback:** Reload lại bảng dữ liệu sau 2 giây.
 
 ---
