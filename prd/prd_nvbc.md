@@ -8,11 +8,8 @@ Hệ thống M.Ambassador là cổng đào tạo và tích lũy điểm thưởn
 
 Dữ liệu được tích hợp với:
 
-* **Hệ thống Zalo OA & DMS:** Xác thực danh tính và quyền truy cập qua số điện thoại.  
-* **File System (Parquet):** Quản lý nội dung đào tạo (Danh mục tài liệu).  
+* **Hệ thống Zalo OA:** Xác thực danh tính và quyền truy cập qua số điện thoại.  
 * **PostgreSQL:** Lưu trữ lịch sử truy cập, danh sách trúng thưởng và trạng thái đổi quà.
-
-## ---
 
 **2. Mục tiêu (Goals)**
 
@@ -20,15 +17,11 @@ Dữ liệu được tích hợp với:
 * **[Gamification]:** Tăng tương tác bằng cơ chế tích điểm (xem trên 60s) và bảng xếp hạng/quà tặng.  
 * **[Tracking]:** Ghi nhận chính xác lịch sử học tập để làm cơ sở trả thưởng.
 
-## ---
-
 **3. Đối tượng sử dụng (User Personas)**
 
 | Vai trò | Mô tả công việc trên hệ thống |
 | :---- | :---- |
 | **Dược sĩ / NVBC** | - Đăng nhập bằng SĐT. - Xem tài liệu đào tạo. - Theo dõi điểm tích lũy. - Chọn quà khi đạt giải thưởng. |
-
-## ---
 
 **4. User Flow & UI Overview (Chi tiết quy trình)**
 
@@ -51,8 +44,6 @@ Dữ liệu được tích hợp với:
 
 * **User Flow:** User chọn quà trên popup -> Bấm "Lưu quà" -> Hệ thống gọi API insert_nvbc_reward_item.  
 * **UI Logic:** Hiển thị thông báo thành công/thất bại và tắt popup.
-
-## ---
 
 **5. Thiết kế Cơ sở dữ liệu (Database Schema)**
 

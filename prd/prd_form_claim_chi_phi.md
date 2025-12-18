@@ -69,17 +69,19 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 
 ---
 
-### 4.2. Phân hệ Quản lý (CRM/Manager) - Phê duyệt Kế hoạch
+### 4.2. Phân hệ Quản lý (CRS/CRM) - Phê duyệt Kế hoạch
 
 **User Flow: Duyệt hoặc Từ chối kế hoạch**
 
-1.  **Start:** Manager truy cập tab "Duyệt Đề Xuất" (Route: `/formcontrol/form_claim_chi_phi_crm`).
+1.  **Start:** CRS/CRM truy cập tab "Duyệt Đề Xuất" (Route: `/formcontrol/form_claim_chi_phi_crm`).
 2.  **Display:** Hệ thống load danh sách các khoản chi ở trạng thái `H` (New) thông qua API `get_form_claim_chi_phi_crm`.
 3.  **Action (Điều chỉnh & Chọn):**
     * **Sửa tiền:** Manager có thể sửa ô "Số duyệt" (`float8`). *Lưu ý: FE chặn không cho nhập lớn hơn `max_ke_hoach`*.
     * **Chọn:** Tick vào checkbox ở đầu dòng các khoản muốn xử lý (`boolean`).
 4.  **Submit:**
-    * Manager bấm nút **CONFIRM** (Duyệt) hoặc **DENY** (Từ chối).
+    * Có phân quyền được duyệt dựa trên chức danh. CRM thì DUYỆT/DENY. CRS thì chỉ DENY.
+    * CRM bấm nút **CONFIRM** (Duyệt) hoặc **DENY** (Từ chối).
+    * CRS bấm nút **DENY**. Không có quyền duyệt.
     * **Call API:** `insert_form_claim_chi_phi_crm` (Method: POST).
     * **Payload:** Gửi danh sách các records đã tick kèm trạng thái mới (`C`: Confirmed hoặc `R`: Rejected).
 5.  **Feedback:** Reload lại bảng dữ liệu sau 2 giây.
