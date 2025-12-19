@@ -43,7 +43,10 @@ Dữ liệu được tích hợp với:
 ### **4.4. Phân hệ Đổi quà (Reward Redemption)**
 
 * **User Flow:** User chọn quà trên popup -> Bấm "Lưu quà" -> Hệ thống gọi API insert_nvbc_reward_item.  
-* **UI Logic:** Hiển thị thông báo thành công/thất bại và tắt popup.
+* **UI Logic:**
+
+  - Hiển thị thông báo thành công/thất bại và tắt popup.
+  - Vì quà là có giới hạn nên nếu chọn quà hết tồn sẽ phải chọn lại.
 
 **5. Thiết kế Cơ sở dữ liệu (Database Schema)**
 
@@ -397,7 +400,8 @@ Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_
 * **Logic:**  
   1. Nhận mảng dữ liệu chứa quà.
   1. Xét reward_type = loại monthly trong bảng `nvbc_reward_type`. 
-  2. Insert vào bảng nvbc_reward_item.  
+  2. Insert vào bảng nvbc_reward_item.
+  2. Kiểm tra xem quà còn tồn hay không để ghi nhận hoặc từ chối insert.
   3. Backend trả về message thành công/thất bại. 
 * **JSON Input (body):** *Lưu ý: Input là một Array (Mảng)*  
   JSON
