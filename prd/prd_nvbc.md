@@ -91,9 +91,11 @@ Lưu kết quả chọn quà của người dùng.
 | Column Name | Data Type | Description |
 | :---- | :---- | :---- |
 | phone | text | Số điện thoại user |
-| value | text | Chuỗi quà đã chọn (VD: "Túi... |
+| value | text | Chuỗi quà đã chọn monthly |
 | reward_type | text | (Có thể để trống nếu gộp chung vào value) |
 | inserted_at | text | Thời gian chọn quà |
+| value1 | text | Quà đã chọn product_expert |
+| value2 | text | Quà đã chọn advid_reader |
 
 ## 
 
