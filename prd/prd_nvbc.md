@@ -114,6 +114,10 @@ Bảng cấu hình danh sách các lựa chọn quà tặng (Whitelist Options) 
 | color | text | Mã màu nền hiển thị trên UI (VD: `#42c1f5`) |
 | icon_color | text | Mã màu của Icon (VD: `red`, `gold`, `blue`) |
 | category | text | Phân loại nhóm quà để lọc API. Giá trị: `monthly`, `dgcc`, `cgsp` |
+| stock | numeric | | Số lượng quà tặng |
+| start_time | timestamp without time zone | | Thời gian bắt đầu cho phép đổi quà |
+| end_time | timestamp without time zone | | Thời gian kết thúc cho phép đổi quà |
+
 
 
 **Table: nvbc_reward_type**
@@ -391,18 +395,21 @@ Truy vấn bảng public.nvbc_reward_type để lấy ra c_monthly, c_quarterly_
 * **Method:** POST  
 * **Mục đích:** Lưu thông tin quà tặng user đã chọn vào hệ thống.  
 * **Logic:**  
-  1. Nhận mảng dữ liệu chứa chuỗi quà (value) Quà 1 | Quà 2 | Quà 3.  
+  1. Nhận mảng dữ liệu chứa quà.
+  1. Xét reward_type = loại monthly trong bảng `nvbc_reward_type` . 
   2. Insert vào bảng nvbc_reward_item.  
-  3. Backend trả về message thành công/thất bại.  
+  3. Backend trả về message thành công/thất bại. 
 * **JSON Input (body):** *Lưu ý: Input là một Array (Mảng)*  
   JSON
   ```
   [  
       {  
           "phone": "0909xxxxxx",  
-          "value": "Túi đựng mỹ phẩm...|Máy sấy tóc...| Quà tặng 3",  
+          "value": "Quà monthly",  
           "reward_type": "xth_monthly_reward",  
-          "inserted_at": "2025-12-16 11:00:00"  
+          "inserted_at": "2025-12-16 11:00:00",
+          "value1": Quà product_expert,
+          "value2": Quà advid_reader
       }  
   ]
   ```
