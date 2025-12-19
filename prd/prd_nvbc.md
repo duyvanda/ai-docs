@@ -118,7 +118,7 @@ Bảng cấu hình danh sách các lựa chọn quà tặng (Whitelist Options) 
 | name | text | Tên hiển thị của món quà (Sẽ map với field `value` trong JSON Output) |
 | color | text | Mã màu nền hiển thị trên UI (VD: `#42c1f5`) |
 | icon_color | text | Mã màu của Icon (VD: `red`, `gold`, `blue`) |
-| category | text | Phân loại nhóm quà để lọc API. Giá trị: `monthly`, `dgcc`, `cgsp` |
+| category | text | Phân loại nhóm quà để lọc API. Giá trị: `monthly_reward`, `avid_reader_reward`, `product_expert_reward` |
 | stock | numeric | | Số lượng quà tặng |
 | start_time | timestamp without time zone | | Thời gian bắt đầu cho phép đổi quà |
 | end_time | timestamp without time zone | | Thời gian kết thúc cho phép đổi quà |
