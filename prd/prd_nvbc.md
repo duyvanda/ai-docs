@@ -92,7 +92,7 @@ Lưu kết quả chọn quà của người dùng.
 | :---- | :---- | :---- |
 | phone | text | Số điện thoại user |
 | value | text | Chuỗi quà đã chọn monthly |
-| reward_type | text | (Có thể để trống nếu gộp chung vào value) |
+| reward_event | text | (Có thể để trống nếu gộp chung vào value) |
 | inserted_at | text | Thời gian chọn quà |
 | value1 | text | Quà đã chọn product_expert |
 | value2 | text | Quà đã chọn advid_reader |
@@ -110,18 +110,19 @@ Bảng danh mục khách hàng master.
 ##
 
 **Table: nvbc_gift_options**
-Bảng cấu hình danh sách các lựa chọn quà tặng (Whitelist Options) hiển thị lên Popup chọn quà. Dữ liệu này được API `nvbc_get_point` sử dụng để trả về các danh sách `list_chon_monthly`, `list_chon_dgcc`, `list_chon_cgsp`.
+Bảng cấu hình danh sách các lựa chọn quà tặng (Whitelist Options) hiển thị lên Popup chọn quà. Dữ liệu này được API nvbc_get_point sử dụng để trả về các danh sách list_chon_monthly, list_chon_dgcc, list_chon_cgsp.
 
-| Column Name | Data Type | Description |
-| :---- | :---- | :---- |
-| id | integer | **PK** - Mã định danh món quà |
-| name | text | Tên hiển thị của món quà (Sẽ map với field `value` trong JSON Output) |
-| color | text | Mã màu nền hiển thị trên UI (VD: `#42c1f5`) |
-| icon_color | text | Mã màu của Icon (VD: `red`, `gold`, `blue`) |
-| category | text | Phân loại nhóm quà để lọc API. Giá trị: `monthly_reward`, `avid_reader_reward`, `product_expert_reward` |
+| column name | data type | constraints | description |
+| :--- | :--- | :--- | :--- |
+| id | integer | PK | Mã định danh món quà |
+| name | text | | Tên hiển thị của món quà (Sẽ map với field value trong JSON Output) |
+| color | text | | Mã màu nền hiển thị trên UI (VD: #42c1f5) |
+| icon_color | text | | Mã màu của Icon (VD: red, gold, blue) |
+| category | text | | Phân loại nhóm quà để lọc API. Giá trị: monthly_reward, avid_reader_reward, product_expert_reward |
 | stock | numeric | | Số lượng quà tặng |
-| start_time | timestamp without time zone | | Thời gian bắt đầu cho phép đổi quà |
-| end_time | timestamp without time zone | | Thời gian kết thúc cho phép đổi quà |
+| start_time | timestamp | | Thời gian bắt đầu cho phép đổi quà |
+| end_time | timestamp | | Thời gian kết thúc cho phép đổi quà |
+| is_available | integer | Default 1 | Cờ kiểm soát còn hay hết hàng (1: Còn hàng, 0: Hết hàng) |
 
 
 
@@ -211,45 +212,39 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
 
 #### **Function: nvbc_get_point**
 
-* **Endpoint:** /local/nvbc_get_point/  
-**Loại:** READ
+* **Endpoint:** `/local/nvbc_get_point/`
+* **Loại:** READ
+* **Mục đích:** Truy xuất toàn bộ dữ liệu cần thiết để hiển thị màn hình chính (Dashboard) cho người dùng tham gia chương trình NVBC. Dữ liệu bao gồm: thông tin điểm số tích lũy, lịch sử đọc tài liệu, danh sách tài liệu hiện có, và trạng thái/quyền lợi đổi quà (Rewards) của người dùng dựa trên số điện thoại.
 
-Mục đích:  
-Truy xuất toàn bộ dữ liệu cần thiết để hiển thị màn hình chính (Dashboard) cho người dùng tham gia chương trình NVBC. Dữ liệu bao gồm: thông tin điểm số tích lũy, lịch sử đọc tài liệu, danh sách tài liệu hiện có, và trạng thái/quyền lợi đổi quà (Rewards) của người dùng dựa trên số điện thoại.  
 **Nguyên tắc lọc dữ liệu (Logic):**
 
 **1. Context/Permission (Định danh & Quyền hạn):**
 
-* **User Identification:** Hệ thống định danh người dùng duy nhất thông qua tham số phone được truyền vào trong input JSON (url_param->>'phone').  
+* **User Identification:** Hệ thống định danh người dùng duy nhất thông qua tham số phone được truyền vào trong input JSON (`url_param->>'phone'`).
 * **Scope:** Dữ liệu trả về mang tính cá nhân hóa (Personalized) cho từng số điện thoại cụ thể.
 
 **2. Filter Condition (Điều kiện lọc):**
-Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_quarterly_2 (ví dụ lần lượt là 11th_monthly_reward, q42025_avid_reader_reward, q42025_product_expert_reward), tức tại lần trả thưởng hiện tại sẽ có 3 CT này.
-* **Logic hiển thị Quà tặng (Reward Flags):**  
-  * *Nguồn dữ liệu:* public.nvbc_reward_list (Danh sách được nhận) và public.nvbc_reward_item (Lịch sử đã nhận).  
-  * *Điều kiện chặn (Blocking Condition):* Kiểm tra xem User đã đổi quà tháng (11th_monthly_reward) hay chưa.  
-    * Nếu **ĐÃ** đổi quà tháng (tồn tại trong nvbc_reward_item): Hệ thống trả về show_reward_selection = false.  
-    * Nếu **CHƯA** đổi quà tháng: Tiếp tục kiểm tra danh sách các quyền lợi khác (q42025_avid_reader_reward, q42025_product_expert_reward).  
-  * *Filter:* Chỉ xét các reward type nằm trong danh sách định nghĩa sẵn: c_monthly, c_quarterly_1, c_quarterly_2.  
-* **Logic tính Điểm & Lịch sử (History & Points):**  
-  * *Time Range:* Chỉ tính các lượt xem tài liệu (nvbc_track_view) có ngày tạo (inserted_at) **từ ngày 01/10/2025 trở đi** (c_start_date).  
-  * *User Filter:* Chỉ lấy dữ liệu khớp chính xác với phone của người dùng.  
-* **Logic danh sách quà (Gift Options):**  
-  * Lấy danh sách các món quà khả dụng từ public.nvbc_gift_options theo 3 category cố định: monthly, dgcc (độc giả cao cấp), cgsp (chuyên gia sản phẩm).
 
-**3. Data Enrichment (Làm giàu & Tính toán dữ liệu):**
+* **Dynamic Configuration:** Truy vấn bảng `nvbc_reward_type` để lấy ra 3 mã sự kiện hiện hành: `c_monthly`, `c_quarterly_1`, `c_quarterly_2` (ví dụ: `11th_monthly_reward`, `q42025_avid_reader_reward`, `q42025_product_expert_reward`).
 
-* **Aggregation (Danh sách tài liệu):**  
-  * Dữ liệu từ bảng public.nvbc_docs được gom nhóm (Group by) theo category.  
-  * Cấu trúc trả về là JSON lồng nhau: Category -> List of Subcategories (bao gồm url, type, document_id, point...).  
-* **Calculation (Tính tổng điểm):**  
-  * point: Tổng giá trị (SUM) cột point của các tài liệu mà người dùng đã xem trong khoảng thời gian hợp lệ. Nếu không có lịch sử, mặc định là 0.  
-* **Mapping (Thông tin chi tiết):**  
-  * Join bảng nvbc_track_view với nvbc_docs để lấy tên tài liệu (document_name) và điểm số cụ thể cho từng lượt xem trong lịch sử.  
-* **Derived Flags (Cờ trạng thái UI):**  
-  * show_reward_selection: True nếu người dùng có trong danh sách nhận thưởng VÀ chưa nhận quà tháng.  
-  * fail_show_reward_selection: Nghịch đảo logic của th_monthly_reward (Dùng để handle hiển thị thông báo lỗi hoặc UI thay thế nếu không được nhận quà tháng).  
-  * Các cờ v_th_monthly_reward, v_avid_reader_reward, v_product_expert_reward: Parse từ chuỗi aggregated_rewards để xác định cụ thể user được nhận loại quà nào. 
+* **Logic hiển thị Quà tặng (Reward Flags):**
+  * *Nguồn dữ liệu:* `public.nvbc_reward_list` (Danh sách được nhận) và `public.nvbc_reward_item` (Lịch sử đã nhận).
+  * *Điều kiện chặn (Blocking Condition):* Kiểm tra xem User đã đổi quà của sự kiện hiện tại (`c_monthly`) hay chưa.
+    * Nếu **ĐÃ** đổi quà tháng (tồn tại trong `nvbc_reward_item` với `reward_event = c_monthly`): Hệ thống trả về `show_reward_selection = false`.
+    * Nếu **CHƯA** đổi quà tháng: Tiếp tục kiểm tra danh sách các quyền lợi khác (`c_quarterly_1`, `c_quarterly_2`) trong bảng whitelist.
+  * *Output Flags:* Tính toán các cờ `th_monthly_reward`, `avid_reader_reward`, `product_expert_reward` và `fail_show_reward_selection` (nghịch đảo của `th_monthly_reward`).
+
+* **Logic danh sách quà (Gift Options):**
+  * Truy vấn bảng `public.nvbc_gift_options`.
+  * **Inventory Check:** Chỉ lấy các món quà có trạng thái **`is_available = 1`**.
+  * **Mapping Output:** * Category `monthly_reward` -> Output key: `list_chon_monthly`
+    * Category `avid_reader_reward` -> Output key: `list_chon_dgcc`
+    * Category `product_expert_reward` -> Output key: `list_chon_cgsp`
+
+* **Logic tính Điểm & Lịch sử (History & Points):**
+  * *Time Range:* Chỉ tính các lượt xem tài liệu (`nvbc_track_view`) có ngày tạo (`inserted_at`) **từ ngày 01/10/2025 trở đi** (`c_start_date`).
+  * *User Filter:* Chỉ lấy dữ liệu khớp chính xác với `phone` của người dùng.
+  * *Sorting:* Sắp xếp lịch sử theo thời gian giảm dần (`ORDER BY inserted_at DESC`).
   
 * **JSON Output Specification:**
 
@@ -399,12 +394,14 @@ Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_
 * **Endpoint:** /local/post_data/insert_nvbc_reward_item/  
 * **Method:** POST  
 * **Mục đích:** Lưu thông tin quà tặng user đã chọn vào hệ thống.  
-* **Logic:**  
-  1. Nhận mảng dữ liệu chứa quà.
-  1. Xét reward_type = loại monthly trong bảng `nvbc_reward_type`. 
-  2. Insert vào bảng nvbc_reward_item.
-  2. Kiểm tra xem quà còn tồn hay không để ghi nhận hoặc từ chối insert.
-  3. Backend trả về message thành công/thất bại. 
+* **Logic Xử lý:**
+  1.  **Nhận dữ liệu:** Hệ thống nhận mảng JSON chứa thông tin các món quà user muốn đổi (`value`, `value1`, `value2`) và mã sự kiện (`reward_event`).
+  2.  **Kiểm tra tồn kho (Stock Check):**
+      * Hệ thống tính toán số lượng quà đã phát thực tế bằng cách đếm trong lịch sử bảng `nvbc_reward_item`, **chỉ tính riêng cho `reward_event` hiện tại**.
+      * So sánh: Nếu `(Số lượng đã đổi + 1 đang đổi) > Tổng Stock cấu hình` của món quà đó.
+      * **Quy tắc:** Chỉ cần **1 trong 3** món quà (Monthly/Expert/Reader) hết hàng, hệ thống sẽ **từ chối toàn bộ** (FAIL) và trả về thông báo lỗi kèm tên món quà. Đồng thời set SET is_available = 0. 
+  3.  **Ghi nhận (Insert):** Nếu tất cả món quà đều còn hàng, hệ thống thực hiện Insert dữ liệu vào bảng `nvbc_reward_item`.
+  4.  **Phản hồi:** Trả về message thành công hoặc thất bại.
 * **JSON Input (body):** *Lưu ý: Input là một Array (Mảng)*  
   JSON
   ```
@@ -412,7 +409,7 @@ Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_
       {  
           "phone": "0909xxxxxx",  
           "value": "Quà monthly",  
-          "reward_type": "xth_monthly_reward",  
+          "reward_event": "xth_monthly_reward",  
           "inserted_at": "2025-12-16 11:00:00",
           "value1": Quà product_expert,
           "value2": Quà advid_reader
@@ -432,5 +429,12 @@ Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_
     ```
     {  
         "error_message": "Lỗi khi lưu quà..."   
+    }
+    ```
+
+    ```
+    {
+        "status": "fail",
+        "error_message": "Rất tiếc, món quà \"Bình giữ nhiệt\" vừa hết hàng trong đợt này."
     }
     ```

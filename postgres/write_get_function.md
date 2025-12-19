@@ -4,6 +4,9 @@
 
 ---
 
+## **Quy tắc comments**
+* Sử dụng **Block Comment** `/* ... */` cho mọi giải thích.
+
 ## **1. Cấu trúc tổng thể chuẩn**
 
 Mọi function phải theo skeleton sau:

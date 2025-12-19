@@ -6,13 +6,16 @@
   * `insert_` → thêm, thường thêm vào 1 bảng
 👉 Ví dụ:
 `insert_form_data`
+
+## **Quy tắc comments**
+* Sử dụng **Block Comment** `/* ... */` cho mọi giải thích.
 ---
 
 Mọi hàm insert/validate phải theo đúng thứ tự:
 
 1. **Parse input fields từ JSON**
 2. **Tạo TEMP TABLE chứa bản ghi người dùng nhập**
-3. **Tạo các TEMP TABLE xử lý bổ sung** (summary, grouping, lookup…)
+3. **Tạo các TEMP TABLE xử lý bổ sung** (summary, grouping, lookup…etc. Không dùng subquery trong SELECT block)
 4. **Tạo nhiều khối VALIDATION**
 5. **Quy tắc thứ tự validation**
 6. **Nếu fail → return JSON fail**
