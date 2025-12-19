@@ -219,7 +219,7 @@ Truy xuất toàn bộ dữ liệu cần thiết để hiển thị màn hình c
 * **Scope:** Dữ liệu trả về mang tính cá nhân hóa (Personalized) cho từng số điện thoại cụ thể.
 
 **2. Filter Condition (Điều kiện lọc):**
-Truy vấn bảng public.nvbc_reward_type để lấy ra c_monthly, c_quarterly_1, c_quarterly_2 (ví dụ lần lượt là 11th_monthly_reward, q42025_avid_reader_reward, q42025_product_expert_reward), tức tại lần trả thưởng hiện tại sẽ có 3 CT này.
+Truy vấn bảng `nvbc_reward_type` để lấy ra c_monthly, c_quarterly_1, c_quarterly_2 (ví dụ lần lượt là 11th_monthly_reward, q42025_avid_reader_reward, q42025_product_expert_reward), tức tại lần trả thưởng hiện tại sẽ có 3 CT này.
 * **Logic hiển thị Quà tặng (Reward Flags):**  
   * *Nguồn dữ liệu:* public.nvbc_reward_list (Danh sách được nhận) và public.nvbc_reward_item (Lịch sử đã nhận).  
   * *Điều kiện chặn (Blocking Condition):* Kiểm tra xem User đã đổi quà tháng (11th_monthly_reward) hay chưa.  
@@ -396,7 +396,7 @@ Truy vấn bảng public.nvbc_reward_type để lấy ra c_monthly, c_quarterly_
 * **Mục đích:** Lưu thông tin quà tặng user đã chọn vào hệ thống.  
 * **Logic:**  
   1. Nhận mảng dữ liệu chứa quà.
-  1. Xét reward_type = loại monthly trong bảng `nvbc_reward_type` . 
+  1. Xét reward_type = loại monthly trong bảng `nvbc_reward_type`. 
   2. Insert vào bảng nvbc_reward_item.  
   3. Backend trả về message thành công/thất bại. 
 * **JSON Input (body):** *Lưu ý: Input là một Array (Mảng)*  
