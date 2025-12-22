@@ -143,8 +143,6 @@ Bảng cấu hình danh sách các lựa chọn quà tặng (Whitelist Options) 
 | end_time | timestamp | | Thời gian kết thúc cho phép đổi quà |
 | is_available | integer | Default 1 | Cờ kiểm soát còn hay hết hàng (1: Còn hàng, 0: Hết hàng) |
 
-
-
 **Table: nvbc_reward_type**
 Bảng danh mục các phần thưởng hiện tại.
 
@@ -173,7 +171,8 @@ Bảng này đồng thời đóng vai trò **giới hạn referrer theo tháng**
 | `month`          | date      | Tháng áp dụng referral (luôn là ngày đầu tháng, ví dụ `2025-12-01`) |
 | `bonus_point`    | integer   | Điểm thưởng referral cho referrer (0 hoặc 100)                      |
 | `inserted_at`    | timestamp | Thời điểm tạo quan hệ referral                                      |
-| `bonus_at`       | timestamp | Thời điểm cộng bonus (nullable)                                     |
+| `bonus_at`       | timestamp | Thời điểm cộng bonus (nullable)
+
 
 **Constraints / Business Notes**
 
@@ -182,6 +181,21 @@ Bảng này đồng thời đóng vai trò **giới hạn referrer theo tháng**
 * `bonus_point` ∈ {0, 100}
 * Invitee chỉ hợp lệ nếu **chưa có điểm trước khi được invite** (xử lý ở backend)
 * Không lưu điểm referral vào bảng điểm hoạt động
+
+
+### Bảng nvbc_streak_daily (Daily Streak)
+
+Bảng lưu trạng thái streak theo **ngày Việt Nam** cho từng user.
+
+**Table: nvbc_streak_daily**
+
+| Column Name  | Data Type | Description |
+| :----------- | :-------- | :---------- |
+| phone        | text      | **PK part** – Số điện thoại user |
+| streak_date  | date      | **PK part** – Ngày VN được tính streak (timezone `Asia/Ho_Chi_Minh`) |
+| streak_length| integer   | Độ dài chuỗi liên tiếp kết thúc tại `streak_date` (1–7 ngày) |
+| bonus_point  | integer   | Điểm thưởng của ngày đó: 0, 30 (ngày thứ 3), hoặc 70 (ngày thứ 7) |
+| inserted_at   | timestamp | Thời gian ghi nhận record |                                   |
 
 ### **5.2. Các API bên ngoài**
 
@@ -196,8 +210,6 @@ Dữ liệu trả về danh sách khách hàng đã follow OA và được map s
 | follow_name | STRING | Tên hiển thị trên Zalo |
 | active_oa | INTEGER | Trạng thái quan tâm OA (Filter đầu vào active_oa=1) |
 | ... | ... | *(Các trường khác trong schema nhưng chưa dùng đến)* |
-
-## 
 
 ## ---
 
@@ -290,6 +302,42 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
   * `referral_point` = Tổng điểm trong bảng ref month.
   * *User Filter:* Chỉ lấy dữ liệu khớp chính xác với `phone` của người dùng.
   * *Sorting:* Sắp xếp lịch sử theo thời gian giảm dần (`ORDER BY inserted_at DESC`).
+
+
+#### **Mở rộng get_nvbc_point – Daily Activity 7 Days**
+
+* Trả về **lịch sử streak 7 ngày gần nhất** (tính từ hôm nay về trước) cho user.
+* Cung cấp đủ thông tin để UI hiển thị:
+  * Những ngày nào user đã xem (có streak).
+  * Streak length từng ngày.
+  * Điểm bonus từng ngày (nếu có).
+  * Các flag hỗ trợ UI (chuỗi hiện tại, chuỗi bị đứt, milestone 3/7 ngày).
+
+#### **Logic xử lý (bổ sung vào nvbc_get_point):**
+
+1. **Xác định ngày VN hiện tại (`today_vn`):**
+   * Lấy `NOW()` của DB và convert sang timezone `Asia/Ho_Chi_Minh` → `today_vn` (kiểu date).
+
+2. **Sinh series 7 ngày gần nhất:**
+   * Tạo series từ `today_vn - 6 days` đến `today_vn` (7 ngày).
+   * Với mỗi ngày `d` trong series:
+     * Join với `nvbc_streak_daily` để lấy `streak_length`, `bonus_point` (nếu có).
+     * Join/Check với `nvbc_track_view` (theo ngày VN) để xác định `has_view` (true/false).
+
+3. **Tính các flag per day:**
+   * `has_view`: `true` nếu tồn tại ít nhất 1 record `nvbc_track_view` có `inserted_at` rơi vào ngày VN `d`.
+   * `streak_length`: lấy từ `nvbc_streak_daily.streak_length` (1–7), nếu không có record thì `0`.
+   * `bonus_point`: lấy từ `nvbc_streak_daily.bonus_point` (0 / 30 / 70), nếu không có record thì `0`.
+
+4. **Tính tổng điểm:**
+   * `base_point`: SUM `effective_point` từ `nvbc_track_view` (theo điều kiện campaign hiện tại, ví dụ `inserted_at >= c_start_date`).
+   * `streak_bonus_point`: SUM `bonus_point` từ `nvbc_streak_daily` cho `phone` (toàn bộ lịch sử, không giới hạn campaign).
+   * `total_point` = `base_point + streak_bonus_point`.
+
+5. **Lịch sử điểm streak (`lich_su_diem_streak`):**
+   * Lấy toàn bộ record từ `nvbc_streak_daily` cho `phone` có `bonus_point > 0`.
+   * Sắp xếp theo `streak_date DESC` (mới nhất trước).
+   * Mỗi item gồm: `streak_date`, `streak_length`, `bonus_point`.
   
 * **JSON Output Specification:**
 
@@ -349,9 +397,72 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
           "bonus_at": "2025-12-16 15:20:00" -- ORDER BY theo field này.
         }
       ],
+      "lich_su_diem_streak": [
+          {
+            "streak_date": "2025-12-16",
+            "streak_length": 3,
+            "bonus_point": 30
+          },
+          {
+            "streak_date": "2025-12-10",
+            "streak_length": 7,
+            "bonus_point": 70
+          },
+          {
+            "streak_date": "2025-12-08",
+            "streak_length": 3,
+            "bonus_point": 30
+          }
+        ],
+        "streak_last_7_days": [
+          {
+            "date": "2025-12-13",
+            "has_view": false,
+            "streak_length": 0,
+            "bonus_point": 0
+          },
+          {
+            "date": "2025-12-14",
+            "has_view": true,
+            "streak_length": 1,
+            "bonus_point": 0
+          },
+          {
+            "date": "2025-12-15",
+            "has_view": true,
+            "streak_length": 2,
+            "bonus_point": 0
+          },
+          {
+            "date": "2025-12-16",
+            "has_view": true,
+            "streak_length": 3,
+            "bonus_point": 30
+          },
+          {
+            "date": "2025-12-17",
+            "has_view": true,
+            "streak_length": 4,
+            "bonus_point": 0
+          },
+          {
+            "date": "2025-12-18",
+            "has_view": false,
+            "streak_length": 0,
+            "bonus_point": 0
+          },
+          {
+            "date": "2025-12-19",
+            "has_view": true,
+            "streak_length": 1,
+            "bonus_point": 0
+          }
+        ],
+  
       "phone": "0909xxxxxx",  
       "point": 150,
       "referral_point": 150,
+      "streak_point": 150,
       "show_reward_selection": true,  
       "th_monthly_reward": true,  
       "product_expert_reward": false,  
@@ -648,3 +759,71 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
   "error_message": "Ghi cụ thể lý do"
   }
   ```
+
+
+#### **Function:** `insert_nvbc_daily_streak`
+* **Ghi chú đặc biệt:** Hàm được gọi trong hàm `insert_nvbc_track_view` khi user tiến hành ghi điểm.
+* **Loại:** WRITE (Update)
+* **Mục đích:**  
+  * Cập nhật bảng `nvbc_streak_daily` cho **một user tại một thời điểm xem**, theo rule streak tối đa 7 ngày và điểm thưởng 0 / 30 / 70.  
+  * Đảm bảo mỗi `(phone, streak_date)` chỉ có **tối đa 1 record** và toàn bộ business streak nằm tập trung trong 1 function riêng, dễ test & bảo trì.
+
+**Input Parameters (dạng Json - Single object):**
+
+| Parameter      | Data Type | Description |
+| :------------- | :-------- | :---------- |
+| `p_phone`      | text      | Số điện thoại user (đã được validate ở `insert_nvbc_track_new`) |
+| `p_inserted_at`| timestamp | Thời điểm xem (lấy từ payload của `insert_nvbc_track_new`, sẽ convert sang ngày VN bên trong hàm) |
+
+---
+
+#### **Logic xử lý (Pseudo):**
+
+1. **Chuẩn hoá ngày Việt Nam:**
+   * Convert `p_inserted_at` sang `view_date_vn` (kiểu `date`) theo timezone `Asia/Ho_Chi_Minh`.  
+   * Đây là ngày VN dùng cho mọi phép tính streak.
+
+2. **Kiểm tra đã có streak trong ngày hay chưa:**
+   * Truy vấn bảng `nvbc_streak_daily` với key `(phone = p_phone, streak_date = view_date_vn)`.
+   * **Nếu đã tồn tại record:**  
+     * Đây không phải là view đầu tiên của ngày.  
+     * Function **RETURN** ngay, **không** cập nhật gì thêm (đảm bảo 1 record/ngày).
+
+3. **Đọc streak của ngày hôm qua:**
+   * Xác định `yesterday_vn = view_date_vn - INTERVAL '1 day'` (lấy phần date).  
+   * Truy vấn `nvbc_streak_daily` với `(phone = p_phone, streak_date = yesterday_vn)`:
+     * Nếu **có record hôm qua** → `yesterday_streak_length = streak_length` của record đó.  
+     * Nếu **không có record hôm qua** → gán `yesterday_streak_length = 0` (coi như hôm qua không có streak / chuỗi bị đứt).
+
+4. **Tính `new_streak_length` (độ dài chuỗi mới của ngày hiện tại):**
+   * **Case 1 – Hôm qua đã full 7 ngày:**  
+     * Nếu `yesterday_streak_length >= 7`  
+       → Chuỗi cũ đã chạm trần 7 ngày.  
+       → **Reset run**, set `new_streak_length = 1`.
+   * **Case 2 – Hôm qua không có streak:**  
+     * Nếu `yesterday_streak_length = 0`  
+       → Không có liên tiếp từ hôm qua.  
+       → **Bắt đầu run mới**, set `new_streak_length = 1`.
+   * **Case 3 – Hôm qua đang streak 1–6:**  
+     * Nếu `1 <= yesterday_streak_length <= 6`  
+       → Chuỗi đang chạy → `new_streak_length = yesterday_streak_length + 1`.
+   * **Giới hạn trần an toàn:**  
+     * Nếu vì bất kỳ lý do gì `new_streak_length > 7` thì ép lại `new_streak_length = 7`.  
+     * Về mặt business, với logic trên, case này gần như không xảy ra, nhưng vẫn giữ để chống lỗi.
+
+5. **Tính điểm thưởng của ngày (`bonus_point_today`):**
+   * Nếu `new_streak_length = 3` → `bonus_point_today = 30`.  
+   * Nếu `new_streak_length = 7` → `bonus_point_today = 70`.  
+   * Ngược lại → `bonus_point_today = 0`.  
+   * Như vậy, **mỗi run 7 ngày tối đa mang lại 100 điểm bonus** (30 ở ngày thứ 3 + 70 ở ngày thứ 7).
+
+6. **Ghi nhận vào bảng `nvbc_streak_daily`:**
+   * Thực hiện `INSERT` 1 record mới:
+     * `phone` = `p_phone`
+     * `streak_date` = `view_date_vn`
+     * `streak_length` = `new_streak_length`
+     * `bonus_point` = `bonus_point_today`
+     * `created_at` = `NOW()`
+   * Ràng buộc unique `(phone, streak_date)` đảm bảo không trùng record trong cùng 1 ngày.
+
+---

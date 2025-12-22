@@ -5,7 +5,7 @@
   * Cập nhật bảng `nvbc_streak_daily` cho **một user tại một thời điểm xem**, theo rule streak tối đa 7 ngày và điểm thưởng 0 / 30 / 70.  
   * Đảm bảo mỗi `(phone, streak_date)` chỉ có **tối đa 1 record** và toàn bộ business streak nằm tập trung trong 1 function riêng, dễ test & bảo trì.
 
-**Input Parameters (Postgres function, không phải JSON RPC):**
+**Input Parameters (dạng Json - Single object):**
 
 | Parameter      | Data Type | Description |
 | :------------- | :-------- | :---------- |
@@ -83,3 +83,152 @@ Trong đó:
 
 - `v_phone` là số điện thoại đã parse từ JSON input.
 - `v_inserted_at` là timestamp của view đang xử lý (thường là field `inserted_at` trong payload).
+
+---
+
+### **6.y. Mở rộng nvbc_get_point – Daily Activity 7 Days**
+
+#### **Mục đích:**
+
+* Trả về **lịch sử streak 7 ngày gần nhất** (tính từ hôm nay về trước) cho user.
+* Cung cấp đủ thông tin để UI hiển thị:
+  * Những ngày nào user đã xem (có streak).
+  * Streak length từng ngày.
+  * Điểm bonus từng ngày (nếu có).
+  * Các flag hỗ trợ UI (chuỗi hiện tại, chuỗi bị đứt, milestone 3/7 ngày).
+
+#### **Logic xử lý (bổ sung vào nvbc_get_point):**
+
+1. **Xác định ngày VN hiện tại (`today_vn`):**
+   * Lấy `NOW()` của DB và convert sang timezone `Asia/Ho_Chi_Minh` → `today_vn` (kiểu date).
+
+2. **Sinh series 7 ngày gần nhất:**
+   * Tạo series từ `today_vn - 6 days` đến `today_vn` (7 ngày).
+   * Với mỗi ngày `d` trong series:
+     * Join với `nvbc_streak_daily` để lấy `streak_length`, `bonus_point` (nếu có).
+     * Join/Check với `nvbc_track_view` (theo ngày VN) để xác định `has_view` (true/false).
+
+3. **Tính các flag per day:**
+   * `has_view`: `true` nếu tồn tại ít nhất 1 record `nvbc_track_view` có `inserted_at` rơi vào ngày VN `d`.
+   * `streak_length`: lấy từ `nvbc_streak_daily.streak_length` (1–7), nếu không có record thì `0`.
+   * `bonus_point`: lấy từ `nvbc_streak_daily.bonus_point` (0 / 30 / 70), nếu không có record thì `0`.
+
+4. **Tính tổng điểm:**
+   * `base_point`: SUM `effective_point` từ `nvbc_track_view` (theo điều kiện campaign hiện tại, ví dụ `inserted_at >= c_start_date`).
+   * `streak_bonus_point`: SUM `bonus_point` từ `nvbc_streak_daily` cho `phone` (toàn bộ lịch sử, không giới hạn campaign).
+   * `total_point` = `base_point + streak_bonus_point`.
+
+5. **Lịch sử điểm streak (`lich_su_diem_streak`):**
+   * Lấy toàn bộ record từ `nvbc_streak_daily` cho `phone` có `bonus_point > 0`.
+   * Sắp xếp theo `streak_date DESC` (mới nhất trước).
+   * Mỗi item gồm: `streak_date`, `streak_length`, `bonus_point`.
+
+#### **JSON Output – Bổ sung vào nvbc_get_point:**
+
+Thêm các field mới vào JSON output hiện tại:
+
+```json
+{
+  "contentlist": [ /* như cũ */ ],
+  "lich_su_diem": [ /* như cũ */ ],
+  "phone": "0909xxxxxx",
+  "point": 250,
+  "base_point": 150,
+  "streak_bonus_point": 100,
+  "show_reward_selection": true,
+  "th_monthly_reward": true,
+  "product_expert_reward": false,
+  "avid_reader_reward": false,
+  "fail_show_reward_selection": false,
+  "list_chon_monthly": [ /* như cũ */ ],
+  "list_chon_dgcc": [ /* như cũ */ ],
+  "list_chon_cgsp": [ /* như cũ */ ],
+  "lich_su_diem_streak": [
+    {
+      "streak_date": "2025-12-16",
+      "streak_length": 3,
+      "bonus_point": 30
+    },
+    {
+      "streak_date": "2025-12-10",
+      "streak_length": 7,
+      "bonus_point": 70
+    },
+    {
+      "streak_date": "2025-12-08",
+      "streak_length": 3,
+      "bonus_point": 30
+    }
+  ],
+  "streak_last_7_days": [
+    {
+      "date": "2025-12-13",
+      "has_view": false,
+      "streak_length": 0,
+      "bonus_point": 0
+    },
+    {
+      "date": "2025-12-14",
+      "has_view": true,
+      "streak_length": 1,
+      "bonus_point": 0
+    },
+    {
+      "date": "2025-12-15",
+      "has_view": true,
+      "streak_length": 2,
+      "bonus_point": 0
+    },
+    {
+      "date": "2025-12-16",
+      "has_view": true,
+      "streak_length": 3,
+      "bonus_point": 30
+    },
+    {
+      "date": "2025-12-17",
+      "has_view": true,
+      "streak_length": 4,
+      "bonus_point": 0
+    },
+    {
+      "date": "2025-12-18",
+      "has_view": false,
+      "streak_length": 0,
+      "bonus_point": 0
+    },
+    {
+      "date": "2025-12-19",
+      "has_view": true,
+      "streak_length": 1,
+      "bonus_point": 0
+    }
+  ]
+}
+```
+
+#### **Ghi chú về fields:**
+
+* `point`: Tổng điểm hiển thị cho user (`base_point + streak_bonus_point`).
+* `base_point`: Điểm học từ xem tài liệu (SUM `effective_point`).
+* `streak_bonus_point`: Điểm bonus từ streak (SUM `bonus_point` từ `nvbc_streak_daily`).
+* `lich_su_diem_streak`: Mảng lịch sử các lần nhận điểm bonus từ streak (chỉ những ngày có `bonus_point > 0`), sắp xếp mới nhất trước. Mỗi item gồm:
+  * `streak_date`: Ngày nhận bonus (YYYY-MM-DD).
+  * `streak_length`: Độ dài chuỗi tại ngày đó (3 hoặc 7).
+  * `bonus_point`: Điểm bonus nhận được (30 hoặc 70).
+* `streak_last_7_days`: Mảng 7 ngày gần nhất, mỗi ngày có:
+  * `date`: Ngày VN (YYYY-MM-DD).
+  * `has_view`: User có xem tài liệu trong ngày này hay không.
+  * `streak_length`: Độ dài chuỗi tại ngày đó (0 = break/không có streak, 1-7 = đang trong streak).
+  * `bonus_point`: Điểm bonus nhận được trong ngày (0, 30, hoặc 70).
+
+---
+
+**Lưu ý triển khai:**
+
+* Phần này **chỉ mô tả output** (contract với Frontend).
+* Backend cần implement CTE/join logic để:
+  1. Generate series 7 ngày.
+  2. LEFT JOIN với `nvbc_streak_daily` và aggregate `nvbc_track_view` theo ngày VN.
+  3. Build JSON array `streak_last_7_days` theo đúng format trên.
+* Có thể cần index trên `nvbc_streak_daily(phone, streak_date)` và `nvbc_track_view(phone, inserted_at)` để query nhanh.
