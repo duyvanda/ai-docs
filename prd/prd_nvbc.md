@@ -562,7 +562,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
   {  
       "status": "ok",  
       "message": "Đã nhận thông tin thành công !!!"
-      "referral_bonus": "Đã cộng thưởng cho người giới thiệu thành công"
+      "referral_bonus": "Đã cộng thưởng cho người giới thiệu thành công",
+      "streak_info": "Ghi nhận streak thành công"
+
   }
   ```
 
