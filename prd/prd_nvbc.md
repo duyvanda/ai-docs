@@ -48,6 +48,20 @@ Dữ liệu được tích hợp với:
   - Hiển thị thông báo thành công/thất bại và tắt popup.
   - Vì quà là có giới hạn nên nếu chọn quà hết tồn sẽ phải chọn lại.
 
+  Ok 👍 đây là **PHẦN 4 – USER FLOW (tóm tắt siêu ngắn)**, **mỗi role đúng 1 dòng**, PRD-style:
+
+---
+
+## 4.5 Flow Referrer-Invitee
+
+* **Invitee**: chọn referrer trong tháng, xem video tích điểm; khi đạt ≥20 điểm thì kích hoạt xét thưởng cho referrer.
+* **Referrer**: không thao tác; nhận tối đa 100 điểm khi invitee đạt điều kiện trong tháng.
+* **System**: ghi nhận quan hệ referral theo tháng, theo dõi điểm invitee và tự động cộng bonus khi đủ điều kiện.
+
+---
+
+
+
 **5. Thiết kế Cơ sở dữ liệu (Database Schema)**
 
 ### **5.1. Các tables nội bộ**
@@ -145,6 +159,30 @@ ví dụ:
 |  2 | q42025_avid_reader_reward    |
 |  3 | 12_25_th_monthly_reward      |
 
+
+### Table: `nvbc_ref_month`
+
+**Overview**
+Lưu quan hệ giới thiệu (invitee – referrer) theo tháng và trạng thái thưởng referral.
+Bảng này đồng thời đóng vai trò **giới hạn referrer theo tháng** và **ghi nhận bonus**.
+
+| Column           | Type      | Description                                                         |
+| ---------------- | --------- | ------------------------------------------------------------------- |
+| `invitee_phone`  | text      | SĐT người được giới thiệu (invitee)                                 |
+| `referrer_phone` | text      | SĐT người giới thiệu (referrer)                                     |
+| `month`          | date      | Tháng áp dụng referral (luôn là ngày đầu tháng, ví dụ `2025-12-01`) |
+| `bonus_point`    | integer   | Điểm thưởng referral cho referrer (0 hoặc 100)                      |
+| `inserted_at`    | timestamp | Thời điểm tạo quan hệ referral                                      |
+| `bonus_at`       | timestamp | Thời điểm cộng bonus (nullable)                                     |
+
+**Constraints / Business Notes**
+
+* **UNIQUE (`referrer_phone`, `month`)**
+  → mỗi referrer chỉ được nhận **1 referral / tháng**
+* `bonus_point` ∈ {0, 100}
+* Invitee chỉ hợp lệ nếu **chưa có điểm trước khi được invite** (xử lý ở backend)
+* Không lưu điểm referral vào bảng điểm hoạt động
+
 ### **5.2. Các API bên ngoài**
 
 API: eoffice.meraplion.com (Zalo OA Data)  
@@ -215,9 +253,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
 
 ### **6.2. Nhóm Core Business (Trang chủ & Dữ liệu)**
 
-#### **Function: nvbc_get_point**
+#### **Function: get_nvbc_point**
 
-* **Endpoint:** `/local/nvbc_get_point/`
+* **Endpoint:** `/local/get_data/get_nvbc_point/`
 * **Loại:** READ
 * **Mục đích:** Truy xuất toàn bộ dữ liệu cần thiết để hiển thị màn hình chính (Dashboard) cho người dùng tham gia chương trình NVBC. Dữ liệu bao gồm: thông tin điểm số tích lũy, lịch sử đọc tài liệu, danh sách tài liệu hiện có, và trạng thái/quyền lợi đổi quà (Rewards) của người dùng dựa trên số điện thoại.
 
@@ -248,7 +286,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
 
 * **Logic tính Điểm & Lịch sử (History & Points):**
   * *Time Range:* Chỉ tính các lượt xem tài liệu (`nvbc_track_view`) có ngày tạo (`inserted_at`) **từ ngày 01/10/2025 trở đi** (`c_start_date`).
-  * `point = sum(effective_point)`:
+  * `point = sum(effective_point)`.
+  * `referral_point` = Tổng điểm trong bảng ref month.
   * *User Filter:* Chỉ lấy dữ liệu khớp chính xác với `phone` của người dùng.
   * *Sorting:* Sắp xếp lịch sử theo thời gian giảm dần (`ORDER BY inserted_at DESC`).
   
@@ -300,8 +339,19 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
           "effective_point": 4
         }
       ],
+      "lich_su_diem_referral": [
+        {
+          "invitee_phone": "0909xxxxxx",
+          "referrer_phone": "0987654321",
+          "month": "2025-12-01",
+          "bonus_point": 100,
+          "inserted_at": "2025-12-10 09:30:00",
+          "bonus_at": "2025-12-16 15:20:00" -- ORDER BY theo field này.
+        }
+      ],
       "phone": "0909xxxxxx",  
-      "point": 150,  
+      "point": 150,
+      "referral_point": 150,
       "show_reward_selection": true,  
       "th_monthly_reward": true,  
       "product_expert_reward": false,  
@@ -389,7 +439,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
           "time_rate": 1.0,
           "base_point":4,
           "effective_point":4
-          "inserted_at": "2025-12-16 10:30:00"  
+          "inserted_at": "2025-12-16 10:30:00"
       }  
   ]
   ```
@@ -400,7 +450,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
   ``` 
   {  
       "status": "ok",  
-      "message": "Đã nhận thông tin thành công !!!"   
+      "message": "Đã nhận thông tin thành công !!!"
+      "referral_bonus": "Đã cộng thưởng cho người giới thiệu thành công"
   }
   ```
 
@@ -453,3 +504,147 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
         "error_message": "Rất tiếc, món quà \"Bình giữ nhiệt\" vừa hết hàng trong đợt này."
     }
     ```
+
+#### **Function:** `insert_nvbc_ref_month_regis`
+
+* **Loại:** WRITE (Insert)
+* **Mục đích:** Ghi nhận quan hệ Invitee-Referrer
+* **Logic:**
+  **Bước 1: Invitee chọn referrer**
+
+  * Input:
+
+      * `invitee_phone`
+      * `referal_phone`
+      * `inserted_at` => Tự suy ra month
+  ---
+
+  **Bước 2: Kiểm tra invitee đã từng có điểm chưa**
+
+  * Query `nvbc_track_view`
+  * Nếu **đã tồn tại bản ghi**
+    → ❌ Reject
+    *(invitee không hợp lệ)*
+  ---
+
+  **Bước 3: Insert quan hệ**
+
+  * Insert vào `nvbc_ref_month`
+
+    * `invitee_phone`
+    * `referal_phone`
+    * `month`
+    * `bonus_point = 0`
+    * `inserted_at`
+
+  * Nếu vi phạm `UNIQUE (referal_phone, month)`
+    → ❌ Reject
+    *(referrer đã được dùng trong tháng)*
+
+* **Input Json:**
+  ```
+  [
+    {
+      "invitee_phone": "0909123456",
+      "referral_phone": "0987654321",
+      "inserted_at": "2025-12-10T09:30:123"
+    }
+  ]
+  ```
+* **Output Json:**
+
+  * Thành công
+  ```
+  {
+    "status": "ok",
+    "success_message": "Ghi nhận người giới thiệu thành công.",
+  }
+  ```
+
+    * Thất bại
+  ```
+  {
+    "status": "fail",
+    "error_message": "Người giới thiệu đã được sử dụng trong tháng này."
+  }
+  ```
+
+#### **Function:** `insert_nvbc_ref_month_check`
+* **Ghi chú đặc biệt:** Hàm được gọi trong hàm `insert_nvbc_track_view` khi user tiến hành ghi điểm.
+* **Loại:** WRITE (Update)
+* **Mục đích:** Kiểm tra điều kiện và cộng bonus cho referrer khi invitee đạt mốc điểm
+
+* **Logic:**
+
+**Bước 1: Kiểm tra invitee có active invite trong tháng**
+
+* Query `nvbc_ref_month`
+
+  * `invitee_phone`
+  * `month = current_month`
+* Nếu **không tồn tại bản ghi**
+  → ❌ Dừng
+  *(invitee không có referrer trong tháng, không cần tính điểm)*
+---
+
+**Bước 2: Kiểm tra đã cộng bonus chưa**
+
+* Nếu `bonus_point = 100`
+  → ❌ Dừng
+  *(đã cộng bonus trước đó)*
+
+---
+
+**Bước 3: Tính tổng điểm invitee trong tháng**
+
+  * `phone = invitee_phone`
+  * `month = current_month`
+
+---
+
+**Bước 4: Kiểm tra mốc 20 điểm**
+
+* Nếu tổng `< 20`
+  → ❌ Dừng
+* Nếu tổng `>= 20`
+  → Sang bước cộng bonus
+
+---
+
+**Bước 5: Cộng bonus cho referrer**
+
+* Update `nvbc_ref_month`
+
+  * `bonus_point = 100`
+  * `bonus_at = now()`
+
+---
+
+✅ **Không insert điểm referral vào `user_point`**
+✅ **Referral bonus chỉ được ghi nhận tại `nvbc_ref_month`**
+✅ **Hàm idempotent – gọi lại không cộng trùng**
+
+* **Input Json:**
+
+  ```
+  {
+    "invitee_phone": "0909123456",
+    "current_month": "2025-12-01"
+  }
+  ```
+* **Output Json:**
+  * Thành công
+  ```
+  {
+    "status": "ok",
+    "success_message": "Đã cộng thưởng cho người giới thiệu thành công.",
+  }
+  ```
+
+  * Thất bại
+  ```
+  {
+  "status": "fail",
+  "error_message": "Ghi cụ thể lý do"
+  }
+  ```
