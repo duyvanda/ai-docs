@@ -268,7 +268,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
                       "document_name": "Video HDSD...",  
                       "document_id": 101,  
                       "point": 2,
-                      "type": new
+                      "condition": new
                   }  
               ]  
           },  
@@ -282,7 +282,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
                       "document_name": "Video HDSD...",  
                       "document_id": 101,  
                       "point": 2,
-                      "type": old 
+                      "condition": old
                   }  
               ]  
           }  
