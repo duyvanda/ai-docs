@@ -1093,6 +1093,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
       ],
         "bmkt013_tong_tien_ke_hoach": "600,000",
         "bmkt013_tong_tien_duyet": "500,000",
+        "bmkt013_tong_tien_thuc_hien": "2,500,000",
 
         "bmkt002_department": "HCP",
         "bmkt002_tong_so_tien": "666,666",
