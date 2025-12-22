@@ -64,6 +64,7 @@ Lưu trữ danh mục tài liệu đào tạo.
 | sub-category | text | Nhóm phụ (Lưu ý: Tên cột có dấu gạch ngang) và có thể bị Trống “” |
 | url | text | Link Youtube hoặc PDF |
 | point | integer | Điểm thưởng cho bài này |
+| type | text | loại mới hay cũ, mặc định `old` |
 
 ### 
 
@@ -74,6 +75,10 @@ Table 1: nvbc_track_view
 | phone | text | **Index** - Số điện thoại user |
 | ma_kh_dms | text | Mã khách hàng DMS |
 | document_id | text | ID tài liệu đã xem |
+| watch_duration_seconds  | integer     | Tổng số giây người dùng đã thực sự xem tài liệu trong lượt này (do Client đo lường). |
+| time_rate | numeric(3,2)| Hệ số tỷ lệ thời gian xem, nằm trong [0, 1]. Phiên bản đầu sử dụng tập giá trị {0, 0.5, 1.0}. |
+| base_point | numeric     | Điểm gốc user nhận được cho lượt xem này được tính bằng `nvbc_docs.point` |
+| effective_point         | numeric     | Điểm thực tế user nhận được cho lượt xem này, được tính bằng `nvbc_docs.point * time_rate`. |
 | inserted_at | timestamp | Thời gian xem |
 
 Table 2: nvbc_reward_list  
@@ -243,6 +248,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
 
 * **Logic tính Điểm & Lịch sử (History & Points):**
   * *Time Range:* Chỉ tính các lượt xem tài liệu (`nvbc_track_view`) có ngày tạo (`inserted_at`) **từ ngày 01/10/2025 trở đi** (`c_start_date`).
+  * `point = sum(effective_point)`:
   * *User Filter:* Chỉ lấy dữ liệu khớp chính xác với `phone` của người dùng.
   * *Sorting:* Sắp xếp lịch sử theo thời gian giảm dần (`ORDER BY inserted_at DESC`).
   
@@ -261,7 +267,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
                       "type": "video",  
                       "document_name": "Video HDSD...",  
                       "document_id": 101,  
-                      "point": 2  
+                      "point": 2,
+                      "type": new
                   }  
               ]  
           },  
@@ -274,21 +281,25 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
                       "type": "video",  
                       "document_name": "Video HDSD...",  
                       "document_id": 101,  
-                      "point": 2  
+                      "point": 2,
+                      "type": old 
                   }  
               ]  
-          },  
-      ],  
-      "lich_su_diem": [  
-          {  
-              "ma_kh_dms": "KH001",  
-              "phone": "0909xxxxxx",  
-              "document_id": "101",  
-              "inserted_at": "2025-12-16 10:00:00",  
-              "document_name": "Video HDSD...",  
-              "point": 2  
           }  
       ],  
+      "lich_su_diem": [
+        {
+          "ma_kh_dms": "KH001",
+          "phone": "0909xxxxxx",
+          "document_id": "101",
+          "inserted_at": "2025-12-16 10:00:00",
+          "document_name": "Video HDSD...",
+          "time_rate": 1.0,
+          "watch_duration_seconds": 122,
+          "base_point": 4,
+          "effective_point": 4
+        }
+      ],
       "phone": "0909xxxxxx",  
       "point": 150,  
       "show_reward_selection": true,  
@@ -373,7 +384,11 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
       {  
           "ma_kh_dms": "KH00123",  
           "phone": "0909xxxxxx",  
-          "document_id": "101",  
+          "document_id": "101",
+          "watch_duration_seconds": 75,
+          "time_rate": 1.0,
+          "base_point":4,
+          "effective_point":4
           "inserted_at": "2025-12-16 10:30:00"  
       }  
   ]
