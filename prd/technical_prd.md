@@ -27,6 +27,8 @@ Dữ liệu được tích hợp với:
 
 ## 2. Mục tiêu (Goals)
 
+Mô tả ngắn gọn các mục tiêu.
+
 * **[Mục tiêu 1]:** [Mô tả chi tiết - VD: Kiểm soát ngân sách...]
 * **[Mục tiêu 2]:** [Mô tả chi tiết - VD: Tự động hóa quy trình...]
 * **[Mục tiêu 3]:** [Mô tả chi tiết - VD: Tối ưu hóa trải nghiệm...]
@@ -147,9 +149,11 @@ Hệ thống hoạt động theo mô hình 2 lớp:
     3.  **Check 3 (Data Integrity):** [Check tồn tại trong DB].
 
 * **Logic (Quy trình xử lý dữ liệu):**
-    1.  **Chuẩn bị dữ liệu:** Convert JSON sang bảng tạm, chuẩn hóa ngày tháng.
-    2.  **Tính toán:** [Các công thức tính toán nếu có].
-    3.  **Thực thi:**
+    **Ghi cụ thể từng bước xử lý theo hướng BA/PM**
+    1.  **Bước 1: Chuẩn bị dữ liệu:** Convert JSON sang bảng tạm, chuẩn hóa ngày tháng.
+    2.  **Bước 2: Tính toán:** Các CTE công thức tính toán nếu có.
+        * Ưu tiên sử dụng mã giả để mô tả các bước tính toán.
+    3.  **Bước 3: Thực thi:**
         * INSERT/UPDATE vào bảng `[tên_bảng]`.
         * Update trạng thái bảng liên quan (nếu có).
     4.  **Return:** Trả về thông báo thành công.

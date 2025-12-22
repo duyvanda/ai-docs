@@ -1103,3 +1103,61 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     }
     ```
 
+#### **Function (PYTHON):** `get_form_claim_chi_phi_excel_form`
+
+* **Loại:** READ
+* **Mục đích:** Tự động hóa việc tạo hồ sơ thanh toán chi phí dưới dạng file Excel chuẩn.
+* **Logic các bước:**
+
+    **1. Dữ liệu đầu vào (Input)**
+    Hệ thống tiếp nhận yêu cầu từ người dùng với các thông tin sau:
+    - **Khoảng thời gian:** Từ ngày (`from_date`) đến ngày (`to_date`).
+    - **Nhân sự:** Mã nhân viên (`manv`) thực hiện claim.
+    - **Định danh:** ID hồ sơ (`id`) để đặt tên file và lưu trữ.
+
+    **2. Truy xuất dữ liệu nguồn**
+    - Hệ thống gọi hàm xử lý trung tâm trong cơ sở dữ liệu (`get_form_claim_chi_phi_excel_form`).
+    - **Kết quả trả về:** Một gói dữ liệu bao gồm:
+        - Thông tin chung (Người đề nghị, Bộ phận, Lý do...).
+        - Danh sách chi tiết cho biểu mẫu **BMKT013** (Kế hoạch & Thực hiện).
+        - Danh sách chi tiết cho biểu mẫu **BMKT002** (Đề nghị thanh toán).
+
+    **3. Khởi tạo & Tải File Mẫu (Template)**
+    - Hệ thống truy cập vào đường dẫn lưu trữ nội bộ trên server (`/app/thumuc/`).
+    - Tải file Excel mẫu chuẩn có tên `form_claim_chi_phi_excel.xlsx`.
+    - **Đặc điểm file mẫu:** File này đã được thiết kế sẵn layout, logo, tiêu đề, và định dạng khung viền chuẩn cho hai biểu mẫu BMKT013 và BMKT002. Hệ thống sẽ điền dữ liệu lên bản sao của file này chứ không ghi đè file gốc.
+
+    **4. Quy tắc xử lý Biểu mẫu 1: BMKT013 (Kế hoạch & Thực hiện)**
+    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT013-KH-TH-CP` theo các bước:
+    - **Tiêu đề:** Tự động điền tháng/năm vào ô tiêu đề dựa trên thông tin "Từ ngày".
+    - **Danh sách chi tiết:**
+        - **Cơ chế dòng động (Dynamic Rows):** Hệ thống tự động chèn thêm số lượng dòng mới tương ứng với số lượng bản ghi dữ liệu thực tế.
+        - **Thông tin hiển thị:** Điền các cột Khu vực, SupID, Khách hàng, Nội dung, Số hóa đơn, Ghi chú...
+        - **Định dạng:** Ngày tháng (`dd/mm/yyyy`) và Số tiền (phân cách hàng ngàn).
+    - **Dòng tổng cộng (Footer):**
+        - Hệ thống xác định dòng cuối cùng ngay sau danh sách chi tiết vừa chèn.
+        - Điền giá trị **"Tổng tiền kế hoạch"** và **"Tổng tiền duyệt"** vào đúng cột tương ứng.
+
+    **5. Quy tắc xử lý Biểu mẫu 2: BMKT002 (Đề nghị thanh toán)**
+    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT002-DNTT` theo các bước:
+    - **Thông tin chung (Header):**
+        - Điền tự động: Người đề nghị, Bộ phận, Lý do thanh toán vào phần đầu của phiếu.
+    - **Danh sách chi tiết:**
+        - **Cơ chế dòng động:** Tương tự BMKT013, hệ thống chèn dòng mới bắt đầu từ dòng số 9 để chứa dữ liệu chi tiết.
+        - **Thông tin hiển thị:** STT, Nội dung, Số tiền, Số hóa đơn, Ngày hóa đơn...
+    - **Dòng tổng cộng & Chữ ký (Footer):**
+        - **Vị trí thông minh:** Hệ thống tự động tính toán vị trí dòng tổng cộng luôn nằm **ngay sau** dòng dữ liệu cuối cùng (Logic: `Start Row + Số dòng dữ liệu`).
+        - **Giá trị:**
+            - Điền **Tổng số tiền** bằng số.
+            - Điền **Tổng số tiền bằng chữ** ngay dòng bên dưới.
+
+    **6. Kết quả đầu ra (Output)**
+    - File Excel sau khi xử lý được lưu vào thư mục tạm trên server với tên file theo ID hồ sơ.
+    - Hệ thống trả về một đường dẫn (URL) để người dùng tải file hoàn chỉnh về máy.
+    
+    JSON Output Example:
+    ```json
+    {
+        "excel_url": "https://bi.meraplion.com/DMS/TEMP/e09e0114.xlsx"
+    }
+    ```
