@@ -198,19 +198,11 @@ Cho phép Admin xem danh sách các chương trình mà **một Sales cụ thể
 Nhận tham số `manv` từ `url_param`.
 
 **Step 2:**
-Query bảng `theo_doi_tang_qua_chung_tu` và filter theo điều kiện:
+Query bảng `theo_doi_tang_qua_danh_sach_qua` và filter theo điều kiện:
 
 * `nguoi_upload = manv`
 
 **Step 3:**
-Join bảng `theo_doi_tang_qua_danh_sach_qua` theo các khóa:
-
-* `ma_chuong_trinh`
-* `ma_khach_hang`
-
-để lấy thông tin `ten_chuong_trinh`.
-
-**Step 4:**
 Select **DISTINCT** các trường sau:
 
 * `ma_chuong_trinh`
@@ -218,7 +210,7 @@ Select **DISTINCT** các trường sau:
 * `nguoi_upload`
 * `thoi_gian_upload`
 
-**Step 5:**
+**Step 4:**
 Sắp xếp dữ liệu theo:
 
 * `thoi_gian_upload DESC`
