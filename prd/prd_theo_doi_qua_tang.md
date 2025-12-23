@@ -48,6 +48,18 @@ Dữ liệu được tích hợp với:
     * Admin bấm "Import".
     * **Call API:** `insert_theo_doi_tang_qua_admin_excel`.
 4.  **Feedback:** Thông báo số dòng import thành công/thất bại.
+5.  **Các cột:**
+ma_chuong_trinh
+ten_chuong_trinh
+ma_khach_hang
+ten_nha_thuoc
+ma_phu
+ten_phu
+ma_nhan_vien
+ma_qua_tang
+ten_qua
+so_luong
+6. Bấm vào lịch sử để xem lại mã và CT đã up, goi API `get_theo_doi_tang_qua_admin_dashboard`
 
 ### 4.2. Phân hệ Sales - Thực hiện tặng quà
 **Start:** Sales truy cập trang thực hiện (/formcontrol/theo_doi_tang_qua/sales).
@@ -75,6 +87,9 @@ Lưu trữ dữ liệu gốc từ file Excel Admin upload.
 | `ma_chuong_trinh` | text | **PK** - Mã chương trình |
 | `ten_chuong_trinh` | text | Tên chương trình |
 | `ma_khach_hang` | text | **PK** - Mã khách hàng |
+| `ten_nha_thuoc` | text      | Tên nhà thuốc |
+| `ma_phu`        | text      | **PK** Mã phụ (NOT NULL)        |
+| `ten_phu`       | text      | Tên phụ       |
 | `ma_nhan_vien` | text | Mã nhân viên (Index) |
 | `ma_qua_tang` | text | **PK** - Mã quà tặng |
 | `ten_qua` | text | Tên quà |
@@ -133,6 +148,9 @@ Lưu trữ kết quả thực hiện của Sales.
         "ma_chuong_trinh": "CT2025_01",
         "ten_chuong_trinh": "Quà Tết 2025",
         "ma_khach_hang": "KH001",
+        "ten_nha_thuoc": "Nhà thuốc An Khang",
+        "ma_phu": "MP001",
+        "ten_phu": "Chi nhánh Quận 1"
         "ma_nhan_vien": "SALE_A",
         "ma_qua_tang": "GIFT01",
         "ten_qua": "Hộp Bánh",
@@ -146,6 +164,86 @@ Lưu trữ kết quả thực hiện của Sales.
 * **JSON Output:**
     * Success: `{ "status": "ok", "success_message": "Import thành công 150 dòng." }`
     * Fail: `{ "status": "fail", "error_message": "..." }`
+
+Ok 👍 mình hiểu ý bạn rồi.
+Dưới đây là **PHIÊN BẢN VIẾT ĐÚNG CẤU TRÚC PRD**, **KHÔNG dùng heading `###`**, **chỉ dùng `####` cho Function** và các tiêu đề con **chỉ dùng `**bold**`** đúng như format bạn đang dùng trong PRD.
+
+Bạn **copy dán trực tiếp** là dùng được.
+
+---
+
+#### **Function:** `get_theo_doi_tang_qua_admin_dashboard`
+
+**Loại:** READ
+
+**Mục đích:**
+Cho phép Admin xem danh sách các chương trình mà **một Sales cụ thể đã upload chứng từ**, kèm theo thời gian upload, phục vụ kiểm soát và audit theo từng nhân viên.
+
+**JSON Input (`url_param`):**
+
+```json
+{
+  "manv": "MR2948"
+}
+```
+
+**Input Rules:**
+
+* `manv` là **bắt buộc**
+* Chỉ lấy dữ liệu của **người upload = manv**
+
+**Logic:**
+
+**Step 1:**
+Nhận tham số `manv` từ `url_param`.
+
+**Step 2:**
+Query bảng `theo_doi_tang_qua_chung_tu` và filter theo điều kiện:
+
+* `nguoi_upload = manv`
+
+**Step 3:**
+Join bảng `theo_doi_tang_qua_danh_sach_qua` theo các khóa:
+
+* `ma_chuong_trinh`
+* `ma_khach_hang`
+
+để lấy thông tin `ten_chuong_trinh`.
+
+**Step 4:**
+Select **DISTINCT** các trường sau:
+
+* `ma_chuong_trinh`
+* `ten_chuong_trinh`
+* `nguoi_upload`
+* `thoi_gian_upload`
+
+**Step 5:**
+Sắp xếp dữ liệu theo:
+
+* `thoi_gian_upload DESC`
+
+**JSON Output:**
+
+```json
+{
+  "status": "ok",
+  "rows": [
+    {
+      "ma_chuong_trinh": "CT2025_01",
+      "ten_chuong_trinh": "Quà Tết 2025",
+      "nguoi_upload": "MR2948",
+      "thoi_gian_upload": "2025-02-15T10:05:00"
+    },
+    {
+      "ma_chuong_trinh": "CT2024_12",
+      "ten_chuong_trinh": "Tri ân khách hàng Q4/2024",
+      "nguoi_upload": "MR2948",
+      "thoi_gian_upload": "2024-12-28T16:20:00"
+    }
+  ]
+}
+```
 
 ### 6.2. Nhóm Sales
 
