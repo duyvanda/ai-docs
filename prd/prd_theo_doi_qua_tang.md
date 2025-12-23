@@ -220,7 +220,7 @@ Sắp xếp dữ liệu theo:
 ```json
 {
   "status": "ok",
-  "rows": [
+  "data": [
     {
       "ma_chuong_trinh": "CT2025_01",
       "ten_chuong_trinh": "Quà Tết 2025",
@@ -288,7 +288,7 @@ Sắp xếp dữ liệu theo:
     ```json
     {
       "status": "ok",
-      "rows": [
+      "data": [
         {
           "ma_chuong_trinh": "CT2025_01",
           "ten_chuong_trinh": "Quà Tết 2025",
@@ -336,7 +336,7 @@ Sắp xếp dữ liệu theo:
     ```json
     {
       "status": "ok",
-      "rows": [
+      "data": [
         {
           "ma_chuong_trinh": "CT2025_01",
           "ten_chuong_trinh": "Quà Tết 2025"
