@@ -144,13 +144,12 @@ Không log lỗi vào bảng trừ khi được yêu cầu.
 
 ## **7. Quy tắc Comment**
 
-* Mỗi function cần comment ngắn phía trên:
+* Mỗi function cần comment ngắn phía trên cho mục đích sử dụng:
 
 ```sql
--- Function: get list seminar hco
--- Author: AI
--- Input: url_param jsonb (key: manv, month, status)
--- Output: JSONB standard format
+/* ... 
+get list seminar hco
+*/
 ```
 
 ---
