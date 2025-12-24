@@ -115,6 +115,7 @@ Lưu trữ kết quả thực hiện của Sales.
 | `ghi_chu` | text | Ghi chú |
 | `nguoi_tai_len` | text | Mã nhân viên Sales |
 | `thoi_gian_tai_len` | timestamp | Thời gian upload |
+| `ma_phu` | text | **PK** - Mã phụ |
 
 ### **Table 3: `d_master_khachhang`** (Transaction)
 Lưu trữ kết quả thực hiện của Sales.
@@ -184,11 +185,6 @@ Lưu trữ kết quả thực hiện của Sales.
 * **JSON Output:**
     * Success: `{ "status": "ok", "success_message": "Import thành công 150 dòng." }`
     * Fail: `{ "status": "fail", "error_message": "..." }`
-
-Ok 👍 mình hiểu ý bạn rồi.
-Dưới đây là **PHIÊN BẢN VIẾT ĐÚNG CẤU TRÚC PRD**, **KHÔNG dùng heading `###`**, **chỉ dùng `####` cho Function** và các tiêu đề con **chỉ dùng `**bold**`** đúng như format bạn đang dùng trong PRD.
-
-Bạn **copy dán trực tiếp** là dùng được.
 
 ---
 
