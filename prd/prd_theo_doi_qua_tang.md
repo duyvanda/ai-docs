@@ -310,7 +310,7 @@ Sắp xếp dữ liệu theo:
 * **Mục đích:** Ghi nhận danh sách vật tư chi tiết (Được gọi từ hàm cha `insert_theo_doi_tang_qua_chung_tu`).
 * **Validation:** Không có validation phức tạp.
 * **Logic (Chi tiết từng bước):**
-    1.  **Loop Input:** Sử dụng `jsonb_populate_recordset` hoặc vòng lặp để duyệt qua mảng `items` truyền vào.
+    1.  **Input:** Nhận mảng `items` truyền vào.
     2.  **Step 1 - Upsert Vật tư:**
         * **ON CONFLICT (`ma_chuong_trinh`, `ma_vat_tu`, `ma_khach_hang`, `ma_phu`):**
         * **DO UPDATE SET:**
