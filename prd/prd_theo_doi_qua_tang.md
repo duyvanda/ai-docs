@@ -129,14 +129,14 @@ Lưu trữ kết quả thực hiện của Sales.
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `ma_chuong_trinh` | text | **PK** - Mã chương trình |
-| `ma_vat_tu` | text | **PK** - Mã vật tư |
-| `ten_vat_tu` | text | Tên vật tư |
+| `ma_qua_tang` | text | **PK** - Mã quà tặng |
+| `ten_qua` | text | Tên quà tặng |
 | `ma_khach_hang` | text | **PK** - Mã khách hàng |
 | `ten_nha_thuoc` | text | Tên khách hàng |
 | `ma_phu` | text | **PK** - Mã phụ |
 | `ten_phu` | text | Tên mã phụ |
 | `so_luong_dieu_chinh`| numeric | Số lượng thực tế của vật tư |
-| `nguoi_thuc_hien` | text | User thực hiện |
+| `manv` | text | User thực hiện |
 | `inserted_at` | timestamp | Thời gian ghi nhận |
 
 
@@ -284,8 +284,8 @@ Sắp xếp dữ liệu theo:
         "items": [
              {
                 "ma_chuong_trinh": "CT2025_01",
-                "ma_vat_tu": "VT001",
-                "ten_vat_tu": "Túi giấy",
+                "ma_qua_tang": "VT001",
+                "ten_qua": "Túi giấy",
                 "ma_khach_hang": "KH001",
                 "ten_nha_thuoc": "Nhà thuốc An Khang",
                 "ma_phu": "MP001",
@@ -322,8 +322,8 @@ Sắp xếp dữ liệu theo:
   [
       {
           "ma_chuong_trinh": "CT2025_01",
-          "ma_vat_tu": "VT001",
-          "ten_vat_tu": "Túi giấy",
+          "ma_qua_tang": "VT001",
+          "ten_qua": "Túi giấy",
           "ma_khach_hang": "KH001",
           "ten_nha_thuoc": "Nhà thuốc An Khang",
           "ma_phu": "MP001",
