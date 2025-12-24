@@ -11,17 +11,55 @@
 * Sử dụng **Block Comment** `/* ... */` cho mọi giải thích.
 ---
 
-Mọi hàm insert/validate phải theo đúng thứ tự:
+## Quy trình xử lý dữ liệu (Step-by-step)
 
-1. **Parse input fields từ JSON**
-2. **Tạo TEMP TABLE chứa bản ghi người dùng nhập**
-3. **Tạo các TEMP TABLE xử lý bổ sung** (summary, grouping, lookup…etc. Không dùng subquery trong SELECT block)
-4. **Tạo nhiều khối VALIDATION**
-5. **Quy tắc thứ tự validation**
-6. **Nếu fail → return JSON fail**
-7. **Nếu pass → insert dữ liệu**
-8. **Return JSON success**
-9. **Exception block**
+### 1. Parse Input
+- Parse các input fields từ **JSON request**
+
+### 2. Tạo Temporary Table (Input)
+- Tạo **TEMP TABLE** chứa:
+  - Dữ liệu người dùng nhập
+  - Data enrichment (nếu có)
+
+### 3. Validate Input
+- Validate dữ liệu đầu vào của người dùng:
+  - Kiểu dữ liệu
+  - Giá trị hợp lệ
+  - Ràng buộc nghiệp vụ cơ bản
+
+### 4. Tạo Temporary Table bổ sung (nếu có)
+- Dùng cho:
+  - Summary
+  - Grouping
+  - Lookup
+- **Không sử dụng subquery trong SELECT block**
+
+### 5. Xử lý Logic theo từng bước
+- Thực hiện logic theo thứ tự:
+  - Bước 1 → Bước 2 → Bước 3
+
+#### 5.1. Các khối Validation Logic
+- Kiểm tra nghiệp vụ nâng cao, ví dụ:
+  - Tổng giá trị không được vượt giới hạn
+  - Điểm đã được cộng hay chưa
+  - Trạng thái dữ liệu có hợp lệ không
+
+### 6. Xử lý khi Validate Fail
+- Dừng xử lý
+- **Return JSON với trạng thái `fail`**
+- Kèm message lỗi chi tiết
+
+### 7. Xử lý khi Validate Pass
+- Thực hiện **INSERT dữ liệu** vào bảng chính
+
+### 8. Return kết quả thành công
+- **Return JSON với trạng thái `success`**
+- Kèm dữ liệu hoặc message cần thiết
+
+### 9. Exception Handling
+- Bắt toàn bộ exception
+- Log lỗi
+- Return JSON lỗi hệ thống
 
 ```sql
 CREATE OR REPLACE FUNCTION schema.function_name(url_param jsonb)
@@ -29,11 +67,13 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    -- variable declarations and parse inputs
+    */variable declarations and parse inputs
 BEGIN
-    -- main logic
-    -- PARSE INPUT
-    
+
+    /*
+    main logic
+    PARSE INPUT
+    */
 
     IF v_check_1 > 0 THEN
     RETURN jsonb_build_object('status','fail','error_message','<error 1>');
@@ -91,23 +131,6 @@ Có thể có 1 hoặc nhiều TEMP TABLE tùy logic business, ví dụ:
 
 # ✅ **4. VALIDATION RULES (GENERIC)**
 
-### **4.1. Validation phải được gom thành từng nhóm rõ ràng**
-
-Ví dụ:
-
-* Validation Group 1: Kiểm tra giới hạn (threshold)
-* Validation Group 2: Kiểm tra tồn tại/trùng lặp
-* Validation Group 3: Kiểm tra tính hợp lệ dữ liệu
-* Validation Group 4: Kiểm tra cross-table constraint
-* Validation Group 5: Kiểm tra tổng/định mức
-* Validation Group 6: Kiểm tra quyền/authorization
-
-**Không viết trực tiếp logic — chỉ áp dụng theo mô tả.**
-
----
-
-### **4.2. Mỗi validation phải trả kết quả dạng boolean/INT**
-
 Ví dụ dạng generic:
 
 ```sql
@@ -115,19 +138,6 @@ SELECT COUNT(*) INTO v_condition_X
 FROM some_table
 WHERE <condition>;
 ```
-
-> AI sẽ tự thay `<condition>` theo logic bạn mô tả.
-
----
-
-### **4.3. Validation priority rule**
-
-Nếu bạn mô tả bài toán có nhiều validation, AI phải:
-
-1. Sắp xếp từ high priority → low priority
-2. Check theo đúng thứ tự
-3. Dừng ngay khi một validation fail
-4. Trả JSON fail rõ ràng
 
 ---
 
@@ -186,11 +196,9 @@ EXCEPTION WHEN OTHERS THEN
 * `summary_*`
 * `validate_*`
 
-Tên do AI đặt theo mô tả của bạn, nhưng phải theo pattern.
-
 ---
 
-# ✅ **8. GENERIC FUNCTION TEMPLATE (Không chứa logic business)**
+# ✅ **8. GENERIC FUNCTION TEMPLATE**
 
 ```sql
 CREATE OR REPLACE FUNCTION schema.fn_template(
@@ -200,52 +208,62 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    -- Parsed input variables
+    /* user input*/
     p_field_1 TEXT;
     p_field_2 TEXT;
 
-    -- Validation flags
+    /* validation flag*/
     v_check_1 INT := 0;
     v_check_2 INT := 0;
     v_check_3 INT := 0;
 
-    -- Calculated values
+    /* Calculated values*/
     v_value_1 NUMERIC;
 BEGIN
-    ------------------------------------------------------------------
-    -- 1. PARSE INPUT
-    ------------------------------------------------------------------
+    /* ==============================================================
+       1. PARSE INPUT FIELDS TỪ JSON
+       ============================================================== */
     SELECT json_input->0->>'field_1' INTO p_field_1;
     SELECT json_input->0->>'field_2' INTO p_field_2;
 
-    ------------------------------------------------------------------
-    -- 2. TEMP TABLE: RAW INPUT
-    ------------------------------------------------------------------
-    -- Parse toàn bộ JSON input thành bảng tạm
+    /* ==============================================================
+       2. TẠO TEMP TABLE CHỨA BẢN GHI NGƯỜI DÙNG NHẬP
+          + DATA ENRICHMENT (NẾU CÓ)
+       ============================================================== */
     CREATE TEMP TABLE input_raw ON COMMIT DROP AS (
         SELECT *
         FROM jsonb_populate_recordset(NULL::your_target_type, v_json_input)
     );
 
-    -- Hoặc: parse các JSON ARRAY bên trong
+    /* Hoặc: parse các JSON ARRAY bên trong sử dụng jsonb_array_elements */
     CREATE TEMP TABLE input_array ON COMMIT DROP AS (
         SELECT
-            -- parse text
+            /* parse text */
             (el ->> 'some_text')::TEXT AS some_text,
 
-            -- parse number
+            /* parse number */
             (el ->> 'some_number')::INT AS some_number,
 
-            -- parse date / timestamp
+            /* parse date / timestamp */
             TO_DATE(el ->> 'some_date', 'DD-MM-YYYY')::TIMESTAMP AS some_date,
 
-            -- parse bool
-            (el ->> 'some_bool')::BOOLEAN AS some_bool
         FROM jsonb_array_elements(v_json_input -> 'array_key') AS el
     );
-    ------------------------------------------------------------------
-    -- 3. TEMP TABLE: CALCULATED DATA (GENERIC)
-    ------------------------------------------------------------------
+
+    /* ==============================================================
+       3. VALIDATE INPUT CỦA NGƯỜI DÙNG
+       ============================================================== */
+
+        SELECT COUNT(*)
+        INTO v_check_1
+        FROM input_raw
+        WHERE some_required_field IS NULL;
+
+    /* ==============================================================
+       4. TẠO CÁC TEMP TABLE XỬ LÝ BỔ SUNG (NẾU CÓ)
+          (summary, grouping, lookup…)
+          LƯU Ý: KHÔNG DÙNG SUBQUERY TRONG SELECT
+       ============================================================== */
     CREATE TEMP TABLE calc_summary ON COMMIT DROP AS
     SELECT
         field_1,
@@ -253,52 +271,56 @@ BEGIN
     FROM raw_input
     GROUP BY field_1;
 
-    ------------------------------------------------------------------
-    -- 4. VALIDATION BLOCKS (GENERIC RULES)
-    ------------------------------------------------------------------
-    -- Validation example (AI sẽ thay logic theo yêu cầu thật)
-    SELECT COUNT(*) INTO v_check_1
+    /* ==============================================================
+       4. XỬ LÝ STEP-BY-STEP LOGIC
+          (BƯỚC 1 → BƯỚC 2 → BƯỚC 3)
+       ============================================================== */
+    
+    /* Bước 1: kiểm tra tổng giá trị */
+    SELECT COUNT(*)
+    INTO v_check_2
     FROM calc_summary
-    WHERE <condition_1>;   -- do AI tự điền
+    WHERE total_amount > 1000000;
 
-    SELECT COUNT(*) INTO v_check_2
-    FROM calc_summary
-    WHERE <condition_2>;
-
-    SELECT COUNT(*) INTO v_check_3
+    /* Bước 2: kiểm tra trạng thái đã xử lý hay chưa */
+    SELECT COUNT(*)
+    INTO v_check_3
     FROM some_lookup_table
-    WHERE <condition_3>;
+    WHERE status = 'DONE';
 
-    ------------------------------------------------------------------
-    -- 5. VALIDATION FLOW (ALWAYS FOLLOW THIS ORDER)
-    ------------------------------------------------------------------
-    IF v_check_1 > 0 THEN
-        RETURN jsonb_build_object('status','fail','error_message','<error 1>');
-    ELSIF v_check_2 > 0 THEN
-        RETURN jsonb_build_object('status','fail','error_message','<error 2>');
-    ELSIF v_check_3 > 0 THEN
-        RETURN jsonb_build_object('status','fail','error_message','<error 3>');
-    END IF;
+    /* ==========================================================
+        6. NẾU FAIL → RETURN JSON FAIL
+        ========================================================== */
 
-    ------------------------------------------------------------------
-    -- 6. INSERT IF VALID
-    ------------------------------------------------------------------
+    RETURN jsonb_build_object(
+        'status', 'fail',
+        'error_message', '<Cụ thể lý do fail>'
+    );
+
+    /* ==============================================================
+       7. NẾU PASS → INSERT DỮ LIỆU
+       ============================================================== */
     INSERT INTO target_table
-    SELECT * FROM raw_input;
+    SELECT *
+    FROM input_raw;
 
-    ------------------------------------------------------------------
-    -- 7. RETURN SUCCESS
-    ------------------------------------------------------------------
+    /* ==============================================================
+       8. RETURN JSON SUCCESS
+       ============================================================== */
     RETURN jsonb_build_object(
-        'status','ok',
-        'success_message','Insert thành công'
+        'status', 'success',
+        'message', 'Xử lý dữ liệu thành công'
     );
 
-EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object(
-        'status','fail',
-        'error_message', SQLERRM
-    );
-END;
+        /* ==============================================================
+       9. EXCEPTION BLOCK
+       ============================================================== */
+
+    EXCEPTION WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status','fail',
+            'error_message', SQLERRM
+        );
+    END;
 $$;
 ```
