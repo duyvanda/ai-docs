@@ -1,14 +1,19 @@
 # ✅ **1. STRUCTURE RULES — KHUNG CỐ ĐỊNH CỦA MỌI HÀM**
 
-## **Quy tắc đặt tên**
+## **Quy tắc chung**
+* Không dùng vòng lặp (loop) trừ khi được yêu cầu.
+* Nếu không yêu cầu validation thì không cần block validation.
+
+### **Quy tắc đặt tên**
 * snake_case
 * có prefix theo domain
   * `insert_` → thêm, thường thêm vào 1 bảng
 👉 Ví dụ:
 `insert_form_data`
 
-## **Quy tắc comments**
+### **Quy tắc comments**
 * Sử dụng **Block Comment** `/* ... */` cho mọi giải thích.
+
 ---
 
 ## Quy trình xử lý dữ liệu (Step-by-step)
@@ -74,6 +79,7 @@ BEGIN
     main logic
     PARSE INPUT
     */
+    SELECT json_input->0->>'field_1' INTO p_field_1;
 
     IF v_check_1 > 0 THEN
     RETURN jsonb_build_object('status','fail','error_message','<error 1>');

@@ -171,15 +171,6 @@ get list seminar hco
 ```sql
 WHERE STRPOS(manv, p_manv) > 0
 ```
-
-### **Nếu filter rỗng → không áp dụng filter**
-
-Ví dụ:
-
-```sql
-AND (p_manv = '' OR STRPOS(manv, p_manv) > 0)
-```
-
 ---
 
 ## **10. Template function hoàn chỉnh (AI dùng luôn)**
@@ -199,7 +190,7 @@ BEGIN
                 name,
                 created_at
             FROM schema.table_name
-            WHERE (p_search = '' OR STRPOS(name, p_search) > 0)
+            WHERE STRPOS(name, p_search) > 0)
             ORDER BY created_at DESC
         ),
         smn_thang_options AS (
