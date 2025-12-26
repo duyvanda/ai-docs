@@ -11,7 +11,7 @@ Tạo một cột cờ (Flag) hoạt động như công tắc bật/tắt:
 * **Giá trị 0:** Các dòng sau -> Không tính (trả về 0).
 
 ### 3. Code triển khai (SQL)
-
+#### 3.1 Giải pháp 1 Sử dụng Biến Flag "Hiệu Lực Tính"
 ```sql
 WITH Du_Lieu_Tho AS (
     SELECT
@@ -39,6 +39,21 @@ SELECT
     phi_ship * hieu_luc_tinh as phi_ship_thuc_te
 FROM Du_Lieu_Tho;
 ```
+
+#### 3.2 Giải pháp 2 Nhân giá trị trực tiếp với row number theo key
+```SQL
+SELECT
+    D.ma_don_hang,
+    C.ten_san_pham,
+    D.phi_ship as phi_ship_goc,
+    
+    -- Gọn nhất: Nhân trực tiếp Phí ship với biểu thức điều kiện
+    D.phi_ship * (CASE WHEN ROW_NUMBER() OVER(PARTITION BY D.ma_don_hang ORDER BY NULL) = 1 THEN 1 ELSE 0 END) as phi_ship_thuc_te
+
+FROM Don_Hang D
+LEFT JOIN Chi_Tiet_Don_Hang C ON D.ma_don_hang = C.ma_don_hang;
+```
+
 
 ### 4. Kết quả minh hoạ
 Ví dụ Đơn #101 mua 3 món (Áo, Quần, Mũ), Phí ship gốc là 30k.
