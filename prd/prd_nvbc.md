@@ -468,6 +468,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
       "product_expert_reward": false,  
       "avid_reader_reward": false,  
       "fail_show_reward_selection": false,
+      "reward_event":"12_25_th_monthly_reward",
       "list_chon_monthly": [
         {
           "id": 4,
@@ -588,11 +589,11 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
       {  
           "phone": "0909xxxxxx",  
           "value": "Quà monthly",  
-          "reward_event": "xth_monthly_reward",  
+          "reward_event": "12_25_th_monthly_reward",
           "inserted_at": "2025-12-16 11:00:00",
           "value1": Quà product_expert,
           "value2": Quà advid_reader
-      }  
+      }
   ]
   ```
 
