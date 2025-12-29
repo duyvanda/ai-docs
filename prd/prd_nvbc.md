@@ -57,7 +57,12 @@ Dữ liệu được tích hợp với:
 * **Invitee**: chọn referrer trong tháng, xem video tích điểm; khi đạt ≥20 điểm thì kích hoạt xét thưởng cho referrer.
 * **Referrer**: không thao tác; nhận tối đa 100 điểm khi invitee đạt điều kiện trong tháng.
 * **System**: ghi nhận quan hệ referral theo tháng, theo dõi điểm invitee và tự động cộng bonus khi đủ điều kiện.
+* **API**: Hệ thống gọi API `insert_nvbc_ref_month_regis`.
 
+## 4.6 Flow Streak
+
+* **System**: Ghi nhận điểm theo số ngày LIÊN TIẾP user xem tài liệu.
+* **API**: Hệ thống gọi API `insert_nvbc_track_view` sau đó gọi hàm phụ `insert_nvbc_daily_streak`.
 ---
 
 
