@@ -47,9 +47,6 @@ Dữ liệu được tích hợp với:
 
   - Hiển thị thông báo thành công/thất bại và tắt popup.
   - Vì quà là có giới hạn nên nếu chọn quà hết tồn sẽ phải chọn lại.
-
-  Ok 👍 đây là **PHẦN 4 – USER FLOW (tóm tắt siêu ngắn)**, **mỗi role đúng 1 dòng**, PRD-style:
-
 ---
 
 ## 4.5 Flow Referrer-Invitee
@@ -199,7 +196,7 @@ Bảng lưu trạng thái streak theo **ngày Việt Nam** cho từng user.
 | phone        | text      | **PK part** – Số điện thoại user |
 | streak_date  | date      | **PK part** – Ngày VN được tính streak (timezone `Asia/Ho_Chi_Minh`) |
 | streak_length| integer   | Độ dài chuỗi liên tiếp kết thúc tại `streak_date` (1–7 ngày) |
-| bonus_point  | integer   | Điểm thưởng của ngày đó: 0, 30 (ngày thứ 3), hoặc 70 (ngày thứ 7) |
+| bonus_point  | integer   | Điểm thưởng của ngày đó |
 | inserted_at   | timestamp | Thời gian ghi nhận record |                                   |
 
 ### **5.2. Các API bên ngoài**
@@ -773,7 +770,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
 * **Ghi chú đặc biệt:** Hàm được gọi trong hàm `insert_nvbc_track_view` khi user tiến hành ghi điểm.
 * **Loại:** WRITE (Update)
 * **Mục đích:**  
-  * Cập nhật bảng `nvbc_streak_daily` cho **một user tại một thời điểm xem**, theo rule streak tối đa 7 ngày và điểm thưởng 0 / 30 / 70.  
+  * Cập nhật bảng `nvbc_streak_daily` cho **một user tại một thời điểm xem**, theo rule streak tối đa 7 ngày và điểm thưởng.  
   * Đảm bảo mỗi `(phone, streak_date)` chỉ có **tối đa 1 record** và toàn bộ business streak nằm tập trung trong 1 function riêng, dễ test & bảo trì.
 
 **Input Parameters (dạng Json - Single object):**
@@ -820,8 +817,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
      * Về mặt business, với logic trên, case này gần như không xảy ra, nhưng vẫn giữ để chống lỗi.
 
 5. **Tính điểm thưởng của ngày (`bonus_point_today`):**
-   * Nếu `new_streak_length = 3` → `bonus_point_today = 30`.  
-   * Nếu `new_streak_length = 7` → `bonus_point_today = 70`.  
+   * Nếu `new_streak_length = 3` → `bonus_point_today = 30`.
+   * Nếu `new_streak_length = 6` → `bonus_point_today = 30`.  
+   * Nếu `new_streak_length = 7` → `bonus_point_today = 40`.  
    * Ngược lại → `bonus_point_today = 0`.  
    * Như vậy, **mỗi run 7 ngày tối đa mang lại 100 điểm bonus** (30 ở ngày thứ 3 + 70 ở ngày thứ 7).
 
