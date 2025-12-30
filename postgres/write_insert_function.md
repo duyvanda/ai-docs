@@ -1,7 +1,7 @@
 # ✅ **1. STRUCTURE RULES — KHUNG CỐ ĐỊNH CỦA MỌI HÀM**
 
 ## **Quy tắc chung**
-* Không dùng vòng lặp (loop) trừ khi được yêu cầu.
+* Thường sẽ nhận 1 mảng chỉ có 1 phần tử, nên không ưu tiền dùng vòng lặp, chỉ dùng CTE hoặc bảng tạm.
 * Nếu không yêu cầu validation thì không cần block validation.
 
 ### **Quy tắc đặt tên**
