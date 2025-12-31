@@ -529,6 +529,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
         * Cơ chế này đảm bảo trong vòng 10 giây, hệ thống chỉ xử lý luồng ghi nhận mới nhất và dọn dẹp các request cũ/spam.
     2.  **Data Structure Check:** Dữ liệu đầu vào bắt buộc phải là một JSON Array hợp lệ để có thể parse bằng hàm `jsonb_populate_recordset`.
     3.  **Exception Handling:** Bất kỳ lỗi nào xảy ra trong quá trình thực thi (VD: Lỗi kết nối, lỗi định dạng dữ liệu, lỗi SQL) đều được bắt bởi khối `EXCEPTION WHEN OTHERS` và trả về `status: fail` kèm nội dung lỗi chi tiết (`SQLERRM`).
+    4.  VALIDATION: LIMIT POINT PER DOCUMENT (Category Meraplion),Logic: Nếu doc thuộc 'THÔNG TIN VỀ MERAPLION', kiểm tra tổng điểm của CHÍNH DOC ĐÓ trong tháng. Nếu > 50 -> Chặn (RAISE EXCEPTION).
 
 * **Logic (Quy trình xử lý dữ liệu):**
     1.  **Parse Input:** Trích xuất số điện thoại (`p_phone`) từ phần tử đầu tiên của mảng JSON input.
