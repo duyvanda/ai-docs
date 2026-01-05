@@ -55,12 +55,15 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
   * Gồm các cột: *Zone, NCRM, Mã nhân viên, Tên nhân viên, Định mức quỹ*.
   * Mapping toàn bộ danh sách vào key -> `list_phan_bo_ngan_sach` (Array Object).
 
+* **Submit:**
+  1. Gửi api `insert_form_seminar_hco_settings`
+
 ### 4.1. Phân hệ [Đề xuất] - [Tạo Đề Xuất Seminar]
 
-**User Flow: Gửi đề xuất mới**
+#### User Flow: Gửi đề xuất mới
 
-1.  **Start:** User truy cập Tab "Đề xuất".
-2.  **Input & UI Logic:**
+1. **Start:** User truy cập Tab "Đề xuất".
+2. **Input & UI Logic:**
     * Hệ thống tải dữ liệu options qua API `get_form_seminar_hco_crs`.
     * **Logic chọn HCO:**
         * User tìm kiếm tên HCO (không dấu).
@@ -75,12 +78,12 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
         * `dia_diem`, `muc_dich`: Text input.
         * `chi_phi_*`: 6 trường chi phí (Hội trường, Máy chiếu, Ăn uống, Teabreak, BCV, Tặng phẩm).
         * `danh_sach_hcp_bo_sung*`: Tên + BS
-3.  **Submit:**
+3. **Submit:**
     * User bấm "Gửi Đề Xuất".
     * Hệ thống tính tổng `tong_sl_nvyt` từ các options đã chọn.
     * Gộp ID khoa phòng thành chuỗi phân cách dấu phẩy.
     * **Call API:** `insert_form_seminar_hco` (Method: POST).
-4.  **Feedback:**
+4. **Feedback:**
     * **Thành công:** Alert xanh "Đã nhận thông tin thành công", Reset form.
     * **Thất bại:** Alert đỏ hiển thị lỗi.
 
