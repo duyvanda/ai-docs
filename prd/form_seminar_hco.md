@@ -47,11 +47,12 @@ Dữ liệu được tích hợp với:
     * **Các trường thông tin:**
         * `hco`: Danh sách Khoa/Phòng đã chọn.
         * `smn_thang`: Tháng thực hiện (Select).
-        * `tuan_thuc_hien`: Tuần (W1-W4).
+        * `ngay_thuc_hien`: Ngày dd-mm-yyyy.
         * `nhom_san_pham`: Nhóm sản phẩm chính.
         * `so_luong_bs_ds`: Số lượng khách mời.
         * `dia_diem`, `muc_dich`: Text input.
         * `chi_phi_*`: 6 trường chi phí (Hội trường, Máy chiếu, Ăn uống, Teabreak, BCV, Tặng phẩm).
+        * `danh_sach_hcp_bo_sung*`: Tên + BS
 3.  **Submit:**
     * User bấm "Gửi Đề Xuất".
     * Hệ thống tính tổng `tong_sl_nvyt` từ các options đã chọn.
@@ -105,7 +106,6 @@ Dữ liệu được tích hợp với:
 ### Các table mới của hệ thống (New Tables):
 
 **Table 1: `form_seminar_hco`**
-*(Dựa trên keys của `jsonb_populate_recordset` trong function `insert_form_seminar_hco`)*
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
@@ -116,7 +116,7 @@ Dữ liệu được tích hợp với:
 | `nganh_khoa_phong` | text | Danh sách khoa phòng (String, comma separated) |
 | `tong_sl_nvyt` | int | Tổng số lượng NVYT tại các khoa phòng đã chọn |
 | `smn_thang` | text | Tháng thực hiện (DD-MM-YYYY) |
-| `tuan_thuc_hien` | text | Tuần thực hiện (W1, W2...) |
+| `ngay_thuc_hien` | date | Ngày thực hiện (ví dụ: 14-02-2025) |
 | `nhom_san_pham` | text | Nhóm sản phẩm chính |
 | `so_luong_bs_ds` | int | Số lượng khách mời dự kiến |
 | `dia_diem` | text | Địa điểm tổ chức |
@@ -127,13 +127,103 @@ Dữ liệu được tích hợp với:
 | `chi_phi_teabreak` | numeric | Chi phí |
 | `chi_phi_bao_cao_vien` | numeric | Chi phí |
 | `tang_pham` | numeric | Chi phí |
-| `inserted_at` | timestamp | Thời gian tạo/cập nhật |
+| `inserted_at` | timestamp | Thời gian tạo |
+| `updated_at` | timestamp | Thời gian cập nhật |
+
+
+### Table Cấu hình Hệ thống (Configuration Table)
+
+**Table `settings_data`**
+*Bảng cấu hình "All-in-One". Lưu trữ toàn bộ tham số vận hành (Danh mục, Định mức chi phí, Ngân sách nhân viên). Dữ liệu được cập nhật từ file Excel của Admin.*
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `appid` | text | **PK** - Giá trị cố định: `form_seminar_hco` |
+| `js` | jsonb | **Chứa toàn bộ data cấu hình** (Xem mẫu JSON chuẩn bên dưới) |
+| `manv` | text | Mã nhân viên (Admin) thực hiện upload |
+| `inserted_at` | timestamp | Thời gian thực hiện upload |
+
+**Table 3: `form_seminar_hco_added_hcps` (Bảng Danh sách HCP bổ sung)**
+Lưu trữ danh sách các HCP được nhân viên CRS (Client) chủ động bổ sung trong quá trình làm việc. Bảng này lưu chi tiết từng dòng dữ liệu thay vì JSON để phục vụ báo cáo/tracking.
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | text | **PK** - Mã định danh duy nhất (Client-generated ID). Ví dụ: `20251231_NV001_A`. |
+| `manv` | text | Mã nhân viên thực hiện thao tác (Ví dụ: `NV001`). |
+| `ten_hcp` | text | Họ và tên HCP. |
+| `chuc_vu` | text | Chức vụ (Giá trị: Bác sĩ, Dược sĩ, Điều dưỡng...). |
+| `inserted_at` | timestamp | Thời gian tạo bản ghi |
 
 -----
 
 ## 6. API & Function Specifications (Chi tiết kỹ thuật)
 
 Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về JSONB.
+
+#### Function: `insert_form_seminar_hco_settings`
+
+* **Loại:** WRITE (Configuration Upsert)
+* **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống cho Form đăng ký Seminar. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
+* **Bảng ảnh hưởng:** `settings_data`.
+
+* **Validation (Các quy tắc chặn lỗi):**  KHÔNG CẦN VALIDATION
+
+* **JSON Input (`body`):**
+    ```json
+    {
+        "appid": "form_seminar_hco",
+        "manv": "ADMIN_01",
+        "inserted_at": "2025-10-27 10:30:00",
+        "settings_data": {
+            "list_nhom_san_pham_gioi_thieu": [
+                "ENT", "EYE", "ANTI", "GI", "DERMA", "ORAL CARE"
+            ],
+            "list_dia_diem_thuc_hien": [
+                "Tại khoa", "Bên ngoài"
+            ],
+            "list_muc_dich_thuc_hien": [
+                "Giới thiệu thông tin sản phẩm mới", 
+                "Nhắc lại thông tin sản phẩm",
+                "Commitment", 
+                "Mesabi", 
+                "SunoHada", 
+                "ENT tập trung 2026", 
+                "Nhập hàng"
+            ],
+            "list_dinh_muc_chi_phi": [
+                { "ma_chi_phi": "hoi_truong", "ten_hien_thi": "Chi phí thuê hội trường", "max_chi_phi": 10000000 },
+                { "ma_chi_phi": "may_chieu", "ten_hien_thi": "Chi phí thuê máy chiếu", "max_chi_phi": 1000000 },
+                { "ma_chi_phi": "an_uong", "ten_hien_thi": "Chi phí ăn uống", "max_chi_phi": 5000000 },
+                { "ma_chi_phi": "teabreak", "ten_hien_thi": "Teabreak", "max_chi_phi": 2000000 },
+                { "ma_chi_phi": "bao_cao_vien", "ten_hien_thi": "Mời báo cáo viên", "max_chi_phi": 7000000 },
+                { "ma_chi_phi": "tang_pham", "ten_hien_thi": "Tặng phẩm", "max_chi_phi": 450000 }
+            ],
+            "list_phan_bo_ngan_sach": [
+                { "zone": "ZONE 1", "ncrm": "Ngô Tiến Vũ", "ma_nhan_vien": "MR1111", "ten_nhan_vien": "Bùi Hữu Toàn", "dinh_muc_quy": 50000000 },
+                { "zone": "ZONE 2", "ncrm": "Hoàng Trung Thành", "ma_nhan_vien": "MR1116", "ten_nhan_vien": "Nguyễn Thị Dung", "dinh_muc_quy": 50000000 }
+            ],
+            "quy_tac_chung": "1/ Chỉ được chọn thực hiện SMN tại 1 khoa phòng\n2/ Số lượng NVYT tham dự là số lượng thực tế tham dự SMN\n3/ Các nội dung không có chi phí : điền số 0\n4/ Lưu ý chi phí teabreak: (lưu ý cần hình ảnh báo cáo bánh nước/ cơm phần)\n   - Bánh nước : ko quá 1 triệu , ko quá 100k/ người (1 phần bánh nước)\n   - Cơm phần : ko quá 2 triệu, ko quá 150k/ người\n5/ Định nghĩa mục đích thực hiện SMN"
+        }
+    }
+    ```
+
+* **Logic (PostgreSQL Function Logic):**
+    Hàm thực hiện chiến lược **Upsert** (Update nếu tồn tại, Insert nếu chưa có) dựa trên `appid`.
+
+
+* **JSON Output:**
+    * **Thành công:**
+        ```json
+        { 
+            "status": "ok", 
+            "message": "Đã cập nhật cấu hình thành công!"
+        }
+        ```
+    * **Thất bại:**
+        ```json
+        { "status": "fail", "error_message": "Lỗi database: ..." }
+        ```
+
 
 ### 6.1. Nhóm Load Data & Submit Form
 
@@ -142,9 +232,9 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Loại:** READ
 * **Mục đích:** Lấy dữ liệu khởi tạo cho dropdowns (HCO, Tháng, Tuần, Sản phẩm) và check chức danh user.
 * **Logic:**
-    1.  Lấy chức danh từ `d_hr_dsns`.
-    2.  Lấy list HCO từ `view_list_hcp` (Filter theo `concat_crs_sup` chứa `manv`).
-    3.  Lấy list sản phẩm từ `f_raw_data_sales_yoy`.
+    1. Lấy chức danh từ `d_hr_dsns`.
+    2. Lấy list HCO từ `view_list_hcp` (Filter theo `concat_crs_sup` chứa `manv`).
+    3. Lấy trong settings của appid này ra.
 * **JSON Input (`url_param`):**
     ```json
     {
@@ -168,18 +258,26 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             }
         ],
         "smn_thang_options": [
-            { "value": "01-02-2025", "label": "01-02-2025" },
-            { "value": "01-03-2025", "label": "01-03-2025" }
+            { "value": "01-02-2025", "label": "02-2025" },
+            { "value": "01-03-2025", "label": "03-2025" }
         ],
-        "tuan_thuc_hien_options": [
-            { "value": "W1", "label": "Tuần 1" },
-            { "value": "W2", "label": "Tuần 2" }
+        // lấy từ settings
+        "list_nhom_san_pham_gioi_thieu": [
+            "ENT", "EYE", "ANTI", "GI", "DERMA", "ORAL CARE"
         ],
-        "nhom_san_pham_options": [
-            { "value": "EYE", "label": "EYE" },
-            { "value": "ANTI", "label": "ANTI" }
+        "list_dia_diem_thuc_hien": [
+            "Tại khoa", "Bên ngoài"
         ],
-        "chucdanhengtitlesum": "REP - ETHICAL",
+        "list_muc_dich_thuc_hien": [
+            "Giới thiệu thông tin sản phẩm mới", 
+            "Nhắc lại thông tin sản phẩm",
+            "Commitment", 
+            "Mesabi", 
+            "SunoHada", 
+            "ENT tập trung 2026", 
+            "Nhập hàng"
+        ],
+        "chucdanhengtitlesum": "CRS",
         "time": "2025-12-31 10:00:00+07"
     }
     ```
@@ -188,7 +286,11 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 * **Loại:** WRITE (Insert)
 * **Mục đích:** Tạo mới đề xuất seminar.
-* **Logic:** Sử dụng `jsonb_populate_recordset` để map trực tiếp JSON vào bảng.
+* **Validation:** Kiểm tra các mục chi phí có vượt quá chi phí cho phép không.
+* **Logic:** 
+    1. Sử dụng `jsonb_array_elements` để map JSON => CTE. 
+    2. Insert vô bảng `form_seminar_hco`. 
+    3. Insert vô bảng `form_seminar_hco_added_hcps` từ danh sách `danh_sach_bo_sung_ten_hcp`.
 * **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
     ```json
     [
@@ -200,9 +302,15 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             "nganh_khoa_phong": "NOI_TIM_MACH",
             "tong_sl_nvyt": 15,
             "smn_thang": "01-02-2025",
-            "tuan_thuc_hien": "W1",
+            "ngay_thuc_hien": "14-02-2025",
             "nhom_san_pham": "EYE",
             "so_luong_bs_ds": 10,
+            // Cấu hình các lựa chọn cho Dropdown "Chức vụ" trong bảng thêm HCP
+            "danh_sach_bo_sung_ten_hcp": [
+                { "ten_hcp": "Nguyễn Văn A", "chuc_vu": "Bác sĩ" },
+                { "ten_hcp": "Trần Thị B", "chuc_vu": "Dược sĩ" },
+                { "ten_hcp": "Lê Văn C", "chuc_vu": "Điều dưỡng" }
+            ],
             "dia_diem": "Hội trường A",
             "muc_dich": "Giới thiệu thuốc",
             "chi_phi_hoi_truong": 1000000,
@@ -210,7 +318,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             "chi_phi_an_uong": 3000000,
             "chi_phi_teabreak": 500000,
             "chi_phi_bao_cao_vien": 2000000,
-            "tang_pham": 0,
+            "tang_pham": 450000,
             "inserted_at": "2025-12-31 08:00:00"
         }
     ]
@@ -220,6 +328,12 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     {
         "status": "ok",
         "success_message": "Đã nhận thông tin thành công !!!"
+    }
+    ```
+    ```json
+    {
+        "status": "fail",
+        "error_message": "Chi phí {xxx} đã vượt {xxx}, vui lòng nhập lại !!!"
     }
     ```
 
@@ -303,10 +417,10 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 * **Loại:** WRITE (Update Status)
 * **Mục đích:** Cập nhật trạng thái duyệt/từ chối cho danh sách các đơn đã chọn.
+* **Validation:** KHÔNG CÓ VALIDATION.
 * **Logic:**
     1.  Tạo bảng tạm từ JSON input.
-    2.  Check Validation: Nếu ID không tồn tại -> Return Error.
-    3.  Update `status` và `inserted_at` vào bảng chính.
+    2.  Update `status` và `inserted_at` vào bảng chính.
 * **JSON Input (`body`):** *Array 2 phần tử ví dụ*
     ```json
     [
