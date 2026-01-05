@@ -33,6 +33,28 @@ Dữ liệu được tích hợp với:
 
 ## 4. User Flow & UI Overview (Chi tiết quy trình)
 
+### 4.0 Admin upload settings
+
+Admin vô `/formcontrol/form_seminar_hco_settings` tải file mẫu và upload lên lại.
+
+#### Up file excel 3 sheets và frontend xử lý như sau.
+
+File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và gom tất cả dữ liệu vào trong một JSON Object `settings_data` duy nhất:
+
+* **Sheet 1: "Cấu hình chung"**
+  * Cột "Nhóm sản phẩm" -> Map vào key `list_nhom_san_pham_gioi_thieu` (Array String).
+  * Cột "Địa điểm thực hiện" -> Map vào key `list_dia_diem_thuc_hien` (Array String).
+  * Cột "Mục đích thực hiện" -> Map vào key `list_muc_dich_thuc_hien` (Array String).
+  * Cột "Quy tắc chung" -> Map vào key `quy_tac_chung` (String). **Logic:** Đọc từng dòng trong cột này và ghép lại thành một chuỗi duy nhất, phân cách mỗi dòng bằng ký tự xuống dòng `\n`.
+
+* **Sheet 2: "Định mức chi phí"**
+  * Gồm các cột: *Mã chi phí, Tên hiển thị, Max chi phí*.
+  * Mapping toàn bộ danh sách vào key -> `list_dinh_muc_chi_phi` (Array Object).
+
+* **Sheet 3: "Phân bổ ngân sách"**
+  * Gồm các cột: *Zone, NCRM, Mã nhân viên, Tên nhân viên, Định mức quỹ*.
+  * Mapping toàn bộ danh sách vào key -> `list_phan_bo_ngan_sach` (Array Object).
+
 ### 4.1. Phân hệ [Đề xuất] - [Tạo Đề Xuất Seminar]
 
 **User Flow: Gửi đề xuất mới**
