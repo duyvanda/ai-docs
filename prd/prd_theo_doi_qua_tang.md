@@ -367,9 +367,13 @@ Sắp xếp dữ liệu theo:
           "ma_phu": "MP001",
           "ten_phu": "Chi nhánh Quận 1",
           "ma_nhan_vien": "SALE_A",
-          "ma_qua_tang": "GIFT01",
-          "ten_qua": "Hộp Bánh",
-          "so_luong": 1,
+          "items": [
+              {
+                "ma_qua_tang": "GIFT01",
+                "ten_qua": "Hộp Bánh",
+                "so_luong": 1
+              }
+          ],
           "ghi_chu": "Khách nhận đủ",
           "ghi_chu_admin": "Khách VIP",
           "trang_thai_upload": true
@@ -382,9 +386,13 @@ Sắp xếp dữ liệu theo:
           "ma_phu": "MP001",
           "ten_phu": "Chi nhánh Quận 1",
           "ma_nhan_vien": "SALE_A",
-          "ma_qua_tang": "GIFT01",
-          "ten_qua": "Hộp Bánh",
-          "so_luong": 2,
+          "items": [
+              {
+                "ma_qua_tang": "GIFT01",
+                "ten_qua": "Hộp Bánh",
+                "so_luong": 1
+              }
+          ],
           "ghi_chu": null,
           "ghi_chu_admin": "Khách VIP",
           "trang_thai_upload": false
