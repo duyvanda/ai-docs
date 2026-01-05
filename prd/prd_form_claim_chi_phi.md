@@ -132,7 +132,7 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 2.  **Input:** User nhập form thông tin chung:
     * **Thời gian:** Từ ngày - Đến ngày (`date` - *yyyy-mm-dd*).
     * **Địa điểm:** Tỉnh/Thành phố (`text`).
-    * **Phụ cấp:** Nhập tiền phụ cấp đi lại, ăn uống (`float8` - *User tự nhập*).
+    * **Phụ cấp:** Nhập tiền phụ cấp đi lại, ăn uống, vé xe công tác (`float8` - *User tự nhập*).
     * **Khoản mục:** Nhập text mô tả (`text`).
 3.  **Select Invoice (Modal):**
     * Bấm "Chọn Hóa Đơn Vé Xe Hoặc KS".
@@ -286,6 +286,7 @@ Lưu trữ tờ trình công tác (Header). Chi tiết hóa đơn vé xe/khách 
 | `khoan_muc` | text | Diễn giải mục đích công tác |
 | `phu_cap_di_lai` | float8 | Tiền phụ cấp đi lại (User nhập) |
 | `phu_cap_an_uong` | float8 | Tiền phụ cấp ăn uống (User nhập) |
+| `ve_xe_cong_tac` | float8 | Tiền phụ cấp (User nhập) |
 | `tong_tien_ve_xe` | float8 | Tổng tiền vé xe (Sum từ Table 2 where type='transport') |
 | `tong_tien_khach_san` | float8 | Tổng tiền KS (Sum từ Table 2 where type='hotel') |
 | `inserted_at` | timestamp | Ngày tạo tờ trình |
@@ -980,6 +981,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             
             "phu_cap_di_lai": 100000,
             "phu_cap_an_uong": 200000,
+            "ve_xe_cong_tac": 200000,
             "tong_tien_ve_xe": 500000,
             "tong_tien_khach_san": 1000000,
 
@@ -1027,12 +1029,35 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
           | Nguồn dữ liệu | Loại chi phí | Logic lọc (Filter Criteria) | Logic hiển thị |
           | :--- | :--- | :--- | :--- |
-          | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị chi tiết từng hóa đơn, người thụ hưởng, nội dung quà tặng. |
-          | **Nguồn 2**<br>(`ds_phu_cap_ctp`) | **Phụ cấp CTP**<br>(Đi lại + Ăn uống) | **Số tiền:** Tổng phụ cấp \> 0.<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Gom thành 1 dòng: "CTP THÁNG... từ... đến...".<br>Số hóa đơn = NULL. |
+          | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị tổng tiền hóa đơn, người thụ hưởng (xem ví dụ). |
+          | **Nguồn 2**<br>(`ds_phu_cap_ctp`) | **Phụ cấp CTP**<br>(Đi lại + Ăn uống + Vé xe) | **Số tiền:** Tổng phụ cấp \> 0.<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Gom thành 1 dòng: "CTP THÁNG... từ... đến...".<br>Số hóa đơn = NULL. |
           | **Nguồn 3**<br>(`ds_hoa_don_ctp`) | **Hóa đơn CTP**<br>(Vé xe, KS...) | **Điều kiện:** Phải có hóa đơn đi kèm (ID Not Null).<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Hiển thị chi tiết từng hóa đơn (Vé xe, KS) phát sinh trong chuyến đi. |
 
+          **Ví dụ nguồn 1:**
+
+        | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
+        | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+        | 1 | Chi phí gặp gỡ giao tiếp trao đổi thông tin | 1,999,928 | 000003066 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
+        | 2 | Chi phí giao tiếp đánh giá về hiệu quả của thuốc | 3,950,000 | 000002850 | 20/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
+        | 3 | Chi phí gặp gỡ giao tiếp trao đổi thông tin | 1,000,072 | 000001782 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
+        | **** | **Thanh toán chi phí giao tiếp tháng: [MM-YYYY]** | **6,950,000** | **Trống** | **Trống** | **Trước ngày 20 tháng sau** | **MR0673 - Hồ Thị Hồng Gấm** | **Bảng kê đính kèm** |
+
+        **Ví dụ nguồn 2:**
+
+
+        | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
+        | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+        | 4 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 600,000 | | | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | Phụ cấp đi lại (100,000đ), Phụ cấp ăn uống (200,000đ), Vé xe công tác (300,000đ) |
+
+        **Ví dụ nguồn 3:**
+
+        | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
+        | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+        | 5 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 400,000 | 000000987 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | A2 - Xe |
+        | 5 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 300,000 | 000000988 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | A3 - Khách sạn |
+
         **Định dạng cột Nội dung (`noi_dung`):**
-              * Đối với các dòng là Công tác phí (CTP), hệ thống không lấy tên khoản mục đơn thuần mà tự động ghép chuỗi theo định dạng:
+              * Đối với các dòng là Công tác phí (CTP), hệ thống tự động ghép chuỗi theo định dạng:
                   `"CTP THÁNG : [MM-YYYY], từ : [Ngày đi] đến: [Ngày về]"`
         **Cấu trúc Footer (JSON Keys) cho BMKT002:**
           * Ngoài 2 mảng dữ liệu chính, hàm trả về các **Keys** riêng biệt để điền vào phần chân trang/chữ ký của biểu mẫu Excel:
@@ -1041,6 +1066,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
               * `ly_do_thanh_toan`: Chuỗi cố định `"Thanh toán chi phí giao tiếp tháng: [MM-YYYY]"`.
               * `thoi_gian_de_nghi`: Gán mặc định là `"Trước ngày 20 tháng sau"`.
               * `nguoi_nhan` & `nguoi_de_nghi`: Được ghép tự động theo công thức `[Mã NV] + " - " + [Họ tên]` (Ví dụ: "MR0673 - Nguyễn Văn A").
+              * `ghi_chu`:
+                    + Phụ cấp đi lại + Phụ cấp ăn uống + Vé xe công tác = 1 dòng và Ghi chú là Phụ cấp đi lại [số tiền], Phục cấp ăn uống [số tiền], Vé xe công tác [Số tiền]
+                    + Nếu chọn hóa đơn => Ghi chú là: [Tên Khoản mục] ([Xe hoặc Khách sản động theo hóa đơn chọn])
 
     4.  **Xử lý Footer:**
         * Tính tổng số tiền và tự động chuyển đổi số tiền thành chữ tiếng Việt (Ví dụ: "Một triệu đồng chẵn").
@@ -1061,7 +1089,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
       "BMKT002": [
         {
           "stt": 1,
-          "ghi_chu": "abc",
+          "ghi_chu": "Tùy biến",
           "so_tien": 666666,
           "noi_dung": "Chi phí quà tặng dịp sinh nhật",
           "so_hoa_don": "000000397",
