@@ -109,6 +109,38 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 4.  **Feedback:**
     * Reload danh sách và hiển thị thông báo kết quả.
 
+
+#### User Flow: Upload chứng từ & Chi phí thực tế
+
+1.  **Start:** User truy cập Tab "**Chứng từ**".
+2.  **Load Data & UI Logic:**
+    * Hệ thống gọi API `get_form_seminar_hco_proof` lấy danh sách seminar cần báo cáo.
+    * **Logic hiển thị (Filter):**
+        * Sắp xếp: Mới nhất lên đầu.
+    * **Giao diện (UI) - Card View:**
+        * Mỗi Seminar hiển thị 1 Card tóm tắt: *Mã SMN - Ngày thực hiện - Tên HCO - Khoa/Phòng*.
+        * Action: Nút "Cập nhật báo cáo".
+
+3.  **Input Form (Action):**
+    * User bấm vào Card để mở form nhập liệu.
+    * **Phần 1: Nhập Chi phí thực tế (Actual Costs):**
+        * User điền số tiền thực tế đã chi cho từng hạng mục (Mặc định hiển thị 0 hoặc số tiền dự kiến).
+        * Các trường: `CP Hội trường`, `CP Máy chiếu`, `CP Ăn uống`, `CP Teabreak`, `CP Báo cáo viên`.
+    * **Phần 2: Upload hình ảnh (Proof):**
+        * User upload hình ảnh minh chứng (Hóa đơn, hình ảnh hội thảo...).
+        * **Validation:** Bắt buộc upload **tối thiểu 01 hình ảnh**.
+
+4.  **Submit:**
+    * User bấm "**Lưu Báo Cáo**".
+    * **Validation Frontend:**
+        * Các trường chi phí thực tế phải >= 0.
+        * Bắt buộc có ít nhất 1 hình ảnh.
+    * **Call API:** Update thông tin vào database `insert_form_seminar_hco_proof`.
+
+5.  **Feedback:**
+    * **Thành công:** Thông báo "Cập nhật chứng từ thành công".
+    * **Thất bại:** Hiển thị lỗi cụ thể.
+
 -----
 
 ## 5. Thiết kế Cơ sở dữ liệu (Database Schema)
@@ -146,12 +178,24 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | `so_luong_bs_ds` | int | Số lượng khách mời dự kiến |
 | `dia_diem` | text | Địa điểm tổ chức |
 | `muc_dich` | text | Mục đích tổ chức |
+| **--- KẾ HOẠCH (PLAN) ---** | | |
 | `chi_phi_hoi_truong` | numeric | Chi phí |
 | `chi_phi_may_chieu` | numeric | Chi phí |
 | `chi_phi_an_uong` | numeric | Chi phí |
 | `chi_phi_teabreak` | numeric | Chi phí |
 | `chi_phi_bao_cao_vien` | numeric | Chi phí |
 | `tang_pham` | numeric | Chi phí |
+| **--- THỰC TẾ (ACTUAL) ---** | | *Các cột này null khi mới tạo, update khi báo cáo* |
+| `thuc_te_chi_phi_hoi_truong` | numeric | Chi phí thực tế |
+| `thuc_te_chi_phi_may_chieu` | numeric | Chi phí thực tế |
+| `thuc_te_chi_phi_an_uong` | numeric | Chi phí thực tế |
+| `thuc_te_chi_phi_teabreak` | numeric | Chi phí thực tế |
+| `thuc_te_chi_phi_bao_cao_vien` | numeric | Chi phí thực tế |
+| `hinh_anh_1` | text | **Link ảnh chứng từ 1** (Bắt buộc khi báo cáo) |
+| `hinh_anh_2` | text | Link ảnh chứng từ 2 (Optional) |
+| `hinh_anh_3` | text | Link ảnh chứng từ 3 (Optional) |
+| `ngay_bao_cao` | timestamp | Thời gian user submit báo cáo thực tế |
+| **--- SYSTEM ---** | | |
 | `inserted_at` | timestamp | Thời gian tạo |
 | `updated_at` | timestamp | Thời gian cập nhật |
 
@@ -469,4 +513,79 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "status": "ok",
         "success_message": "Update successful."
     }
+    ```
+
+### 6.3. Nhóm Chứng từ & Báo cáo (Proof)
+
+#### **Function:** `get_form_seminar_hco_proof`
+
+* **Loại:** READ
+* **Mục đích:** Lấy danh sách seminar **đang thực hiện** để báo cáo.
+* **Logic:**
+    1. Filter `manv` = Input `manv` (Lấy đơn chính chủ).
+    2. Filter `status` = **'I'** (Chỉ lấy đơn đã được CXM duyệt).
+    3. Sort `ngay_thuc_hien` DESC.
+* **JSON Input:** `{ "manv": "NV001" }`
+* **JSON Output:**
+    ```json
+    {
+        "status": "ok",
+        "data": [
+            {
+                "id": "20251231_NV001_A",
+                "hco": "CUST01",
+                "ten_hco": "BV Bạch Mai",
+                "nganh_khoa_phong": "NOI_TIM_MACH",
+                "ngay_thuc_hien": "14-02-2025",
+                "smn_thang": "02-2025",
+                "nhom_san_pham": "EYE",
+                "dia_diem": "Hội trường A",
+                "muc_dich": "Giới thiệu thuốc",
+                "tong_cp_du_kien": 10000000,
+                // Các trường này ban đầu sẽ null vì chưa báo cáo
+                "thuc_te_chi_phi_hoi_truong": null,
+                "thuc_te_chi_phi_may_chieu": null,
+                "thuc_te_chi_phi_an_uong": null,
+                "thuc_te_chi_phi_teabreak": null,
+                "thuc_te_chi_phi_bao_cao_vien": null,
+                "hinh_anh_1": null,
+                "hinh_anh_2": null,
+                "hinh_anh_3": null
+            }
+        ]
+    }
+    ```
+
+#### **Function:** `insert_form_seminar_hco_proof`
+
+* **Loại:** WRITE (Update)
+* **Mục đích:** User cập nhật chi phí thực tế và đóng hồ sơ.
+* **Validation:**
+    * Check `status` hiện tại phải là **'I'**.
+    * Check `manv` đúng người tạo.
+* **Logic:**
+    1. Update các cột `thuc_te_*`.
+    2. Update 3 cột ảnh `hinh_anh_1` (bắt buộc từ FE), `hinh_anh_2`, `hinh_anh_3`.
+    3. Update `ngay_bao_cao`.
+    4. **Quan trọng:** Update `status` = **'C'** (Completed/Finished).
+* **JSON Input:** Array chỉ có 1 phần tử
+    ```json
+    [{
+        "id": "20251231_NV001_A",
+        "manv": "NV001",
+        "thuc_te_chi_phi_hoi_truong": 1000000,
+        "thuc_te_chi_phi_may_chieu": 200000,
+        "thuc_te_chi_phi_an_uong": 3200000,
+        "thuc_te_chi_phi_teabreak": 500000,
+        "thuc_te_chi_phi_bao_cao_vien": 2000000,
+        // Hình ảnh (Frontend đã validate hinh_anh_1 bắt buộc có)
+        "hinh_anh_1": "https://storage.googleapis.com/bucket/img_bill_01.jpg", 
+        "hinh_anh_2": "https://storage.googleapis.com/bucket/img_checkin.jpg",
+        "hinh_anh_3": "",
+        "ngay_bao_cao": "2025-12-31 10:00:00"
+    }]
+    ```
+* **JSON Output:**
+    ```json
+    { "status": "ok", "message": "Báo cáo thành công! Hồ sơ đã hoàn tất." }
     ```
