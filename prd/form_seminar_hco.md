@@ -67,8 +67,7 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
     * Hệ thống tải dữ liệu options qua API `get_form_seminar_hco_crs`.
     * **Logic chọn HCO:**
         * User tìm kiếm tên HCO (không dấu).
-        * User có thể chọn nhiều Khoa/Phòng (Switch).
-        * *Validation:* Hệ thống chặn nếu chọn các Khoa/Phòng thuộc các HCO khác nhau (Logic `unique_real_ids`).
+        * User chọn 1 HCO và 1 Khoa phòng cho mỗi lần.
     * **Các trường thông tin:**
         * `hco`: Danh sách Khoa/Phòng đã chọn.
         * `smn_thang`: Tháng thực hiện (Select).
