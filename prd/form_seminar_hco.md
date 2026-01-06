@@ -558,11 +558,9 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 #### **Function:** `insert_form_seminar_hco_proof`
 
-* **Loại:** WRITE (Update)
+* **Loại:** WRITE (UPSERT theo `id`)
 * **Mục đích:** User cập nhật chi phí thực tế và đóng hồ sơ.
-* **Validation:**
-    * Check `status` hiện tại phải là **'I'**.
-    * Check `manv` đúng người tạo.
+* **Validation:**: KHÔNG CẦN VALIDATION.
 * **Logic:**
     1. Update các cột `thuc_te_*`.
     2. Update 3 cột ảnh `hinh_anh_1` (bắt buộc từ FE), `hinh_anh_2`, `hinh_anh_3`.
