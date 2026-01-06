@@ -525,7 +525,10 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     1. Filter `manv` = Input `manv` (Lấy đơn chính chủ).
     2. Filter `status` = **'I'** (Chỉ lấy đơn đã được CXM duyệt).
     3. Sort `ngay_thuc_hien` DESC.
-* **JSON Input:** `{ "manv": "NV001" }`
+* **JSON Input:** 
+```json 
+    { "manv": "NV001" }
+```
 * **JSON Output:**
     ```json
     {

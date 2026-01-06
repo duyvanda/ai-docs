@@ -371,11 +371,11 @@ Sắp xếp dữ liệu theo:
               {
                 "ma_qua_tang": "GIFT01",
                 "ten_qua": "Hộp Bánh",
-                "so_luong": 1
+                "so_luong": 1,
+                "ghi_chu_admin": "Khách VIP"
               }
           ],
           "ghi_chu": "Khách nhận đủ",
-          "ghi_chu_admin": "Khách VIP",
           "trang_thai_upload": true
         },
         {
@@ -390,7 +390,8 @@ Sắp xếp dữ liệu theo:
               {
                 "ma_qua_tang": "GIFT01",
                 "ten_qua": "Hộp Bánh",
-                "so_luong": 1
+                "so_luong": 1,
+                "ghi_chu_admin": "Khách VIP"
               }
           ],
           "ghi_chu": null,
