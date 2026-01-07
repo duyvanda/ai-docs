@@ -36,7 +36,7 @@ Dữ liệu được tích hợp với:
 
 ### 4.0 Admin upload settings
 
-Admin vô `/formcontrol/form_seminar_hco_settings` tải file mẫu và upload lên lại.
+Admin vô `/formcontrol/form_seminar_hco_settings` tải file mẫu và upload lên lại. Admin luôn bắt đầu ở tab `De xuat`.
 
 #### Up file excel 3 sheets và frontend xử lý như sau.
 
@@ -125,7 +125,7 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
     * User bấm vào Card để mở form nhập liệu.
     * **Phần 1: Nhập Chi phí thực tế (Actual Costs):**
         * User điền số tiền thực tế đã chi cho từng hạng mục (Mặc định hiển thị 0 hoặc số tiền dự kiến).
-        * Các trường: `CP Hội trường`, `CP Máy chiếu`, `CP Ăn uống`, `CP Teabreak`, `CP Báo cáo viên`.
+        * Các trường: `CP Hội trường`, `CP Máy chiếu`, `CP Ăn uống`, `CP Teabreak`, `CP Báo cáo viên`. Chi phí (Thực tế phải ≤ Đề xuất). Frontend đã validate.
     * **Phần 2: Upload hình ảnh (Proof):**
         * User upload hình ảnh minh chứng (Hóa đơn, hình ảnh hội thảo...).
         * **Validation:** Bắt buộc upload **tối thiểu 01 hình ảnh**.
@@ -250,7 +250,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống cho Form đăng ký Seminar. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
 * **Bảng ảnh hưởng:** `settings_data`.
 
-* **Validation (Các quy tắc chặn lỗi):**  KHÔNG CẦN VALIDATION
+* **Validation (Các quy tắc chặn lỗi):**  Người nhập phải là CXM.
 
 * **JSON Input (`body`):** Mảng chỉ có 1 phần tử.
     ```json
@@ -538,7 +538,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Mục đích:** Lấy danh sách seminar **đang thực hiện** để báo cáo.
 * **Logic:**
     1. Filter `manv` = Input `manv` (Lấy đơn chính chủ).
-    2. Filter `status` = **'I'** (Chỉ lấy đơn đã được CXM duyệt).
+    2. Filter `status` = **'C'** (Chỉ lấy đơn đã được CXM duyệt).
     3. Sort `ngay_thuc_hien` DESC.
 * **JSON Input:** 
 ```json 
@@ -589,11 +589,17 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     [{
         "id": "20251231_NV001_A",
         "manv": "NV001",
+        "chi_phi_an_uong": 1000000,
+        "chi_phi_teabreak": 1000000,
+        "chi_phi_may_chieu": 1000000,
+        "chi_phi_hoi_truong": 1000000,
+        "chi_phi_bao_cao_vien": 0,
         "thuc_te_chi_phi_hoi_truong": 1000000,
         "thuc_te_chi_phi_may_chieu": 200000,
         "thuc_te_chi_phi_an_uong": 3200000,
         "thuc_te_chi_phi_teabreak": 500000,
         "thuc_te_chi_phi_bao_cao_vien": 2000000,
+        "status":"U",
         // Hình ảnh (Frontend đã validate hinh_anh_1 bắt buộc có)
         "hinh_anh_1": "https://storage.googleapis.com/bucket/img_bill_01.jpg", 
         "hinh_anh_2": "https://storage.googleapis.com/bucket/img_checkin.jpg",
