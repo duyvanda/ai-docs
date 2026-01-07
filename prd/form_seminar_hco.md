@@ -7,6 +7,7 @@
 Module này cho phép Trình dược viên (Sales Rep) tạo các đề xuất tổ chức hội thảo (Seminar) tại các cơ sở y tế (HCO), tính toán chi phí dự kiến và thực hiện quy trình phê duyệt 2 cấp (CRM -> CXM) để kiểm soát ngân sách.
 
 Dữ liệu được tích hợp với:
+
 * **Hệ thống nhân sự (HRM):** Xác thực chức danh (`d_hr_dsns`) để phân quyền duyệt.
 * **Hệ thống khách hàng (DMS/CRM):** Lấy danh sách HCO, HCP (`view_list_hcp`) và thông tin khách hàng (`d_master_khachhang`).
 * **Hệ thống doanh số (Sales):** Lấy dữ liệu doanh số lịch sử (`f_raw_data_sales_yoy`) để hỗ trợ ra quyết định.
@@ -27,7 +28,7 @@ Dữ liệu được tích hợp với:
 | :--- | :--- |
 | **User (Trình dược viên)** | - Tìm kiếm HCO, chọn Khoa/Phòng.<br>- Nhập thông tin kế hoạch, dự toán chi phí và gửi đề xuất mới chờ duyệt. |
 | **CRM (Quản lý vùng)** | - Xem danh sách các đề xuất mới từ nhân viên trực thuộc.<br>- Duyệt để chuyển lên cấp tiếp theo hoặc Từ chối trả về. |
-| **CXM (Giám đốc trải nghiệm)** | - Xem danh sách các đề xuất đã được Quản lý vùng thông qua.<br>- Thực hiện phê duyệt cuối cùng hoặc Từ chối. |
+| **CXM (Giám đốc trải nghiệm)** | - Upload cấu hình.<br>- Xem danh sách các đề xuất đã được Quản lý vùng thông qua.<br>- Thực hiện phê duyệt cuối cùng hoặc Từ chối. |
 
 -----
 
@@ -439,7 +440,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "nganh_khoa_phong": "NOI_TIM_MACH",
                 "tong_sl_nvyt": 15,
                 "smn_thang": "01-02-2025",
-                "tuan_thuc_hien": "W1",
+                "ngay_thuc_hien": "13/12/2026",
                 "nhom_san_pham": "EYE",
                 "so_luong_bs_ds": 10,
                 "dia_diem": "Hội trường A",
@@ -464,7 +465,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "nganh_khoa_phong": "NGOAI_TIEU_HOA",
                 "tong_sl_nvyt": 20,
                 "smn_thang": "01-02-2025",
-                "tuan_thuc_hien": "W2",
+                "ngay_thuc_hien": "13/12/2026",
                 "nhom_san_pham": "ANTI",
                 "so_luong_bs_ds": 15,
                 "dia_diem": "Phòng họp B",
