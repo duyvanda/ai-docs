@@ -39,7 +39,7 @@ Copy toàn bộ đoạn code ở mục **[3. SOURCE CODE]** bên dưới và dá
 
 ```javascript
 /**
- * SCRIPT KIỂM TRA DỮ LIỆU TỰ ĐỘNG (DATE & NUMBER)
+ * SCRIPT KIỂM TRA DỮ LIỆU TỰ ĐỘNG (DATE & NUMBER & DUP)
  * Phiên bản: High Performance - Toast Notification (Siêu Tốc)
  */
 
@@ -50,17 +50,11 @@ function onEdit(e) {
     // ============================================================
     var CONFIG = {
       // TÊN SHEET (Phải giống hệt tên dưới tab)
-      "HOP DONG NAM 2025 - KENH TP": { 
-        skipRows: 4,                   // Số dòng tiêu đề muốn bỏ qua (không kiểm tra)
-        dateCols: [1, 20, 21, 23, 24], // Danh sách cột bắt buộc là NGÀY (A=1, B=2...)
-        numCols: []                    // Danh sách cột bắt buộc là SỐ (Để trống [] nếu không có)
-      },
-      
-      // Thêm cấu hình cho Sheet khác (Copy block trên để thêm)
-      "HOP DONG NAM 2025 - KENH MT": { 
-        skipRows: 4, 
-        dateCols: [1, 20, 21, 23, 24], 
-        numCols: [] 
+      "Sheet1": { 
+        skipRows: 0,                   // Số dòng tiêu đề muốn bỏ qua (không kiểm tra)
+        dateCols: [14, 15],          // Cột N (14), O (15)
+        numCols: [12, 13, 16],       // Cột L (12), M (13), P (16)
+        uniqueCols: [5, 13],         // Cặp E (5) + M (13) không được trùng
       }
     };
 
@@ -86,6 +80,7 @@ function onEdit(e) {
 
     var errorDetail = ""; 
     var hasError = false;
+    var lastRow = sheet.getLastRow();
 
     // Vòng lặp quét lỗi (Dừng ngay khi thấy lỗi đầu tiên để tối ưu tốc độ)
     for (var i = 0; i < numRows; i++) {
@@ -116,12 +111,55 @@ function onEdit(e) {
         
         // --- CHECK SỐ (NUMBER) ---
         if (settings.numCols.indexOf(colIndex) !== -1) {
-           // Nếu không phải number HOẶC là Date (Date cũng là object nhưng ko phải số thuần)
-           if (typeof cellVal !== 'number' || (cellVal instanceof Date)) {
+           // Dùng Number() để check, chấp nhận cả số 0 và số dạng text
+           if ((cellVal instanceof Date) || isNaN(Number(cellVal))) {
              hasError = true;
-             var valShow = (cellVal instanceof Date) ? "Ngày tháng" : ("'" + cellVal + "'");
-             errorDetail = "Dòng " + currentRow + ": " + valShow + " không phải số";
+             var valShow = (cellVal instanceof Date) ? "Dữ liệu ngày" : ("'" + cellVal + "'");
+             
+             // Hiển thị số cột trực tiếp
+             errorDetail = "Dòng " + currentRow + " (Cột " + colIndex + "): " + valShow + " không phải là số";
            }
+        }
+
+        // --- CHECK TRÙNG CẶP [5, 13] ---
+        if (settings.uniqueCols.indexOf(colIndex) !== -1) {
+          // 1. Xác định vị trí 2 cột cần check (Cấu hình là [5, 13])
+          var colA_Idx = settings.uniqueCols[0];
+          var colB_Idx = settings.uniqueCols[1];
+
+          // 2. Lấy giá trị đầy đủ của dòng hiện tại (cần lấy từ sheet để đảm bảo có đủ cặp)
+          var valA = sheet.getRange(currentRow, colA_Idx).getValue();
+          var valB = sheet.getRange(currentRow, colB_Idx).getValue();
+
+          // 3. Chỉ thực hiện kiểm tra khi cả 2 ô đều đã có dữ liệu
+          if (valA !== "" && valB !== "") {
+            var keyCurrent = String(valA).trim().toLowerCase() + "_" + String(valB).trim().toLowerCase();
+            
+            // 4. Lấy dữ liệu toàn bộ của 2 cột này để so sánh
+            // (Lấy 1 lần cho cột A và B để tối ưu tốc độ đọc)
+            var dataColA = sheet.getRange(1, colA_Idx, lastRow, 1).getValues();
+            var dataColB = sheet.getRange(1, colB_Idx, lastRow, 1).getValues();
+
+            var count = 0;
+            // 5. Quét toàn bộ các dòng để đếm
+            for (var k = settings.skipRows; k < lastRow; k++) {
+              // Bỏ qua các ô trống trong data cũ để tránh lỗi
+              var vA = String(dataColA[k][0]).trim().toLowerCase();
+              var vB = String(dataColB[k][0]).trim().toLowerCase();
+              
+              if (vA === "" || vB === "") continue;
+
+              if ((vA + "_" + vB) === keyCurrent) {
+                count++;
+              }
+              // Nếu xuất hiện hơn 1 lần (1 lần là chính dòng đang nhập) -> Lỗi
+              if (count > 1) {
+                hasError = true;
+                errorDetail = "Dòng " + currentRow + ": Cặp (" + valA + " - " + valB + ") bị trùng lặp!";
+                break; 
+              }
+            }
+          }
         }
 
         if (hasError) break; // Thấy lỗi dừng ngay vòng lặp cột
@@ -166,7 +204,8 @@ Khi áp dụng cho file mới, bạn chỉ cần sửa phần `CONFIG` ở đầ
 "TÊN_SHEET_CHÍNH_XÁC": { 
   skipRows: X,            // X là số dòng tiêu đề bỏ qua
   dateCols: [A, B, C],    // Điền số thứ tự cột Ngày
-  numCols:  [D, E]        // Điền số thứ tự cột Số
+  numCols:  [D, E],
+  uniqueCols: [F, G]       // Điền số thứ tự cột Số
 },
 ```
 
