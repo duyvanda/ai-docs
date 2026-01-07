@@ -153,6 +153,21 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | `msnvcsmmoi` | text | **PK** - Mã nhân viên |
 | `chucdanhengtitlesum` | text | Chức danh (Dùng để check Role CXM/CRM) |
 
+**Table `d_users`** (Nhân sự)
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `manv` | text | **PK** - Mã nhân viên |
+| `supid` | text | Quản lý |
+
+**Table `f_raw_data_sales_yoy`** (Nhân sự)
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `ngaychungtu` | timestamp | Ngày xác định doanh số |
+| `pubcustid` | text | Mã HCO chung |
+| `doanhsochuavat` | float | Doanh số chưa VAT |
+| `brandnew2023` | text | nhóm sp theo brand |
+
+
 **Table `view_list_hcp`** (Danh sách HCO/HCP)
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
