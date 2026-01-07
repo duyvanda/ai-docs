@@ -504,7 +504,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Validation:** KHÔNG CÓ VALIDATION.
 * **Logic:**
     1.  Tạo bảng tạm từ JSON input.
-    2.  Update `status` và `inserted_at` vào bảng chính.
+    2.  Update `status` và `updated_at` vào bảng chính.
 * **JSON Input (`body`):** *Array 2 phần tử ví dụ*
     ```json
     [
@@ -583,7 +583,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     1. Update các cột `thuc_te_*`.
     2. Update 3 cột ảnh `hinh_anh_1` (bắt buộc từ FE), `hinh_anh_2`, `hinh_anh_3`.
     3. Update `ngay_bao_cao`.
-    4. **Quan trọng:** Update `status` = **'C'** (Completed/Finished).
+    4. **Quan trọng:** Update `status` = **'U'** (Updated).
 * **JSON Input:** Array chỉ có 1 phần tử
     ```json
     [{
@@ -603,5 +603,5 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     ```
 * **JSON Output:**
     ```json
-    { "status": "ok", "message": "Báo cáo thành công! Hồ sơ đã hoàn tất." }
+    { "status": "ok", "success_message": "Báo cáo thành công! Hồ sơ đã hoàn tất." }
     ```

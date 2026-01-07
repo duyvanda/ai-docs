@@ -102,14 +102,40 @@ function onEdit(e) {
 
         // --- CHECK NGÀY THÁNG ---
         if (settings.dateCols.indexOf(colIndex) !== -1) {
-          if (!(cellVal instanceof Date)) {
+          var dateObj = cellVal;
+
+          // 1. XỬ LÝ LỖI NHẬP TEXT (31-12-2025, 31.12.2025...)
+          if (!(dateObj instanceof Date) && typeof dateObj === 'string') {
+             // Đổi hết gạch ngang (-) và dấu chấm (.) thành gạch chéo (/)
+             var cleanStr = dateObj.replace(/-/g, '/').replace(/\./g, '/'); 
+             var parts = cleanStr.split('/');
+             
+             // Nếu đủ 3 phần ngày/tháng/năm thì ép kiểu thủ công
+             if (parts.length === 3) {
+                var d = parseInt(parts[0], 10);
+                var m = parseInt(parts[1], 10);
+                var y = parseInt(parts[2], 10);
+
+                var tempDate = new Date(y, m - 1, d);
+
+                // Kiểm tra kỹ: ngày tạo ra phải khớp (tránh trường hợp 30/02 nó tự nhảy sang 02/03)
+                if (tempDate.getFullYear() === y && 
+                    tempDate.getMonth() === (m - 1) && 
+                    tempDate.getDate() === d) {
+                   dateObj = tempDate; 
+                }
+             }
+          }
+
+          // 2. KIỂM TRA HỢP LỆ
+          if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
             hasError = true;
-            errorDetail = "Dòng " + currentRow + ": '" + cellVal + "' không phải ngày";
+            errorDetail = "Dòng " + currentRow + ": '" + cellVal + "' không đúng định dạng ngày (dd/mm/yyyy)";
           } else {
-            var y = cellVal.getFullYear();
+            var y = dateObj.getFullYear();
             if (y < minYear || y > maxYear) {
               hasError = true;
-              var dStr = Utilities.formatDate(cellVal, "GMT+7", "dd/MM/yyyy");
+              var dStr = Utilities.formatDate(dateObj, "GMT+7", "dd/MM/yyyy");
               errorDetail = "Dòng " + currentRow + ": Năm " + y + " sai (" + dStr + ")";
             }
           }
