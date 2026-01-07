@@ -237,9 +237,9 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 * **Validation (Các quy tắc chặn lỗi):**  KHÔNG CẦN VALIDATION
 
-* **JSON Input (`body`):**
+* **JSON Input (`body`):** Mảng chỉ có 1 phần tử.
     ```json
-    {
+    [{
         "appid": "form_seminar_hco",
         "manv": "ADMIN_01",
         "inserted_at": "2025-10-27 10:30:00",
@@ -273,7 +273,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             ],
             "quy_tac_chung": "1/ Chỉ được chọn thực hiện SMN tại 1 khoa phòng\n2/ Số lượng NVYT tham dự là số lượng thực tế tham dự SMN\n3/ Các nội dung không có chi phí : điền số 0\n4/ Lưu ý chi phí teabreak: (lưu ý cần hình ảnh báo cáo bánh nước/ cơm phần)\n   - Bánh nước : ko quá 1 triệu , ko quá 100k/ người (1 phần bánh nước)\n   - Cơm phần : ko quá 2 triệu, ko quá 150k/ người\n5/ Định nghĩa mục đích thực hiện SMN"
         }
-    }
+    }]
     ```
 
 * **Logic (PostgreSQL Function Logic):**
