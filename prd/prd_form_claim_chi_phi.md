@@ -330,11 +330,13 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         * **Điều kiện:** Chỉ lấy nếu nhân viên thuộc phòng 'HCP'.
         * **Logic phân quyền:** Kiểm tra `manv` của user có nằm trong chuỗi phân công `concat_crs_sup` của bác sĩ đó không (HCP phải thuộc địa bàn quản lý).
         * **Trạng thái:** Chỉ lấy `status = 'active'`.
+        * **Ngoại lệ:** Đối với tất cả các mã phòng ban khác, giá trị `data_hcp` mặc định trả về là một mảng rỗng `[]`.
 
 
     3. **Lọc danh sách Khách hàng (`data_kh_chung`):**
         * **Trường hợp 1 (Phòng HCP):** Lấy danh sách `hco_bv` (Bệnh viện/PK) duy nhất (`DISTINCT`) từ danh sách bác sĩ đã lọc được ở bước 2.
-        * **Trường hợp 2 (Phòng TP/MT):** Truy vấn bảng `d_master_khachhang`. Lọc theo điều kiện `manv` và `supid` nằm trong thuộc địa bàn quản lý.
+        * **Trường hợp 2 (Phòng TP):** Truy vấn bảng `d_master_khachhang`. Lọc theo điều kiện `manv` và `supid` nằm trong thuộc địa bàn quản lý. Lấy `custid` và `custname`.
+        * **Trường hợp 3 (Phòng MT):** Truy vấn bảng `d_master_khachhang`. Lấy tất cả DISTINCT của `pubcustid` và `pubcustname`.
 
 
     4. **Lọc danh mục Dịp/Nội dung (`lst_noi_dung` & `lst_noi_dung_giao_tiep`):**
