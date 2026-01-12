@@ -332,7 +332,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "hco_options": [
             {
                 "id": "CUST01@@NOI_TIM_MACH",
-                "ten_gop_hco": "BV Bạch Mai - Nội Tim Mạch (15 HCPs)",
+                "ten_gop_hco": "BV Bạch Mai - Nội Tim Mạch (2 HCPs)",
                 "sl_nvyt": 2,
                 "danh_sach_hcp": [
                     { "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si" },
@@ -341,7 +341,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             },
             {
                 "id": "CUST02@@NGOAI_TIEU_HOA",
-                "ten_gop_hco": "BV Việt Đức - Ngoại Tiêu Hóa (10 HCPs)",
+                "ten_gop_hco": "BV Việt Đức - Ngoại Tiêu Hóa (1 HCPs)",
                 "sl_nvyt": 1,
                 "danh_sach_hcp": [
                     { "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si" }
