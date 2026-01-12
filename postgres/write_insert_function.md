@@ -20,6 +20,7 @@
 
 ### 1. Parse Input
 - Parse các input fields từ **JSON request**
+    * xài > json_array_elements > json_populate_record
 
 ### 2. Tạo Temporary Table (Input)
 - Tạo **TEMP TABLE** chứa:

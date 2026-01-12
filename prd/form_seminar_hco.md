@@ -317,7 +317,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Mục đích:** Lấy dữ liệu khởi tạo cho dropdowns (HCO, Tháng, Tuần, Sản phẩm) và check chức danh user.
 * **Logic:**
     1. Lấy chức danh từ `d_hr_dsns`.
-    2. Lấy list HCO từ `view_list_hcp` (Filter theo `concat_crs_sup` chứa `manv`).
+    2. Lấy list HCO từ `view_list_hcp` (Filter theo `concat_crs_sup` chứa `manv`). Và chi tiết hcp trong bv dạng mảng.
     3. Lấy trong settings của appid này ra.
 * **JSON Input (`url_param`):**
     ```json
@@ -333,7 +333,11 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             {
                 "id": "CUST01@@NOI_TIM_MACH",
                 "ten_gop_hco": "BV Bạch Mai - Nội Tim Mạch (15 HCPs)",
-                "sl_nvyt": 15
+                "sl_nvyt": 15,
+                "danh_sach_hcp": [
+                    { "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si" },
+                    { "ten_hcp": "Nguyen Van B", "chuc_vu": "Y Ta" }
+                ]
             },
             {
                 "id": "CUST02@@NGOAI_TIEU_HOA",
@@ -429,7 +433,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 * **Mục đích:** Lấy danh sách cần duyệt theo vai trò (CRM/CXM).
 * **Logic Filter:**
     * Check `d_hr_dsns`: Nếu title chứa `%CXM%` -> Filter `status = 'I'`. Ngược lại -> Filter `status = 'H'`.
-    * **Data Enrichment:** Join để lấy tên NV, tên HCO, và tính tổng doanh số (`ds_tong_hco`, `ds_nhom_sp_chinh`) từ `f_raw_data_sales_yoy`.
+    * **Data Enrichment:** Join để lấy tên NV, tên HCO, và tính tổng doanh số (`ds_tong_hco`, `ds_nhom_sp_chinh`) và last year từ `f_raw_data_sales_yoy`.
 * **JSON Input (`url_param`):**
     ```json
     {
@@ -452,6 +456,8 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "ten_hco": "BV Bạch Mai",
                 "ds_tong_hco": 150000000,
                 "ds_nhom_sp_chinh": 50000000,
+                "ds_tong_hco_ly": 150000000, // last year
+                "ds_nhom_sp_chinh_ly": 50000000, // last year
                 "nganh_khoa_phong": "NOI_TIM_MACH",
                 "tong_sl_nvyt": 15,
                 "smn_thang": "01-02-2025",

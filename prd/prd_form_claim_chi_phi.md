@@ -334,7 +334,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 
     3. **Lọc danh sách Khách hàng (`data_kh_chung`):**
-        * **Trường hợp 1 (Phòng HCP):** Lấy danh sách `hco_bv` (Bệnh viện/PK) duy nhất (`DISTINCT`) từ danh sách bác sĩ đã lọc được ở bước 2.
+        * **Trường hợp 1 (Phòng HCP):** Truy vấn bảng `view_list_hcp`. Lấy danh sách `hco_bv` (Bệnh viện/PK) duy nhất (`DISTINCT`) từ danh sách bác sĩ đã lọc được ở bước 2.
         * **Trường hợp 2 (Phòng TP):** Truy vấn bảng `d_master_khachhang`. Lọc theo điều kiện `manv` và `supid` nằm trong thuộc địa bàn quản lý. Lấy `custid` và `custname`.
         * **Trường hợp 3 (Phòng MT):** Truy vấn bảng `d_master_khachhang`. Lấy tất cả DISTINCT của `pubcustid` và `pubcustname`.
 
