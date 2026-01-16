@@ -174,6 +174,8 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | `hco_bv` | text | Mã Bệnh viện |
 | `nganh_khoa_phong` | text | Tên Khoa/Phòng |
 | `concat_crs_sup` | text | Chuỗi phân cấp quản lý ví dụ NV1-SUP1 (Dùng để filter theo User) |
+| `ten_hcp` | text | ... |
+| `chuc_vu` | text | ... |
 
 ### Các table mới của hệ thống (New Tables):
 
@@ -238,6 +240,16 @@ Lưu trữ danh sách các HCP được nhân viên CRS (Client) chủ động b
 | `chuc_vu` | text | Chức vụ (Giá trị: Bác sĩ, Dược sĩ, Điều dưỡng...). |
 | `inserted_at` | timestamp | Thời gian tạo bản ghi |
 
+**Table 4: `d_tracking_cost_hcp_v2`**
+
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `ma_hco_chung` | text | . |
+| `khoa_phong` | text | . |
+| `hoat_dong` | text | . |
+| `chi_phi_thuc_hien_dong` | float | . |
+| `nam_thuc_hien` | text | . |
+
 -----
 
 ## 6. API & Function Specifications (Chi tiết kỹ thuật)
@@ -254,41 +266,90 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 * **JSON Input (`body`):** Mảng chỉ có 1 phần tử.
     ```json
-    [{
-        "appid": "form_seminar_hco",
-        "manv": "ADMIN_01",
-        "inserted_at": "2025-10-27 10:30:00",
-        "settings_data": {
-            "list_nhom_san_pham_gioi_thieu": [
-                "ENT", "EYE", "ANTI", "GI", "DERMA", "ORAL CARE"
-            ],
-            "list_dia_diem_thuc_hien": [
-                "Tại khoa", "Bên ngoài"
-            ],
-            "list_muc_dich_thuc_hien": [
-                "Giới thiệu thông tin sản phẩm mới", 
-                "Nhắc lại thông tin sản phẩm",
-                "Commitment", 
-                "Mesabi", 
-                "SunoHada", 
-                "ENT tập trung 2026", 
-                "Nhập hàng"
-            ],
-            "list_dinh_muc_chi_phi": [
-                { "ma_chi_phi": "hoi_truong", "ten_hien_thi": "Chi phí thuê hội trường", "max_chi_phi": 10000000 },
-                { "ma_chi_phi": "may_chieu", "ten_hien_thi": "Chi phí thuê máy chiếu", "max_chi_phi": 1000000 },
-                { "ma_chi_phi": "an_uong", "ten_hien_thi": "Chi phí ăn uống", "max_chi_phi": 5000000 },
-                { "ma_chi_phi": "teabreak", "ten_hien_thi": "Teabreak", "max_chi_phi": 2000000 },
-                { "ma_chi_phi": "bao_cao_vien", "ten_hien_thi": "Mời báo cáo viên", "max_chi_phi": 7000000 },
-                { "ma_chi_phi": "tang_pham", "ten_hien_thi": "Tặng phẩm", "max_chi_phi": 450000 }
-            ],
-            "list_phan_bo_ngan_sach": [
-                { "zone": "ZONE 1", "ncrm": "Ngô Tiến Vũ", "ma_nhan_vien": "MR1111", "ten_nhan_vien": "Bùi Hữu Toàn", "dinh_muc_quy": 50000000 },
-                { "zone": "ZONE 2", "ncrm": "Hoàng Trung Thành", "ma_nhan_vien": "MR1116", "ten_nhan_vien": "Nguyễn Thị Dung", "dinh_muc_quy": 50000000 }
-            ],
-            "quy_tac_chung": "1/ Chỉ được chọn thực hiện SMN tại 1 khoa phòng\n2/ Số lượng NVYT tham dự là số lượng thực tế tham dự SMN\n3/ Các nội dung không có chi phí : điền số 0\n4/ Lưu ý chi phí teabreak: (lưu ý cần hình ảnh báo cáo bánh nước/ cơm phần)\n   - Bánh nước : ko quá 1 triệu , ko quá 100k/ người (1 phần bánh nước)\n   - Cơm phần : ko quá 2 triệu, ko quá 150k/ người\n5/ Định nghĩa mục đích thực hiện SMN"
+    [
+        {
+            "appid": "form_seminar_hco",
+            "manv": "MR1119",
+            "inserted_at": "2026-01-12T16:48:44.478",
+            "settings_data": {
+                "list_nhom_san_pham_gioi_thieu": [
+                    "ENT",
+                    "EYE",
+                    "ANTI",
+                    "GI",
+                    "DERMA",
+                    "ORAL CARE"
+                ],
+                "list_dia_diem_thuc_hien": [
+                    "Tại khoa",
+                    "Bên ngoài"
+                ],
+                "list_muc_dich_thuc_hien": [
+                    "Giới thiệu thông tin sản phẩm mới",
+                    "Nhắc lại thông tin sản phẩm",
+                    "Commitment",
+                    "Mesabi",
+                    "SunoHada",
+                    "ENT tập trung 2026",
+                    "Nhập hàng"
+                ],
+                "list_chuc_vu_bo_sung": [
+                    "Bác sĩ",
+                    "Dược sĩ",
+                    "Điều dưỡng"
+                ],
+                "quy_tac_chung": "1/ Chỉ được chọn thực hiện SMN tại 1 khoa phòng\n2/ Số lượng NVYT tham dự là số lượng thực tế tham dự SMN\n3/ Các nội dung không có chi phí : điền số 0\n4/ Lưu ý chi phí teabreak: (lưu ý cần hình ảnh báo cáo bánh nước/ cơm phần)\n- Bánh nước : ko quá 1 triệu , ko quá 100k/ người (1 phần bánh nước)\n- Cơm phần : ko quá 2 triệu, ko quá 150k / người ( 1 phần cơm phần)",
+                "list_dinh_muc_chi_phi": [
+                    {
+                        "ma_chi_phi": "hoi_truong",
+                        "ten_hien_thi": "Chi phí thuê hội trường",
+                        "max_chi_phi": 10000000
+                    },
+                    {
+                        "ma_chi_phi": "may_chieu",
+                        "ten_hien_thi": "Chi phí thuê máy chiếu",
+                        "max_chi_phi": 1000000
+                    },
+                    {
+                        "ma_chi_phi": "an_uong",
+                        "ten_hien_thi": "Chi phí ăn uống",
+                        "max_chi_phi": 5000000
+                    },
+                    {
+                        "ma_chi_phi": "teabreak",
+                        "ten_hien_thi": "Teabreak",
+                        "max_chi_phi": 2000000
+                    },
+                    {
+                        "ma_chi_phi": "bao_cao_vien",
+                        "ten_hien_thi": "Mời báo cáo viên",
+                        "max_chi_phi": 7000000
+                    },
+                    {
+                        "ma_chi_phi": "tang_pham",
+                        "ten_hien_thi": "Tặng phẩm",
+                        "max_chi_phi": 450000
+                    }
+                ],
+                "list_phan_bo_ngan_sach": [
+                    {
+                        "zone": "ZONE 1",
+                        "ncrm": "Vũ Mừng",
+                        "ma_nhan_vien": "MR0673",
+                        "ten_nhan_vien": "Hồ Thị Hồng Gấm",
+                        "dinh_muc_quy": 50000000
+                    },
+                    {
+                        "zone": "ZONE 1",
+                        "ncrm": "Vũ Mừng",
+                        "ma_nhan_vien": "MR1391",
+                        "ten_nhan_vien": "Lê Văn Tùng",
+                        "dinh_muc_quy": 50000000
+                    }
+                ]
+            }
         }
-    }]
+    ]
     ```
 
 * **Logic (PostgreSQL Function Logic):**
@@ -348,10 +409,6 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 ]
             }
         ],
-        "smn_thang_options": [
-            { "value": "01-02-2025", "label": "02-2025" },
-            { "value": "01-03-2025", "label": "03-2025" }
-        ],
         // lấy từ settings
         "list_nhom_san_pham_gioi_thieu": [
             "ENT", "EYE", "ANTI", "GI", "DERMA", "ORAL CARE"
@@ -368,6 +425,13 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             "ENT tập trung 2026", 
             "Nhập hàng"
         ],
+        "list_chuc_vu_bo_sung": [
+            "Bác sĩ",
+            "Dược sĩ",
+            "Điều dưỡng"
+        ],
+        "quy_tac_chung": "Nhớ nhập hết",
+        "max_chi_phi_tang_pham":450000,
         "chucdanhengtitlesum": "CRS",
         "time": "2025-12-31 10:00:00+07"
     }
@@ -475,34 +539,10 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "chi_phi_teabreak": 500000,
                 "chi_phi_bao_cao_vien": 2000000,
                 "tang_pham": 0,
+                "cp_seminar": 0,
+                "cp_sms": 0,
+                "cp_sms_ket_noi": 0,
                 "inserted_at": "2025-12-31 08:00:00"
-            },
-            {
-                "id": "20251231_NV001_B",
-                "manv": "NV001",
-                "status": "H",
-                "hco": "CUST02",
-                "ten_nhan_vien": "Nguyễn Văn A",
-                "ten_hco": "BV Việt Đức",
-                "ds_tong_hco": 200000000,
-                "ds_nhom_sp_chinh": 80000000,
-                "ds_tong_hco_ly": 150000000, // last year
-                "ds_nhom_sp_chinh_ly": 50000000, // last year
-                "nganh_khoa_phong": "NGOAI_TIEU_HOA",
-                "tong_sl_nvyt": 20,
-                "smn_thang": "01-02-2025",
-                "ngay_thuc_hien": "13/12/2026",
-                "nhom_san_pham": "ANTI",
-                "so_luong_bs_ds": 15,
-                "dia_diem": "Phòng họp B",
-                "muc_dich": "Training",
-                "chi_phi_hoi_truong": 0,
-                "chi_phi_may_chieu": 0,
-                "chi_phi_an_uong": 2000000,
-                "chi_phi_teabreak": 500000,
-                "chi_phi_bao_cao_vien": 0,
-                "tang_pham": 1000000,
-                "inserted_at": "2025-12-31 09:00:00"
             }
         ]
     }
@@ -562,6 +602,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "data": [
             {
                 "id": "20251231_NV001_A",
+                "seminar_id_cxm": "SMN.01.xxx",
                 "hco": "CUST01",
                 "ten_hco": "BV Bạch Mai",
                 "nganh_khoa_phong": "NOI_TIM_MACH",
