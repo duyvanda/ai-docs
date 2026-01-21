@@ -49,7 +49,7 @@ function onEdit(e) {
     // PHẦN 1: CẤU HÌNH (BẠN CHỈ CẦN SỬA Ở ĐÂY)
     // ============================================================
     var CONFIG = {
-      // TÊN SHEET (Phải giống hệt tên dưới tab)
+      // TÊN SHEET (Phải giống hệt tên dưới tab), Lưu ý nếu check trùng MỘT CỘT thì ghi là [1,1]
       "Sheet1": { 
         skipRows: 0,                   // Số dòng tiêu đề muốn bỏ qua (không kiểm tra)
         dateCols: [14, 15],          // Cột N (14), O (15)
@@ -60,7 +60,7 @@ function onEdit(e) {
         skipRows: 0,                   // Số dòng tiêu đề muốn bỏ qua (không kiểm tra)
         dateCols: [14, 15],          // Cột N (14), O (15)
         numCols: [12, 13, 16],       // Cột L (12), M (13), P (16)
-        uniqueCols: [5, 13],         // Cặp E (5) + M (13) không được trùng
+        uniqueCols: [1, 1],         // Một cột A không được trùng
       }
     };
 
