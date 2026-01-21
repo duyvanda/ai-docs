@@ -658,6 +658,8 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "hinh_anh_1": "https://storage.googleapis.com/bucket/img_bill_01.jpg", 
         "hinh_anh_2": "https://storage.googleapis.com/bucket/img_checkin.jpg",
         "hinh_anh_3": "",
+        "hinh_anh_4": "",
+        "hinh_anh_5": "",
         "ngay_bao_cao": "2025-12-31 10:00:00"
     }]
     ```
