@@ -604,7 +604,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "data": [
             {
                 "id": "20251231_NV001_A",
-                "seminar_id_cxm": "SMN.01.xxx",
+                "seminar_id_cxm": null, // set to null
                 "hco": "CUST01",
                 "ten_hco": "BV Bạch Mai",
                 "nganh_khoa_phong": "NOI_TIM_MACH",
