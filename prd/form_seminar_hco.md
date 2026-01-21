@@ -211,6 +211,8 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | `hinh_anh_1` | text | **Link ảnh chứng từ 1** (Bắt buộc khi báo cáo) |
 | `hinh_anh_2` | text | Link ảnh chứng từ 2 (Optional) |
 | `hinh_anh_3` | text | Link ảnh chứng từ 3 (Optional) |
+| `hinh_anh_4` | text | Link ảnh chứng từ 3 (Optional) |
+| `hinh_anh_5` | text | Link ảnh chứng từ 3 (Optional) |
 | `ngay_bao_cao` | timestamp | Thời gian user submit báo cáo thực tế |
 | **--- SYSTEM ---** | | |
 | `inserted_at` | timestamp | Thời gian tạo |
