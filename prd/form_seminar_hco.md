@@ -53,7 +53,7 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
   * Mapping toàn bộ danh sách vào key -> `list_dinh_muc_chi_phi` (Array Object).
 
 * **Sheet 3: "Phân bổ ngân sách"**
-  * Gồm các cột: *Zone, NCRM, Mã nhân viên, Tên nhân viên, Định mức quỹ*.
+  * Gồm các cột: *Zone, NCRM, Mã nhân viên, Tên nhân viên, Định mức quỹ, Định mức circle*.
   * Mapping toàn bộ danh sách vào key -> `list_phan_bo_ngan_sach` (Array Object).
 
 * **Submit:**
@@ -252,6 +252,16 @@ Lưu trữ danh sách các HCP được nhân viên CRS (Client) chủ động b
 | `chi_phi_thuc_hien_dong` | float | . |
 | `nam_thuc_hien` | text | . |
 
+**Table 5: `form_seminar_hco_adjusted_hcps` (Bảng Danh sách HCP điều chỉnh)**
+
+| Column Name | Data Type | Description |
+| :--- | _:--- | :--- |
+| `manv` | text | Mã nhân viên thực hiện thao tác (Ví dụ: `NV001`). |
+| `ma_hcp_2` | text | **PK** - Mã định danh duy nhất |
+| `ten_hcp` | text | Họ và tên HCP |
+| `nganh_chuyen_khoa` | text | Khoa phòng làm việc |
+| `inserted_at` | timestamp | Thời gian tạo bản ghi |
+
 -----
 
 ## 6. API & Function Specifications (Chi tiết kỹ thuật)
@@ -339,14 +349,8 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                         "ncrm": "Vũ Mừng",
                         "ma_nhan_vien": "MR0673",
                         "ten_nhan_vien": "Hồ Thị Hồng Gấm",
-                        "dinh_muc_quy": 50000000
-                    },
-                    {
-                        "zone": "ZONE 1",
-                        "ncrm": "Vũ Mừng",
-                        "ma_nhan_vien": "MR1391",
-                        "ten_nhan_vien": "Lê Văn Tùng",
-                        "dinh_muc_quy": 50000000
+                        "dinh_muc_quy": 50000000,
+                        "dinh_muc_circle": 150000000
                     }
                 ]
             }
@@ -395,11 +399,11 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "hco_options": [
             {
                 "id": "CUST01@@NOI_TIM_MACH",
-                "ten_gop_hco": "BV Bạch Mai - Nội Tim Mạch (2 HCPs)",
+                "ten_gop_hco": "BV Bạch Mai - Nội Tim Mạch (2 HCPs)", 
                 "sl_nvyt": 2,
                 "danh_sach_hcp": [
-                    { "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si" },
-                    { "ten_hcp": "Nguyen Van B", "chuc_vu": "Y Ta" }
+                    {"ma_hcp_2":"HCP1000004150-H", "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si", "nganh_chuyen_khoa":"Duoc" },
+                    {"ma_hcp_2":"HCP1000004151-H", "ten_hcp": "Nguyen Van B", "chuc_vu": "Bac si", "nganh_chuyen_khoa":"Duoc" }
                 ]
             },
             {
@@ -407,10 +411,12 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "ten_gop_hco": "BV Việt Đức - Ngoại Tiêu Hóa (1 HCPs)",
                 "sl_nvyt": 1,
                 "danh_sach_hcp": [
-                    { "ten_hcp": "Nguyen Van A", "chuc_vu": "Bac si" }
+                    {"ma_hcp_2":"HCP1000004152-H", "ten_hcp": "Nguyen Van C", "chuc_vu": "Bac si", "nganh_chuyen_khoa":"Duoc" }
                 ]
             }
         ],
+        // lấy từ câu query: select DISTINCT chon_phu from data_tao_form_hcp_bv where loai = 'NGÀNH CHUYÊN KHOA' order by chon_phu
+        "list_nganh_chuyen_khoa": ["Nhi", "Da Liễu"],
         // lấy từ settings
         "list_nhom_san_pham_gioi_thieu": [
             "ENT", "EYE", "ANTI", "GI", "DERMA", "ORAL CARE"
@@ -468,6 +474,12 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 { "ten_hcp": "Trần Thị B", "chuc_vu": "Dược sĩ" },
                 { "ten_hcp": "Lê Văn C", "chuc_vu": "Điều dưỡng" }
             ],
+
+            "danh_sach_dieu_chinh_khoa_phong_hcp": [
+                {"ma_hcp_2":"HCP1000004151-H", "ten_hcp": "Nguyen Van B", "chuc_vu": "Bac si", "nganh_chuyen_khoa":"Mắt" },
+                {"ma_hcp_2":"HCP1000004152-H", "ten_hcp": "Nguyen Van C", "chuc_vu": "Bac si", "nganh_chuyen_khoa":"Mắt" },
+            ],
+
             "dia_diem": "Hội trường A",
             "muc_dich": "Giới thiệu thuốc",
             "chi_phi_hoi_truong": 1000000,
