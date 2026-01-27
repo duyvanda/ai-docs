@@ -454,6 +454,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     1. Sử dụng `jsonb_array_elements` để map JSON => CTE. 
     2. Insert vô bảng `form_seminar_hco`. 
     3. Insert vô bảng `form_seminar_hco_added_hcps` từ danh sách `danh_sach_bo_sung_ten_hcp`.
+    4. Insert vô bảng `form_seminar_hco_adjusted_hcps` từ danh sách `danh_sach_dieu_chinh_khoa_phong_hcp`.
 * **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
     ```json
     [
