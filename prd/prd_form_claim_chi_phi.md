@@ -171,7 +171,9 @@ Bảng quản lý thông tin cây phân cấp nhân sự, được sử dụng �
 | `manv` | text | **PK** - Mã nhân viên (Khớp với `d_hr_dsns`) |
 | `supid` | text | **Permission** - Mã nhân viên của người quản lý trực tiếp (Line Manager) |
 
-## View: `view_list_hcp` (Danh sách Bác sĩ & Phân quyền) View tổng hợp thông tin Bác sĩ/Dược sĩ (HCP) và thông tin phân công địa bàn. Đây là nguồn dữ liệu chính để lọc danh sách bác sĩ cho nhân viên Sales kênh HCP.
+## View: `view_list_hcp` 
+
+(Danh sách Bác sĩ & Phân quyền) View tổng hợp thông tin Bác sĩ/Dược sĩ (HCP) và thông tin phân công địa bàn. Đây là nguồn dữ liệu chính để lọc danh sách bác sĩ cho nhân viên Sales kênh HCP.
 
 | Column Name | Data Type | Description |
 | --- | --- | --- |
@@ -183,7 +185,9 @@ Bảng quản lý thông tin cây phân cấp nhân sự, được sử dụng �
 | `concat_crs_sup` | text | **Permission Column** - Chuỗi chứa danh sách mã nhân viên và quản lý phụ trách HCP này (VD: "MR0673,SUP001"). Hệ thống dùng hàm `strpos` để kiểm tra quyền truy cập. |
 | `status` | text | Trạng thái hoạt động (`active` / `inactive`) |
 
-## Table: `d_master_khachhang` (Danh sách Khách hàng Tổ chức)Bảng Master Data chứa danh sách Bệnh viện, Nhà thuốc, Phòng khám (HCO). Dùng để lọc khách hàng cho nhân viên Sales kênh OTC/ETC (TP, MT) hoặc lấy thông tin khách hàng chung.
+## Table: `d_master_khachhang` 
+
+(Danh sách Khách hàng Tổ chức)Bảng Master Data chứa danh sách Bệnh viện, Nhà thuốc, Phòng khám (HCO). Dùng để lọc khách hàng cho nhân viên Sales kênh OTC/ETC (TP, MT) hoặc lấy thông tin khách hàng chung.
 
 | Column Name | Data Type | Description |
 | --- | --- | --- |
@@ -193,7 +197,9 @@ Bảng quản lý thông tin cây phân cấp nhân sự, được sử dụng �
 | `channel` | text | Kênh bán hàng (Hospital, Pharmacy, Wholesaler...) |
 | `province` | text | Tỉnh/Thành phố của khách hàng (Hỗ trợ lọc theo vùng) |
 
-## Table: `d_tracking_cost_hcp_v2` (Lịch sử chi phí Marketing)Đây là bảng dữ liệu lịch sử được đồng bộ từ hệ thống Marketing, lưu trữ các khoản chi phí đã thực hiện cho từng HCP trong quá khứ. Bảng này được dùng để tính toán định mức "Ngân sách còn lại" (đặc biệt là cho quà Sinh nhật) nhằm tránh chi vượt trần.
+## Table: `d_tracking_cost_hcp_v2` 
+
+(Lịch sử chi phí Marketing)Đây là bảng dữ liệu lịch sử được đồng bộ từ hệ thống Marketing, lưu trữ các khoản chi phí đã thực hiện cho từng HCP trong quá khứ. Bảng này được dùng để tính toán định mức "Ngân sách còn lại" (đặc biệt là cho quà Sinh nhật) nhằm tránh chi vượt trần.
 
 | Column Name | Data Type | Description |
 | --- | --- | --- |
@@ -304,6 +310,15 @@ Bảng Master Data định nghĩa các dịp tặng quà (Sinh nhật, Hội ngh
 | `ma_dip` | text | **PK** - Mã dịp (VD: SN_01) |
 | `thang_chi_phi` | timestamp | Tháng áp dụng của dịp này |
 | `trang_thai_dip` | int2 | Trạng thái: `1` (Active), `0` (Inactive) |
+| `ghi_chu` | text | . |
+
+
+### Table 5: `form_claim_chi_phi_email_kt`
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `ma_ql` | text | mã quản lý của nhân viên yêu cầu xác nhận |
+| `ma_nv_kt` | text | mã KT phụ trách yêu cầu xác nhận |
+
 
 -----
 
@@ -1075,6 +1090,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     4.  **Xử lý Footer:**
         * Tính tổng số tiền và tự động chuyển đổi số tiền thành chữ tiếng Việt (Ví dụ: "Một triệu đồng chẵn").
 
+    5.  **Email info:**
+        * Thông tin gửi email.
+
   * **JSON Input (`url_param`):**
     ```json
     {
@@ -1130,7 +1148,56 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         "bmkt002_nguoi_nhan": "MR1137 - Vũ Mừng",
         "bmkt002_nguoi_de_nghi": "MR1137 - Vũ Mừng",
         "bmkt002_ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 11-2025",
-        "bmkt002_so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng"
+        "bmkt002_so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng",
+        "send_email_info": {
+            "email_to":[
+                {
+                    "receive_code": "Mã NV"
+                },
+                {
+                    "receive_code": "Mã QL"
+                },
+                {
+                    "receive_code": "Mã NVKT phụ trách của QL"
+                }
+            ],
+            "subject":"Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng xx/năm xxxx",
+            // content xài html
+            "content": """
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #000;">
+                    
+                    <p><strong>Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng .../năm....</strong></p>
+
+                    <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px;">
+                        <tr>
+                            <td style="padding: 5px 0; width: 160px;"><strong>Mã người lập ĐNTT:</strong></td>
+                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;"><strong>Tên người lập ĐNTT:</strong></td>
+                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;"><strong>Phòng ban:</strong></td>
+                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0; color: #800000;"><strong>Vị trí:</strong></td>
+                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
+                        </tr>
+                    </table>
+
+                    <br>
+
+                    <p>1. Số tiền giao tiếp/quà tặng đề nghị thanh toán Tháng .../Năm là: .................... VNĐ</p>
+                    <p>2. Số tiền công tác phí đề nghị thanh toán Tháng .../Năm là: .................... VNĐ</p>
+
+                    <p><strong>Tổng cộng số tiền đề nghị thanh toán là: .................... VNĐ</strong></p>
+
+                </div>
+                """,
+                "bcc_to":[]
+        }
     }
     ```
 
