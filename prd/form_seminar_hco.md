@@ -214,6 +214,8 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | `hinh_anh_4` | text | Link ảnh chứng từ 3 (Optional) |
 | `hinh_anh_5` | text | Link ảnh chứng từ 3 (Optional) |
 | `ngay_bao_cao` | timestamp | Thời gian user submit báo cáo thực tế |
+| `file_1` | text | Link file 1 |
+| `file_2` | text | Link file 2 |
 | **--- SYSTEM ---** | | |
 | `inserted_at` | timestamp | Thời gian tạo |
 | `updated_at` | timestamp | Thời gian cập nhật |
@@ -255,7 +257,7 @@ Lưu trữ danh sách các HCP được nhân viên CRS (Client) chủ động b
 **Table 5: `form_seminar_hco_adjusted_hcps` (Bảng Danh sách HCP điều chỉnh)**
 
 | Column Name | Data Type | Description |
-| :--- | _:--- | :--- |
+| :--- | :--- | :--- |
 | `manv` | text | Mã nhân viên thực hiện thao tác (Ví dụ: `NV001`). |
 | `ma_hcp_2` | text | **PK** - Mã định danh duy nhất |
 | `ten_hcp` | text | Họ và tên HCP |
@@ -455,6 +457,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     2. Insert vô bảng `form_seminar_hco`. 
     3. Insert vô bảng `form_seminar_hco_added_hcps` từ danh sách `danh_sach_bo_sung_ten_hcp`.
     4. Insert vô bảng `form_seminar_hco_adjusted_hcps` từ danh sách `danh_sach_dieu_chinh_khoa_phong_hcp`.
+    5. Nếu dành công trả thêm giá trị của object send_email_info
 * **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
     ```json
     [
@@ -497,7 +500,25 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     ```json
     {
         "status": "ok",
-        "success_message": "Đã nhận thông tin thành công !!!"
+        "success_message": "Đã nhận thông tin thành công !!!",
+        // Mục gửi email này đã update không dùng nữa.
+        "send_email_info": {
+            "email_to":[
+                {
+                    "receive_code": "MRCRM1"
+                },
+                {
+                    "receive_code": "MRCXM1"
+                },
+                {
+                    "receive_code": "MRCXM2"
+                },
+                {
+                    "receive_code": "MRCXM3"
+                }
+            ],
+            "subject":"Xin chào !!!. Một đề xuất SMN cần bạn phê duyệt. Tại Ngày: <dd-mm-yyyy> của <Tên bạn CRS>"
+        }
     }
     ```
     ```json
@@ -673,7 +694,9 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "hinh_anh_3": "",
         "hinh_anh_4": "",
         "hinh_anh_5": "",
-        "ngay_bao_cao": "2025-12-31 10:00:00"
+        "ngay_bao_cao": "2025-12-31 10:00:00",
+        "file_1":"https://storage.googleapis.com/bucket/file_1.pdf",
+        "file_2":"https://storage.googleapis.com/bucket/file_2.pdf"
     }]
     ```
 * **JSON Output:**
