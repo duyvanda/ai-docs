@@ -556,7 +556,9 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "status": "H",
                 "hco": "CUST01",
                 "ten_nhan_vien": "Nguyễn Văn A",
+                "ten_crm": "Sup của NVA",
                 "ten_hco": "BV Bạch Mai",
+                "zone_smn":"Zone 2",
                 "ds_tong_hco": 150000000,
                 "ds_nhom_sp_chinh": 50000000,
                 "ds_tong_hco_ly": 150000000, // last year
@@ -574,6 +576,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "chi_phi_an_uong": 3000000,
                 "chi_phi_teabreak": 500000,
                 "chi_phi_bao_cao_vien": 2000000,
+                "chi_phi_smn_thuc_te_khoa_duoc":0,
                 "tang_pham": 0,
                 "cp_seminar": 0,
                 "cp_sms": 0,

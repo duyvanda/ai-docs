@@ -144,6 +144,13 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
     * **Call API:** `insert_form_cong_tac_phi` (Method: POST).
     * **Payload:** Gửi object bao gồm thông tin chuyến đi (`form_cong_tac_phi`) và danh sách hóa đơn kèm loại chi phí (`lst_chon_invoices`).
 
+### 4.6. Tải và xác nhận excel
+
+**User Flow**: 
+    1 - Vào mục claim chọn Tải dữ liệu và upload
+        **Call API:** `post_form_claim_chi_phi_excel_form` (Method: POST) để hiển thị file excel url.
+        **Call API:** `insert_form_claim_chi_phi_chung_tu` (Method: POST) để ghi nhận data.
+
 -----
 
 ## 5. Thiết kế Cơ sở dữ liệu (Database Schema)
@@ -319,6 +326,18 @@ Bảng Master Data định nghĩa các dịp tặng quà (Sinh nhật, Hội ngh
 | `ma_ql` | text | mã quản lý của nhân viên yêu cầu xác nhận |
 | `ma_nv_kt` | text | mã KT phụ trách yêu cầu xác nhận |
 
+### Table 6: `form_claim_chi_phi_chung_tu`
+
+Bảng lưu trữ thông tin đi kèm với chứng từ chi phí được upload từ Form Claim.
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| `id` | text | **PK** - Mã định danh chứng từ (VD: MNV123_15_01_2026). |
+| `manv` | text | Mã nhân viên (VD: MR1391). |
+| `from_date` | date | Thời gian bắt đầu của kỳ claim. |
+| `to_date` | date | Thời gian kết thúc của kỳ claim. |
+| `file_1` | text | Đường dẫn file chứng từ/hình ảnh (URL). |
+| `inserted_at` | timestamp | Thời gian ghi nhận dữ liệu (Default: `CURRENT_TIMESTAMP`). |
 
 -----
 
@@ -1024,6 +1043,101 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 -----
 
+#### **Function (PYTHON):** `post_form_claim_chi_phi_excel_form`
+
+* **Loại:** READ
+* **Mục đích:** Tự động hóa việc tạo hồ sơ thanh toán chi phí dưới dạng file Excel chuẩn.
+* **Logic các bước:**
+
+    **1. Dữ liệu đầu vào (Input)**
+    Hệ thống tiếp nhận yêu cầu từ người dùng với các thông tin sau:
+    - **Khoảng thời gian:** Từ ngày (`from_date`) đến ngày (`to_date`).
+    - **Nhân sự:** Mã nhân viên (`manv`) thực hiện claim.
+    - **Định danh:** ID hồ sơ (`id`) để đặt tên file và lưu trữ.
+    - **Lưu file:** Lưu file dưới local server.
+
+    **2. Truy xuất dữ liệu nguồn**
+    - Hệ thống gọi hàm xử lý trong cơ sở dữ liệu (`get_form_claim_chi_phi_excel_form`).
+    - **Kết quả trả về:** Một gói dữ liệu bao gồm:
+        - Thông tin chung (Người đề nghị, Bộ phận, Lý do...).
+        - Danh sách chi tiết cho biểu mẫu **BMKT013** (Kế hoạch & Thực hiện).
+        - Danh sách chi tiết cho biểu mẫu **BMKT002** (Đề nghị thanh toán).
+
+    **3. Khởi tạo & Tải File Mẫu (Template)**
+    - Hệ thống truy cập vào đường dẫn lưu trữ nội bộ trên server (`/app/thumuc/`).
+    - Tải file Excel mẫu chuẩn có tên `form_claim_chi_phi_excel.xlsx`.
+    - **Đặc điểm file mẫu:** File này đã được thiết kế sẵn layout, logo, tiêu đề, và định dạng khung viền chuẩn cho hai biểu mẫu BMKT013 và BMKT002. Hệ thống sẽ điền dữ liệu lên bản sao của file này chứ không ghi đè file gốc.
+
+    **4. Quy tắc xử lý Biểu mẫu 1: BMKT013 (Kế hoạch & Thực hiện)**
+    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT013-KH-TH-CP` theo các bước:
+    - **Tiêu đề:** Tự động điền tháng/năm vào ô tiêu đề dựa trên thông tin "Từ ngày".
+    - **Danh sách chi tiết:**
+        - **Cơ chế dòng động (Dynamic Rows):** Hệ thống tự động chèn thêm số lượng dòng mới tương ứng với số lượng bản ghi dữ liệu thực tế.
+        - **Thông tin hiển thị:** Điền các cột Khu vực, SupID, Khách hàng, Nội dung, Số hóa đơn, Ghi chú...
+        - **Định dạng:** Ngày tháng (`dd/mm/yyyy`) và Số tiền (phân cách hàng ngàn).
+    - **Dòng tổng cộng (Footer):**
+        - Hệ thống xác định dòng cuối cùng ngay sau danh sách chi tiết vừa chèn.
+        - Điền giá trị **"Tổng tiền kế hoạch"** và **"Tổng tiền duyệt"** vào đúng cột tương ứng.
+
+    **5. Quy tắc xử lý Biểu mẫu 2: BMKT002 (Đề nghị thanh toán)**
+    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT002-DNTT` theo các bước:
+    - **Thông tin chung (Header):**
+        - Điền tự động: Người đề nghị, Bộ phận, Lý do thanh toán vào phần đầu của phiếu.
+    - **Danh sách chi tiết:**
+        - **Cơ chế dòng động:** Tương tự BMKT013, hệ thống chèn dòng mới bắt đầu từ dòng số 9 để chứa dữ liệu chi tiết.
+        - **Thông tin hiển thị:** STT, Nội dung, Số tiền, Số hóa đơn, Ngày hóa đơn...
+    - **Dòng tổng cộng & Chữ ký (Footer):**
+        - **Vị trí thông minh:** Hệ thống tự động tính toán vị trí dòng tổng cộng luôn nằm **ngay sau** dòng dữ liệu cuối cùng (Logic: `Start Row + Số dòng dữ liệu`).
+        - **Giá trị:**
+            - Điền **Tổng số tiền** bằng số.
+            - Điền **Tổng số tiền bằng chữ** ngay dòng bên dưới.
+
+    **6. Json format**
+    - File Excel sau khi xử lý được lưu vào thư mục tạm trên server với tên file theo ID hồ sơ.
+    - Hệ thống trả về một đường dẫn (URL) để người dùng tải file hoàn chỉnh về máy.
+
+    JSON Input Example:
+    ```json
+        {
+        "data": {
+            "from_date": "2026-01-01",
+            "to_date": "2026-01-01",
+            "manv": "MR1391",
+            "id": "MNV123_15_01_2026",
+            "file_1": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_MNV123_15_01_2026.zip",
+            "inserted_at": "2026-01-01 11:11:11"
+        },
+        "files": "(binary)",
+        "file_metadata_other": {
+            "folder_to_save": "form_claim_chi_phi_proof",
+            "file_rename_field": "id"
+        }
+        }
+    ```
+    
+    JSON Output Example:
+    ```json
+    {
+        "excel_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_excel_output/MR1391_01_01_2026.xlsx",
+        "send_email_info": {
+            "content": "<div email content </div>",
+            "subject": "Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng 01/2026",
+            "email_to": [
+                {
+                    "receive_code": "MR1391"
+                },
+                {
+                    "receive_code": "MR1391"
+                },
+                {
+                    "receive_code": "MR3119"
+                }
+            ],
+            "email_bcc": []
+        }
+    }
+    ```
+
 #### **Function:** `get_form_claim_chi_phi_excel_form`
 
 * **Loại:** READ
@@ -1099,7 +1213,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         "from_date": "2025-11-01",
         "to_date": "2025-11-01",
         "manv": "MR1137",
-        "id": "20251212235209830"
+        "id": "MNV123_15_01_2026"
     }
     ```
   * **JSON Output:**
@@ -1201,61 +1315,23 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     }
     ```
 
-#### **Function (PYTHON):** `get_form_claim_chi_phi_excel_form`
+#### **Function:** `insert_form_claim_chi_phi_chung_tu`
 
-* **Loại:** READ
-* **Mục đích:** Tự động hóa việc tạo hồ sơ thanh toán chi phí dưới dạng file Excel chuẩn.
-* **Logic các bước:**
-
-    **1. Dữ liệu đầu vào (Input)**
-    Hệ thống tiếp nhận yêu cầu từ người dùng với các thông tin sau:
-    - **Khoảng thời gian:** Từ ngày (`from_date`) đến ngày (`to_date`).
-    - **Nhân sự:** Mã nhân viên (`manv`) thực hiện claim.
-    - **Định danh:** ID hồ sơ (`id`) để đặt tên file và lưu trữ.
-
-    **2. Truy xuất dữ liệu nguồn**
-    - Hệ thống gọi hàm xử lý trung tâm trong cơ sở dữ liệu (`get_form_claim_chi_phi_excel_form`).
-    - **Kết quả trả về:** Một gói dữ liệu bao gồm:
-        - Thông tin chung (Người đề nghị, Bộ phận, Lý do...).
-        - Danh sách chi tiết cho biểu mẫu **BMKT013** (Kế hoạch & Thực hiện).
-        - Danh sách chi tiết cho biểu mẫu **BMKT002** (Đề nghị thanh toán).
-
-    **3. Khởi tạo & Tải File Mẫu (Template)**
-    - Hệ thống truy cập vào đường dẫn lưu trữ nội bộ trên server (`/app/thumuc/`).
-    - Tải file Excel mẫu chuẩn có tên `form_claim_chi_phi_excel.xlsx`.
-    - **Đặc điểm file mẫu:** File này đã được thiết kế sẵn layout, logo, tiêu đề, và định dạng khung viền chuẩn cho hai biểu mẫu BMKT013 và BMKT002. Hệ thống sẽ điền dữ liệu lên bản sao của file này chứ không ghi đè file gốc.
-
-    **4. Quy tắc xử lý Biểu mẫu 1: BMKT013 (Kế hoạch & Thực hiện)**
-    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT013-KH-TH-CP` theo các bước:
-    - **Tiêu đề:** Tự động điền tháng/năm vào ô tiêu đề dựa trên thông tin "Từ ngày".
-    - **Danh sách chi tiết:**
-        - **Cơ chế dòng động (Dynamic Rows):** Hệ thống tự động chèn thêm số lượng dòng mới tương ứng với số lượng bản ghi dữ liệu thực tế.
-        - **Thông tin hiển thị:** Điền các cột Khu vực, SupID, Khách hàng, Nội dung, Số hóa đơn, Ghi chú...
-        - **Định dạng:** Ngày tháng (`dd/mm/yyyy`) và Số tiền (phân cách hàng ngàn).
-    - **Dòng tổng cộng (Footer):**
-        - Hệ thống xác định dòng cuối cùng ngay sau danh sách chi tiết vừa chèn.
-        - Điền giá trị **"Tổng tiền kế hoạch"** và **"Tổng tiền duyệt"** vào đúng cột tương ứng.
-
-    **5. Quy tắc xử lý Biểu mẫu 2: BMKT002 (Đề nghị thanh toán)**
-    Hệ thống thực hiện điền dữ liệu vào Sheet `BMKT002-DNTT` theo các bước:
-    - **Thông tin chung (Header):**
-        - Điền tự động: Người đề nghị, Bộ phận, Lý do thanh toán vào phần đầu của phiếu.
-    - **Danh sách chi tiết:**
-        - **Cơ chế dòng động:** Tương tự BMKT013, hệ thống chèn dòng mới bắt đầu từ dòng số 9 để chứa dữ liệu chi tiết.
-        - **Thông tin hiển thị:** STT, Nội dung, Số tiền, Số hóa đơn, Ngày hóa đơn...
-    - **Dòng tổng cộng & Chữ ký (Footer):**
-        - **Vị trí thông minh:** Hệ thống tự động tính toán vị trí dòng tổng cộng luôn nằm **ngay sau** dòng dữ liệu cuối cùng (Logic: `Start Row + Số dòng dữ liệu`).
-        - **Giá trị:**
-            - Điền **Tổng số tiền** bằng số.
-            - Điền **Tổng số tiền bằng chữ** ngay dòng bên dưới.
-
-    **6. Kết quả đầu ra (Output)**
-    - File Excel sau khi xử lý được lưu vào thư mục tạm trên server với tên file theo ID hồ sơ.
-    - Hệ thống trả về một đường dẫn (URL) để người dùng tải file hoàn chỉnh về máy.
-    
-    JSON Output Example:
+* **Loại:** WRITE (UPSERT theo ID) vào bảng `form_claim_chi_phi_chung_tu`
+* **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
+* **Mục đích:** Lưu lại dữ liệu đi kèm với chứng từ upload.
+* **Validation (Các quy tắc chặn lỗi):** Không có validation.
+  * **JSON Input (`body` - Array wrapper):**
     ```json
-    {
-        "excel_url": "https://bi.meraplion.com/DMS/TEMP/e09e0114.xlsx"
-    }
+    [
+        {
+            "from_date": "2026-01-01",
+            "to_date": "2026-01-01",
+            "manv": "MR1391",
+            "id": "MNV123_15_01_2026",
+            "file_1": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_MNV123_15_01_2026.zip",
+            "inserted_at": "2026-01-01 11:11:11"
+        }
+    ]
     ```
+  * **JSON Output:** `{"status": "ok", "success_message": "Đã nhận thành công"}`
