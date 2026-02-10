@@ -127,6 +127,7 @@ Bảng danh mục khách hàng master.
 | :---- | :---- | :---- |
 | custid | STRING | **PK/Join Key** - Mã khách hàng (Khớp với customer_code) |
 | channel | STRING | Kênh phân phối. **Điều kiện bắt buộc:** channel = 'TP' |
+| statedescr | STRING | Tỉnh KH |
 
 ##
 
@@ -212,6 +213,17 @@ Dữ liệu trả về danh sách khách hàng đã follow OA và được map s
 | follow_name | STRING | Tên hiển thị trên Zalo |
 | active_oa | INTEGER | Trạng thái quan tâm OA (Filter đầu vào active_oa=1) |
 | ... | ... | *(Các trường khác trong schema nhưng chưa dùng đến)* |
+
+
+### **Table: f_crawl_activate_ecom**
+Bảng thông tin user Zalo đã xác thực (Crawl từ EOffice/Zalo OA).
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| follow_phone | text | **Join Key** - Số điện thoại Zalo |
+| follow_name | text | Tên hiển thị của Dược sĩ trên Zalo |
+| customer_code | text | **Join Key** - Mã khách hàng DMS (Map sang `d_master_khachhang` - custid) |
+| ... | ... | Các thông tin khác |
 
 ## ---
 
@@ -834,3 +846,66 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API trực tiếp t�
    * Ràng buộc unique `(phone, streak_date)` đảm bảo không trùng record trong cùng 1 ngày.
 
 ---
+
+#### **Function: get_reward_event**
+
+* **Loại:** READ
+* **Mục đích:** Truy xuất bảng xếp hạng (Leaderboard) các dược sĩ đạt giải trong một sự kiện thi đua cụ thể. Hàm tự động tính toán điểm tích lũy trong khoảng thời gian của sự kiện đó để xếp hạng.
+* **Logic Xử lý:**
+1. **Parse Event Date:** Từ chuỗi `reward_event` (VD: `01_26_...`), xác định `start_date` (01/01/2026) và `end_date` (01/02/2026).
+2. **Filter & Enrich:** Lấy danh sách SĐT trúng thưởng từ `nvbc_reward_list`, sau đó join với `f_crawl_activate_ecom` (lấy tên dược sĩ) và `d_master_khachhang` (lấy tên tỉnh).
+3. **Ranking:** Tính tổng điểm (`nvbc_track_view`) trong khoảng thời gian sự kiện và xếp hạng (`RANK()`).
+
+
+* **JSON Input (body):**
+```json
+{
+    "reward_event": "01_26_th_monthly_reward"
+}
+
+```
+
+
+* **JSON Output:**
+* **Thành công (HTTP 200):**
+
+
+```json
+{
+    "status": "ok",
+    "meta_info": {
+        "event": "01_26_th_monthly_reward",
+        "filter_from": "2026-01-01",
+        "filter_to": "2026-02-01"
+    },
+    "list_winners": [
+        {
+            "sdt": "0909xxxxxx",
+            "ten_duoc_si": "Nguyễn Văn A",
+            "ten_tinh": "Hồ Chí Minh",
+            "tong_diem_tich_luy": 150,
+            "rank_theo_diem": 1
+        },
+        {
+            "sdt": "0912xxxxxx",
+            "ten_duoc_si": "Trần Thị B",
+            "ten_tinh": "Hà Nội",
+            "tong_diem_tich_luy": 145,
+            "rank_theo_diem": 2
+        }
+    ]
+}
+
+```
+
+
+* **Thất bại (HTTP 400/500):**
+
+
+```json
+{
+    "status": "fail",
+    "error_message": "Invalid reward_event date format (MM_YY required)"
+}
+
+```
