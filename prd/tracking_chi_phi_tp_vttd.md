@@ -107,7 +107,6 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `inserted_at` | timestamp | Thời gian thực hiện upload |
 | `applyfor` | timestamp | Thời gian apply |
 
-
 -----
 
 ## 6. API & Function Specifications (Chi tiết kỹ thuật)
@@ -119,7 +118,7 @@ URL: https://bi.meraplion.com
 #### Function: `insert_tracking_chi_phi_tp_vttd_settings`
 
 * **Loại:** WRITE (Configuration Upsert)
-* **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống cho Form đăng ký Seminar. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
+* **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
 * **Bảng ảnh hưởng:** `settings_data`.
 
 * **Validation (Các quy tắc chặn lỗi):**  Người nhập phải là CXM.
@@ -200,8 +199,6 @@ URL: https://bi.meraplion.com
 * **Loại:** WRITE (Configuration Upsert)
 * **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống cho Form đăng ký Seminar. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
 * **Bảng ảnh hưởng:** `settings_data`.
-
-* **Validation (Các quy tắc chặn lỗi):**  Người nhập phải là CXM.
 
 * **JSON Input (`body`):**.
     ```json
@@ -354,8 +351,8 @@ URL: https://bi.meraplion.com
 * **Loại:** READ
 * **Mục đích:** Lấy danh sách chưa cần duyệt để duyệt.
 * **Logic Filter:**
-    * Filter `status = 'H'`và lấy ra các bản ghi của nhân viên mình.
-    * **Data Enrichment:** Tổng hợp thêm các phần tổng KH CRM và tổng thực hiện của các nhân viên.
+	* Filter `status = 'H'`và lấy ra các bản ghi của nhân viên mình.
+	* **Data Enrichment:** Tổng hợp thêm các phần tổng KH CRM và tổng thực hiện của các nhân viên.
 * **JSON Input (`url_param`):**
     ```json
     {
