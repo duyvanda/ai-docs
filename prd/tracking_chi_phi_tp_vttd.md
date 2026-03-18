@@ -73,6 +73,21 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `manv` | text | **PK** - Mã nhân viên |
 | `supid` | text | Quản lý |
 
+**Table `api_f_thongtin_tuyen_mcp_tp_pcl`** (Tuyến)
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `manv` | text | **PK** - Mã nhân viên |
+| `supid` | text | Quản lý |
+| `ma_khachhang` | text |  |
+| `tenkhachhang` | text |  |
+
+**Table `d_master_khachhang`** (khách hàng)
+| Column Name | Data Type | Description |
+| :--- | :--- | :--- |
+| `custid` | text | **PK** - Mã nhân viên |
+| `custname` | text | Quản lý |
+| `channel` | text |  |
+| `hcotypeid` | text |  |
 
 ### Các table mới của hệ thống (New Tables):
 
