@@ -128,7 +128,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về JSONB.
 
-URL get: https://bi.meraplion.com/local/get_data/<ten_ham>
+URL get: https://bi.meraplion.com/local/get_data/<ten_ham>, **input json là query params**
 
 URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
