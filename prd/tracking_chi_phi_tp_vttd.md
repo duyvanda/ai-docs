@@ -264,7 +264,6 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
             },
         ],
-        // lấy từ câu query: select DISTINCT chon_phu from data_tao_form_hcp_bv where loai = 'NGÀNH CHUYÊN KHOA' order by chon_phu
         //giống input của settings
         "quy_tac_chung": {},
         "data_vttd_gm": [], 
