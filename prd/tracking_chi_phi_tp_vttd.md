@@ -140,8 +140,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                     "thoi_gian_dong_link": "31/03/2026",
                     "gioi_han_so_lan_submit_cho_1_nt": 1,
                     "dinh_muc_toi_da_cho_nt": 1000000,
-                    "loai_kenh_phu_ap_dung": "TP",
-                    "phan_loai_hco_ap_dung": "CTD,QT,NT",
+                    "loai_kenh_phu_ap_dung": "TP", // chưa cấu hình
+                    "phan_loai_hco_ap_dung": "CTD,QT,NT", // chưa cấu hình
                     "chi_phi_thang": "01/03/2026"
                     }
                 ,
