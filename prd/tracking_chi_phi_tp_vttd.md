@@ -265,7 +265,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** WRITE (Insert)
 * **Mục đích:** Tạo mới đăng ký vttd tp.
 * **Validation:** Chỉ apply cho Status H, C
-  * **Rule 1 - Tần suất:** Số lần NT nhập không được vượt quá số lần quy định trong `Settings`.
+  * **Rule 1 - Tần suất & định mức cho mỗi NT:** Số lần/tổng tiền NT nhập không được vượt quá số lần quy định trong.
   * **Rule 2 - Số lượng:** Đối với từng mã vật tư, số lượng nhập không được vượt quá số lượng tối đa cho phép.
   * **Rule 3 - Hạn mức CRS:** Tổng tiền CRS không được vượt quá định mức quy định cho CRS.
   * **Rule 4 - Hạn mức CRM:** Tổng tiền CRM không được vượt quá định mức quy định cho CRM.
@@ -315,7 +315,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     ```json
     {
         "status": "fail",
-        "error_message": "NT đã được chọn rồi !!!"
+        "error_message": "NT đã được chọn rồi hoặc tổng tiền là <xxx> / tổng định mức <xxx> !!!"
     }
     ```
 
