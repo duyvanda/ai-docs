@@ -240,7 +240,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** READ
 * **Mục đích:** Lấy dữ liệu khởi tạo cho crs chọn NT và nhập số lượng.
 * **Logic Filter:**
-	* Filter theo tuyến CRS + kênh và phân loại trong `settings`
+	* Filter theo tuyến CRS + kênh và phân loại trong `settings`, không hiển thị các NT đã được submit trong quý.
 * **JSON Input (`url_param`):**
     ```json
     {
@@ -272,6 +272,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "dinh_muc": 1955000,
         "thuc_hiem": 1000000, // sum tổng theo quý hiện tại
         "chucdanhengtitlesum": "CRS", // chưa có thì để là "CXD"
+        "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
     }
     ```
@@ -280,8 +281,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
 * **Loại:** WRITE (Insert)
 * **Mục đích:** Tạo mới đăng ký vttd tp.
-* **Validation:** Chỉ apply cho Status H, C
-  * **Rule 1 - Tần suất & định mức cho mỗi NT:** Số lần/tổng tiền NT nhập không được vượt quá số lần quy định trong.
+* **Validation:** Chỉ apply cho Status H, C và trong quý.
+  * **Rule 1 - Tần suất & định mức cho mỗi NT:** Số lần/tổng tiền NT nhập không được vượt quá số lần quy định.
   * **Rule 2 - Số lượng:** Đối với từng mã vật tư, số lượng nhập không được vượt quá số lượng tối đa cho phép.
   * **Rule 3 - Hạn mức CRS:** Tổng tiền CRS không được vượt quá định mức quy định cho CRS.
   * **Rule 4 - Hạn mức CRM:** Tổng tiền CRM không được vượt quá định mức quy định cho CRM.
@@ -296,7 +297,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "manv": "NV001",
             "status": "H",
             "custid": "CUST01",
-            "applyfor": "2026-03-01",
+            "applyfor": "2026-03-01T00:00:00",
             // làm phẵng mảng rồi insert
             "vttd" [
                 {
