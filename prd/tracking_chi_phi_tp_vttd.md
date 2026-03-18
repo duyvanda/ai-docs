@@ -113,7 +113,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về JSONB.
 
-URL: https://bi.meraplion.com
+URL get: https://bi.meraplion.com/local/get_data/<ten_ham>
+URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
 #### Function: `insert_tracking_chi_phi_tp_vttd_settings`
 
