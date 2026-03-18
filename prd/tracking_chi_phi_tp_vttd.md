@@ -114,6 +114,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về JSONB.
 
+URL: https://bi.meraplion.com
+
 #### Function: `insert_tracking_chi_phi_tp_vttd_settings`
 
 * **Loại:** WRITE (Configuration Upsert)
@@ -233,7 +235,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     ```json
     {
         "status": "ok",
-        "hco_options": [
+        "nt_options": [
             {
                 "custid": "NT001",
                 "custname": "NT Ngọc Nữ",
@@ -280,6 +282,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             "status": "H",
             "custid": "CUST01",
             "applyfor": "2026-03-01",
+            // làm phẵng mảng rồi insert
             "vttd" [
                 {
                     "ma_vat_tu": "VT80385",
@@ -298,6 +301,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         }
     ]
     ```
+
 * **JSON Output:**
     ```json
     {
@@ -305,8 +309,10 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "success_message": "Đã nhận thông tin thành công !!!",
     }
     ```
+
 * **JSON Output Fail:**
   * **Rule 1:**
+
     ```json
     {
         "status": "fail",
@@ -396,7 +402,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
     }
     ```
 
-#### **Function:** `get_tracking_chi_phi_tp_vttd_crm`
+#### **Function:** `insert_tracking_chi_phi_tp_vttd_crm`
 
 * **Loại:** WRITE (Update Status)
 * **Mục đích:** Cập nhật trạng thái duyệt/từ chối cho danh sách các đơn đã chọn.
