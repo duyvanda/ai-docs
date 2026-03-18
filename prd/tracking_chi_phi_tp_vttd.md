@@ -37,6 +37,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 ### 4.0. Thiết lập hệ thống (CXM)
 * CXM chuẩn bị file cấu hình tổng (All-in-one).
 * Upload file lên hệ thống để ghi nhận vào `settings_data` (bao gồm quy tắc chung, danh mục VTTD, định mức cá nhân, định mức quản lý). Hệ thống sẽ apply theo thời gian cấu hình.
+* Frontend validate các số liệu như numberic + ngày tháng + null
 
 ### 4.1. Phân hệ [Đề xuất] - Trình dược viên (CRS)
 1.  **Khởi tạo:** User mở form. Hệ thống load dữ liệu danh sách khách hàng (NT) thuộc quyền quản lý và hiển thị trạng thái ngân sách hiện tại (Định mức cá nhân vs Thực hiện).
