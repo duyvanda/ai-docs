@@ -381,7 +381,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** READ
 * **Mục đích:** Lấy danh sách chưa cần duyệt để duyệt.
 * **Logic Filter:**
-	* Filter `status = 'H'`và lấy ra các bản ghi của nhân viên mình.
+	* Lấy ra các bản ghi của nhân viên mình hoặc chính crs.
 	* **Data Enrichment:** Tổng hợp thêm các phần tổng KH CRM và tổng thực hiện của các nhân viên.
 * **JSON Input (`url_param`):**
     ```json
