@@ -133,6 +133,7 @@ URL get: https://bi.meraplion.com/local/get_data/<ten_ham>, **input json là que
 
 URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
+
 #### Function: `insert_tracking_chi_phi_tp_vttd_settings`
 
 * **Loại:** WRITE (Configuration Upsert)
@@ -363,6 +364,16 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     }
     ```
 
+  * **Không nằm trong time mở link:**
+
+    ```json
+    {
+        "status": "fail",
+        "error_message": "Hiện tại không nằm trong thời gian mở link đăng ký !!!",
+        "chucdanhengtitlesum":"CRS"   
+    }
+    ```
+
 ### 6.2. Nhóm Approval Flow (Duyệt)
 
 #### **Function:** `get_tracking_chi_phi_tp_vttd_crm`
@@ -410,7 +421,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 ],
 
                 "dinh_muc":300000,
-                "thuc_hien":2500000
+                "thuc_hien":2500000,
 
                 "inserted_at": "2025-12-31 08:00:00"
             }
