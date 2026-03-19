@@ -215,10 +215,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
 #### Function: `get_tracking_chi_phi_tp_vttd_settings`
 
-* **Loại:** WRITE (Configuration Upsert)
-* **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống cho Form đăng ký Seminar. Dữ liệu nguồn từ file Excel do Admin upload, được Frontend xử lý thành JSON trước khi gửi xuống Server.
-* **Bảng ảnh hưởng:** `settings_data`.
-
+* **Loại:** READ
+* **Mục đích:** Lấy dữ liệu settings.
 * **JSON Input (`body`):**.
     ```json
         {
