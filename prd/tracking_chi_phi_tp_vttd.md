@@ -240,7 +240,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** READ
 * **Mục đích:** Lấy dữ liệu khởi tạo cho crs chọn NT và nhập số lượng.
 * **Logic Filter:**
-	* Filter theo tuyến CRS + kênh và phân loại trong `settings`, không hiển thị các NT đã được submit trong quý.
+	* Filter theo tuyến CRS + kênh và phân loại trong `settings`, không hiển thị các NT đã được submit.
 * **JSON Input (`url_param`):**
     ```json
     {
@@ -270,8 +270,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "data_vttd_gm": [], 
         // lấy từ settings
         "dinh_muc": 1955000,
-        "thuc_hiem": 1000000, // sum tổng theo quý hiện tại
-        "chucdanhengtitlesum": "CRS", // chưa có thì để là "CXD"
+        "thuc_hien": 1000000, // sum tổng theo quý hiện tại
+        "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
     }
@@ -287,8 +287,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
   * **Rule 3 - Hạn mức CRS:** Tổng tiền CRS không được vượt quá định mức quy định cho CRS.
   * **Rule 4 - Hạn mức CRM:** Tổng tiền CRM không được vượt quá định mức quy định cho CRM.
 * **Logic:** 
-    1. Sử dụng `jsonb_array_elements` để map JSON => CTE. 
-    2. Insert vô bảng `tracking_chi_phi_tp_vttd`. 
+    1. Sử dụng `jsonb_array_elements` để map JSON => CTE.
+    2. Insert vô bảng `tracking_chi_phi_tp_vttd`. (nếu uuid đã tồn tại thì xóa và insert data mới vào, phục vụ việc sửa trên giao diện)
 * **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
     ```json
     [
@@ -425,7 +425,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Validation:** KHÔNG CÓ VALIDATION.
 * **Logic:**
     1.  Tạo bảng tạm từ JSON input.
-    2.  Update `status` và `updated_at` vào bảng chính. Trạng thái chỉ có C và R
+    2.  Update `updated_manv`,  `status` và `updated_at` vào bảng chính. Trạng thái chỉ có C và R
 * **JSON Input (`body`):** *Array 2 phần tử ví dụ*
     ```json
     [
