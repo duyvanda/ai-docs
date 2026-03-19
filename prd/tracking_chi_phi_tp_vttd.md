@@ -220,7 +220,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **JSON Input (`body`):**.
     ```json
         {
-            "appid": "insert_tracking_chi_phi_tp_vttd",
+            "appid": "tracking_chi_phi_tp_vttd",
             "manv": "MR1682",
             "applyfor":"2026-03-01",
         }
