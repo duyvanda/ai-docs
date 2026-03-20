@@ -291,7 +291,19 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         // lấy từ settings
         "dinh_muc": 1955000,
         "thuc_hien": 1000000, // sum tổng theo quý hiện tại
-        "dinh_muc_crs_theo_vttd": [], // của riêng crs thôi, số lượng tối đa phải trừ đi phần đã dùng.
+        "dinh_muc_crs_theo_vttd": [
+          {
+              "ma_crs": "MR1077",
+              "ten_crs": "MR1077",
+              "gia_tien": 58000,
+              "ma_vat_tu": "VT80063",
+              "ten_vat_tu": "Áo mưa",
+              "nhom_vat_tu": "vttd",
+              "so_luong_toi_da": 10,
+              "so_luong_con_lai": 3,
+              "so_luong_da_dung": 7
+          },
+        ], // của riêng crs thôi, số lượng tối đa, so_luong_da_dung, so_luong_con_lai.
         "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
