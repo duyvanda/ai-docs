@@ -283,17 +283,17 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     ```json
     {
         "status": "fail",
-        "error_message": "NT đã được chọn rồi hoặc tổng tiền là <xxx> / tổng định mức <xxx> !!!"
+        "error_message": "Phiên bản đã cũ, vui lòng refresh lại trang !!!",
+        "version":"version_1",
+        "chucdanhengtitlesum":"CRS"   
     }
-    ```
 
   * **Không nằm trong time mở link:**
 
     ```json
     {
         "status": "fail",
-        "error_message": "Phiên bản đã cũ, vui lòng refresh lại trang !!!",
-        "version":"version_1",
+        "error_message": "Hiện tại không nằm trong thời gian mở link đăng ký !!!",
         "chucdanhengtitlesum":"CRS"   
     }
     ```
