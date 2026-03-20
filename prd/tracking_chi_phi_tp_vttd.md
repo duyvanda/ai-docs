@@ -192,15 +192,35 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                         "dinh_muc": 65870000
                     },
                 ],
+                "dinh_muc_crs_theo_vttd": [
+                    {
+                        "ma_crs": "MR1077",
+                        "ten_crs": "MR1077",
+                        "ma_vat_tu": "VT80385",
+                        "ten_vat_tu": "Bút BenitaXylo",
+                        "nhom_vat_tu": "vttd",
+                        "gia_tien": 7400,
+                        "so_luong_toi_da": 1565
+                    },
+                    {
+                        "ma_crs": "MR1077",
+                        "ten_crs": "MR1077",
+                        "ma_vat_tu": "VT80035",
+                        "ten_vat_tu": "Bút Ebysta (8)",
+                        "nhom_vat_tu": "vttd",
+                        "gia_tien": 7400,
+                        "so_luong_toi_da": 1550
+                    },
+                ],
                 "dinh_muc_crm": [
                     {
-                        "manv": "MR0319",
-                        "qlkv": "Lê Đức Châu",
+                        "ma_crm": "MR0319",
+                        "ten_crm": "Lê Đức Châu",
                         "dinh_muc": 65870000
                     },
                     {
-                        "manv": "MR1035",
-                        "qlkv": "Nguyễn Thanh Tài",
+                        "ma_crm": "MR1035",
+                        "ten_crm": "Nguyễn Thanh Tài",
                         "dinh_muc": 65500000
                     }
                 ]
@@ -271,6 +291,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         // lấy từ settings
         "dinh_muc": 1955000,
         "thuc_hien": 1000000, // sum tổng theo quý hiện tại
+        "dinh_muc_crs_theo_vttd": [], // của riêng crs thôi.
         "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
@@ -307,6 +328,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
   * **Rule 2 - Số lượng:** Đối với từng mã vật tư, số lượng nhập không được vượt quá số lượng tối đa cho phép.
   * **Rule 3 - Hạn mức CRS:** Tổng tiền CRS không được vượt quá định mức quy định cho CRS.
   * **Rule 4 - Hạn mức CRM:** Tổng tiền CRM không được vượt quá định mức quy định cho CRM.
+  * **Rule 5 - Hạn mức CRS / Mỗi VTTD:** Số lượng không được vượt quá số lượng tối đa cho phép (update 20-03).
 * **Logic:** 
     1. Sử dụng `jsonb_array_elements` để map JSON => CTE.
     2. Insert vô bảng `tracking_chi_phi_tp_vttd`. (nếu uuid đã tồn tại thì xóa và insert data mới vào, phục vụ việc sửa trên giao diện)
@@ -381,6 +403,15 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     {
         "status": "fail",
         "error_message": "Tổng tiền của team <xxx> đã vượt quá định mức <xxx>"
+    }
+    ```
+
+  * **Rule 5:**
+
+    ```json
+    {
+        "status": "fail",
+        "error_message": "Mã vật tư <ABC, XYZ> đã vượt quá quy định"
     }
     ```
 
