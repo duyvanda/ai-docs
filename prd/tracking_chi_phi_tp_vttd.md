@@ -142,7 +142,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
 * **Validation (Các quy tắc chặn lỗi):**  Người nhập phải là CXM.
 
-* **JSON Input (`body`):** Mảng chỉ có 1 phần tử.
+* **JSON Input (`body`):** Mảng chỉ có 1 phần tử. Lấy ra phần tử đầu tiên và insert vào cột js phần data trong key settings_data 
     ```json
     [
         {
@@ -214,8 +214,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 ],
                 "dinh_muc_crm": [
                     {
-                        "ma_crm": "MR0319",
-                        "ten_crm": "Lê Đức Châu",
+                        "ma_crm": "MR3048",
+                        "ten_crm": "Nguyễn Văn Án",
                         "dinh_muc": 65870000
                     },
                     {
@@ -291,7 +291,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         // lấy từ settings
         "dinh_muc": 1955000,
         "thuc_hien": 1000000, // sum tổng theo quý hiện tại
-        "dinh_muc_crs_theo_vttd": [], // của riêng crs thôi.
+        "dinh_muc_crs_theo_vttd": [], // của riêng crs thôi, số lượng tối đa phải trừ đi phần đã dùng.
         "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
