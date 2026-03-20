@@ -243,7 +243,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **JSON Input (`url_param`):**
     ```json
     {
-        "manv": "MR1077"
+        "manv": "MR1077",
+        "version":"version_1.0"
     }
     ```
 * **JSON Output Specification:**
@@ -273,6 +274,27 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
+    }
+    ```
+
+* **JSON Output Fail:**
+  * **version không khớp:**
+
+    ```json
+    {
+        "status": "fail",
+        "error_message": "NT đã được chọn rồi hoặc tổng tiền là <xxx> / tổng định mức <xxx> !!!"
+    }
+    ```
+
+  * **Không nằm trong time mở link:**
+
+    ```json
+    {
+        "status": "fail",
+        "error_message": "Phiên bản đã cũ, vui lòng refresh lại trang !!!",
+        "version":"version_1",
+        "chucdanhengtitlesum":"CRS"   
     }
     ```
 
@@ -359,16 +381,6 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     {
         "status": "fail",
         "error_message": "Tổng tiền của team <xxx> đã vượt quá định mức <xxx>"
-    }
-    ```
-
-  * **Không nằm trong time mở link:**
-
-    ```json
-    {
-        "status": "fail",
-        "error_message": "Hiện tại không nằm trong thời gian mở link đăng ký !!!",
-        "chucdanhengtitlesum":"CRS"   
     }
     ```
 
