@@ -822,8 +822,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "chi_phi_an_uong_thuc_te": 1800000,
             "chi_phi_hoi_truong_thuc_te": 500000,
             "chi_phi_may_chieu_thuc_te": null,
-            "url_zip_file": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_vttd_m_session/0_NT001-04-2026-Xk9aB2.zip",
-            "url_zip_image": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_vttd_m_session/1_NT001-04-2026-Xk9aB2.zip",
+            "url_zip_file": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_m_session/0_NT001-04-2026-Xk9aB2.zip",
+            "url_zip_image": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_m_session/1_NT001-04-2026-Xk9aB2.zip",
             "ly_do_huy": null,
             "submitted_at": "2026-04-23T10:00:00.000"
         }
@@ -833,7 +833,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **`formData.file_metadata_other`:**
     ```json
     {
-        "folder_to_save": "tracking_chi_phi_tp_vttd_m_session",
+        "folder_to_save": "tracking_chi_phi_tp_m_session",
         "file_rename_field": "m_session_id"
     }
     ```
