@@ -198,6 +198,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `follow_name` | text | Tên NVBH theo dõi |
 | `follow_phone` | text | SĐT NVBH |
 | `pharmacy_name` | text | Tên nhà thuốc |
+| `customer_role_name` | text | Chức vụ |
+
 
 ### Các table mới của hệ thống (New Tables):
 
@@ -446,7 +448,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     {
         "status": "fail",
         "error_message": "Phiên bản đã cũ, vui lòng refresh lại trang!",
-        "current_version": "2026-04-23"
+        "version": "2026-04-23"
     }
     ```
 
