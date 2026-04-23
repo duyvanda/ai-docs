@@ -37,6 +37,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 ## 4. User Flow & UI Overview (Chi tiết quy trình)
 
+> **Sơ đồ luồng (Google Stitch):** [https://stitch.withgoogle.com/projects/11139638456267145858](https://stitch.withgoogle.com/projects/11139638456267145858)
+
 ### 4.0. Luồng Admin – Upload dữ liệu
 
 * Admin chuẩn bị 2 file Excel: **file settings** (cấu hình chương trình) và **file danh sách NVBH bên ngoài**.
