@@ -837,3 +837,34 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "success_message": "Đã nộp chứng từ thành công!"
     }
     ```
+
+### 6.5. Nhóm Tiện ích (Utility)
+
+#### **Function:** `get_tracking_chi_phi_tp_chuc_danh`
+
+* **Loại:** READ
+* **Mục đích:** Lấy chức danh của nhân viên từ bảng HR. Dùng để Frontend xác định role người đăng nhập (CRS / CRM / CXS / CXM) sau khi có `manv`.
+* **Bảng liên quan:** `d_hr_dsns`.
+* **Validation:** KHÔNG CÓ VALIDATION.
+* **Logic:** SELECT `chucdanhvntitle`, `chucdanhengtitle`, `chucdanhengtitlesum`, `phongdeptsummary`, `supervisor`, `managerassistantassociateasm` từ `d_hr_dsns` WHERE `msnvcsmmoi = manv`.
+
+* **JSON Input (`url_param`):**
+    ```json
+    {
+        "manv": "MR1077"
+    }
+    ```
+
+* **JSON Output:**
+    ```json
+    {
+        "status": "ok",
+        "manv": "MR1077",
+        "chucdanhvntitle": "Trình dược viên",
+        "chucdanhengtitle": "Medical Representative",
+        "chucdanhengtitlesum": "MR",
+        "phongdeptsummary": "CARDIO",
+        "supervisor": "MR0500",
+        "managerassistantassociateasm": "MR0200"
+    }
+    ```
