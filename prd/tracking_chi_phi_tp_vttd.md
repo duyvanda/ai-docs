@@ -304,7 +304,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
               "so_luong_da_dung": 7
           },
         ], // của riêng crs thôi, số lượng tối đa, so_luong_da_dung, so_luong_con_lai.
-        "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-CXD"
+        "chucdanhengtitlesum": "CRS", // chưa có thì để là "CRS-UNK"
         "applyfor": "2026-03-01T00:00:00",
         "time": "2025-12-31 10:00:00+07"
     }
