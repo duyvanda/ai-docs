@@ -705,6 +705,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 {"ma_cxm": "MR2458", "ten_cxm": "Nguyễn Tường Thanh"}
             ],
             "approved_at": "2026-04-23T10:00:00.000",
+            "rejected_at": null,
             "danh_sach_vat_tu": [
                 {
                     "ma_vat_tu": "VT80385",
@@ -729,6 +730,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 {"ma_cxm": "MR2458", "ten_cxm": "Nguyễn Tường Thanh"}
             ],
             "ly_do_huy": "Ngày tổ chức trùng với sự kiện khác.",
+            "approved_at": null,
             "rejected_at": "2026-04-23T10:05:00.000",
             "danh_sach_vat_tu": null
         }
@@ -801,7 +803,16 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     1. Nếu `status = 'U'`: UPDATE `status = 'U'`, `url_zip_file`, `url_zip_image`, `chi_phi_an_uong_thuc_te`, `chi_phi_hoi_truong_thuc_te`, `chi_phi_may_chieu_thuc_te`, `submitted_at` từ input.
     2. Nếu `status = 'X'`: UPDATE `status = 'X'`, `ly_do_huy`, `rejected_at` từ input.
 
-* **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
+* **Input:** `multipart/form-data` (không phải JSON body thuần)
+
+| Field | Type | Mô tả |
+| :--- | :--- | :--- |
+| `data` | string (JSON) | Array 1 phần tử – xem bên dưới |
+| `files` | File | File zip hình ảnh (`images_zip_file`) |
+| `files` | File | File zip PDF hóa đơn (`pdfs_zip_file`) |
+| `file_metadata_other` | string (JSON) | Metadata lưu file – xem bên dưới |
+
+* **`formData.data`** – *Array chỉ có duy nhất 1 phần tử:*
     ```json
     [
         {
@@ -811,15 +822,34 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "chi_phi_an_uong_thuc_te": 1800000,
             "chi_phi_hoi_truong_thuc_te": 500000,
             "chi_phi_may_chieu_thuc_te": null,
-            "url_zip_file": "https://cdn.example.com/files/HoaDon_01.pdf,https://cdn.example.com/files/HoaDon_02.pdf",
-            "url_zip_image": "https://cdn.example.com/images/anh_01.jpg,https://cdn.example.com/images/anh_02.jpg",
+            "url_zip_file": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_vttd_m_session/0_NT001-04-2026-Xk9aB2.zip",
+            "url_zip_image": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_vttd_m_session/1_NT001-04-2026-Xk9aB2.zip",
             "ly_do_huy": null,
             "submitted_at": "2026-04-23T10:00:00.000"
         }
     ]
     ```
 
-    *Ví dụ khi hủy:*
+* **`formData.file_metadata_other`:**
+    ```json
+    {
+        "folder_to_save": "tracking_chi_phi_tp_vttd_m_session",
+        "file_rename_field": "m_session_id"
+    }
+    ```
+
+* **Frontend gửi:**
+    ```js
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(data));
+    formData.append('files', pdfs_zip_file);    // index 0 → server đặt tên: 0_{m_session_id}.zip → url_zip_file
+    formData.append('files', images_zip_file);  // index 1 → server đặt tên: 1_{m_session_id}.zip → url_zip_image
+    formData.append('file_metadata_other', JSON.stringify(file_metadata_other));
+    ```
+
+    > **Lưu ý thứ tự file:** Server Django loop qua `files` theo index append. File ở index `0` được đặt tên `0_{m_session_id}.zip` và URL được inject vào `url_zip_file`; file ở index `1` được đặt tên `1_{m_session_id}.zip` → `url_zip_image`. Do đó **bắt buộc** append `pdfs_zip_file` trước, `images_zip_file` sau.
+
+* **Ví dụ khi hủy (`formData.data`):**
     ```json
     [
         {

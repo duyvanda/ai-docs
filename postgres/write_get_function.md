@@ -107,6 +107,15 @@ jsonb_build_object(
 * `status` luôn có `'ok'` hoặc `'fail'`
 * Không bao giờ để `data: null` → phải là `[]`
 * Luôn wrap kết quả trong `WITH rows_data AS (...)`
+* **Không liệt kê lại column** trong `jsonb_build_object` nếu CTE đã có đủ — dùng `jsonb_agg(f)` để serialize toàn bộ row:
+
+```sql
+/* ✅ Đúng — CTE đã select đủ column, không cần liệt kê lại */
+'data', COALESCE((SELECT jsonb_agg(f) FROM rows_data f), '[]'::jsonb)
+
+/* ❌ Sai — liệt kê lại từng key thừa token, dễ sót column */
+'data', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', id, 'name', name, ...)) FROM rows_data), '[]'::jsonb)
+```
 
 ---
 
