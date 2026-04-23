@@ -859,12 +859,12 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     ```json
     {
         "status": "ok",
-        "manv": "MR1077",
-        "chucdanhvntitle": "Trình dược viên",
-        "chucdanhengtitle": "Medical Representative",
-        "chucdanhengtitlesum": "MR",
-        "phongdeptsummary": "CARDIO",
-        "supervisor": "MR0500",
-        "managerassistantassociateasm": "MR0200"
+        "manv": "MR3196",
+        "chucdanhvntitle": "Nhân viên Trải nghiệm khách hàng",
+        "chucdanhengtitle": "Customer Experience Staff",
+        "chucdanhengtitlesum": "CX-Staff",
+        "phongdeptsummary": "CXM-TP-MT",
+        "supervisor": "Đinh Thị Ngọc Mẫn",
+        "managerassistantassociateasm": "Nguyễn Thị Ngọc Diệp"
     }
     ```
