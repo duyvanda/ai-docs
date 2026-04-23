@@ -803,7 +803,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     1. Nếu `status = 'U'`: UPDATE `status = 'U'`, `url_zip_file`, `url_zip_image`, `chi_phi_an_uong_thuc_te`, `chi_phi_hoi_truong_thuc_te`, `chi_phi_may_chieu_thuc_te`, `submitted_at` từ input.
     2. Nếu `status = 'X'`: UPDATE `status = 'X'`, `ly_do_huy`, `rejected_at` từ input.
 
-* **Input:** `multipart/form-data` (không phải JSON body thuần)
+* **Input:** `multipart/form-data` (không phải JSON body thuần) //
 
 | Field | Type | Mô tả |
 | :--- | :--- | :--- |
@@ -840,6 +840,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 
 * **Frontend gửi:**
     ```js
+    import JSZip from 'jszip';
     const formData = new FormData();
     formData.append('data', JSON.stringify(data));
     formData.append('files', pdfs_zip_file);    // index 0 → server đặt tên: 0_{m_session_id}.zip → url_zip_file
