@@ -149,7 +149,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "appid": "tracking_chi_phi_tp_vttd",
             "manv": "MR1682",
             "inserted_at": "2026-01-12T16:48:44.478",
-            "applyfor":"2026-03-01T00:00:00",đe
+            "applyfor":"2026-03-01T00:00:00",
             "settings_data": {
                 "quy_tac_chung": {
                     "ten_chuong_trinh": "GIM TP Q1.2026",
