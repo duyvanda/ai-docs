@@ -538,16 +538,16 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         {
             "m_session_id": "NT001-04-2026-Xk9aB2",
             "status": "H",
-            "manv": "MR1077",
+            "manv": "MR1200",
             "custid": "NT001",
             "manv_csx": "MR3196",
-            "ten_csx": "Phạm Thanh Thảo"  // ✅
+            "ten_csx": "Phạm Thanh Thảo",
             "manv_cxm_array": [
                 {"ma_cxm": "MR2458", "ten_cxm": "Nguyễn Tường Thanh"}
             ],
             "nhan_tap_trung": ["ENT", "EYE"],
             "nhan_con_lai": ["DERMA"],
-            "ngay_su_kien": "2026-05-10",
+            "ngay_su_kien": "2026-04-26",
             "ca_thuc_hien": [
                 {
                     "ca": 1,
