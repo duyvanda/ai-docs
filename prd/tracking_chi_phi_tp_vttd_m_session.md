@@ -560,7 +560,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                     "gio_ket_thuc": "16:00"
                 }
             ],
-            "dia_diem_loai": "tai_nt",
+            "dia_diem_loai": "Tại nhà thuốc",
             "dia_diem_dia_chi": "123 Đường ABC, Q1, TP.HCM",
             "chi_phi_hoi_truong": null,
             "chi_phi_may_chieu": null,
