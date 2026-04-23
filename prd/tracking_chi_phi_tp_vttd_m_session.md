@@ -808,8 +808,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 | Field | Type | Mô tả |
 | :--- | :--- | :--- |
 | `data` | string (JSON) | Array 1 phần tử – xem bên dưới |
-| `files` | File | File zip hình ảnh (`images_zip_file`) |
 | `files` | File | File zip PDF hóa đơn (`pdfs_zip_file`) |
+| `files` | File | File zip hình ảnh (`images_zip_file`) |
 | `file_metadata_other` | string (JSON) | Metadata lưu file – xem bên dưới |
 
 * **`formData.data`** – *Array chỉ có duy nhất 1 phần tử:*
