@@ -301,13 +301,13 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "inserted_at": "2026-04-23T10:00:00.000",
             "applyfor":"2026-01-01T00:00:00", // giá trị mặc định
             "settings_data": {
-                "nhom_san_pham_tap_trung": [
+                "nhan_tap_trung": [
                     "ENT",
                     "EYE",
                     "ANTI",
                     "GI"
                 ],
-                "nhom_san_pham_con_lai": [
+                "nhan_con_lai": [
                     "DERMA",
                     "ORAL CARE"
                 ],
@@ -499,8 +499,8 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 "ngay_ban": "29/04/2026"
             }
         ],
-        "nhom_san_pham_tap_trung": ["ENT", "EYE", "ANTI", "GI"],
-        "nhom_san_pham_con_lai": ["DERMA", "ORAL CARE"],
+        "nhan_tap_trung": ["ENT", "EYE", "ANTI", "GI"],
+        "nhan_con_lai": ["DERMA", "ORAL CARE"],
         "dia_diem_thuc_hien": ["Tại nhà thuốc", "Bên ngoài"],
         "chuc_vu_bo_sung": ["NV đặt hàng", "Quản lý cơ sở", "Chủ cơ sở", "Đại diện ký HĐ"],
         "data_vttd_gm": [
