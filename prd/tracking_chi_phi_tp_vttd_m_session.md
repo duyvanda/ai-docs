@@ -282,8 +282,9 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 #### Function: `insert_tracking_chi_phi_tp_m_session_settings`
 
 
-Tải file mẫu settings: https://bi.meraplion.com/DMS/excel_file/tp_setting_m_session.xlsx
-Tải file mẫu dskh ngoài: https://bi.meraplion.com/DMS/excel_file/tp_setting_m_session_dskh_roi.xlsx
+* Tải file mẫu settings: https://bi.meraplion.com/DMS/excel_file/tp_setting_m_session.xlsx
+
+* Tải file mẫu dskh ngoài: https://bi.meraplion.com/DMS/excel_file/tp_setting_m_session_dskh_roi.xlsx
 
 * **Loại:** WRITE (Configuration Upsert)
 * **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống M.Session. Dữ liệu nguồn từ file Google Sheet do Admin chuẩn bị, được Frontend xử lý thành JSON trước khi gửi xuống Server.
