@@ -847,7 +847,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
     formData.append('file_metadata_other', JSON.stringify(file_metadata_other));
     ```
 
-    > **Lưu ý thứ tự file:** Server Django loop qua `files` theo index append. File ở index `0` được đặt tên `0_{m_session_id}.zip` và URL được inject vào `url_zip_file`; file ở index `1` được đặt tên `1_{m_session_id}.zip` → `url_zip_image`. Do đó **bắt buộc** append `pdfs_zip_file` trước, `images_zip_file` sau.
+    > **Lưu ý thứ tự file:** Server loop qua `files` theo index append. File ở index `0` được đặt tên `0_{m_session_id}.zip` và URL được inject vào `url_zip_file`; file ở index `1` được đặt tên `1_{m_session_id}.zip` → `url_zip_image`. Do đó **bắt buộc** append `pdfs_zip_file` trước, `images_zip_file` sau.
 
 * **Ví dụ khi hủy (`formData.data`):**
     ```json
