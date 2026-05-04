@@ -383,7 +383,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** WRITE (Bulk Insert / Truncate & Replace)
 * **Mục đích:** Admin upload danh sách NVBH nhà thuốc từ file rời (file Excel). Frontend xử lý thành JSON rồi gửi xuống. Hàm thực hiện **xóa toàn bộ dữ liệu cũ** và insert lại toàn bộ danh sách mới.
 * **Bảng ảnh hưởng:** `tracking_chi_phi_tp_m_session_danh_sach_khach_hang_file_roi`.
-* **Validation:** Người nhập phải là CXS hoặc Admin.
+* **Validation:** Người nhập phải có chức danh là CX.
 * **Logic:** TRUNCATE bảng, sau đó bulk insert từ mảng JSON.
 
 * **JSON Input (`body`):**

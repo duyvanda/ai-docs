@@ -115,14 +115,18 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 1.  **Start:** User truy cập Tab "**Chứng từ**".
 2.  **Load Data & UI Logic:**
     * Hệ thống gọi API `get_form_seminar_hco_proof` lấy danh sách seminar cần báo cáo.
-    * **Logic hiển thị (Filter):**
-        * Sắp xếp: Mới nhất lên đầu.
-    * **Giao diện (UI) - Card View:**
+    * **Logic hiển thị (Filter):** > ✏️ **[CẬP NHẬT]**
+        * Sắp xếp do **API xử lý**: `status ASC` (C trước U), rồi `ngay_thuc_hien DESC`. Frontend **không re-sort**.
+        * Filter `status IN ('C', 'U')` — bao gồm cả chứng từ đã lập.
+    * **Giao diện (UI) - Card View:** > ✏️ **[CẬP NHẬT]**
         * Mỗi Seminar hiển thị 1 Card tóm tắt: *Mã SMN - Ngày thực hiện - Tên HCO - Khoa/Phòng*.
-        * Action: Nút "Cập nhật báo cáo".
+        * **Status `U`**: Hiển thị badge **"✅ Đã lập CT"** (màu vàng) trên card.
+        * **Status `C`**: Nút **"📷 Cập nhật báo cáo"** (variant=primary).
+        * **Status `U`**: Nút **"🔄 Nhập lại chứng từ"** (variant=warning).
 
-3.  **Input Form (Action):**
+3.  **Input Form (Action):** > ✏️ **[CẬP NHẬT]**
     * User bấm vào Card để mở form nhập liệu.
+    * Modal Footer có **3 nút**: Đóng | ❌ Không thực hiện nữa | ✅ Lưu báo cáo.
     * **Phần 1: Nhập Chi phí thực tế (Actual Costs):**
         * User điền số tiền thực tế đã chi cho từng hạng mục (Mặc định hiển thị 0 hoặc số tiền dự kiến).
         * Các trường: `CP Hội trường`, `CP Máy chiếu`, `CP Ăn uống`, `CP Teabreak`, `CP Báo cáo viên`. Chi phí (Thực tế phải ≤ Đề xuất). Frontend đã validate.
@@ -130,15 +134,22 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
         * User upload hình ảnh minh chứng (Hóa đơn, hình ảnh hội thảo...).
         * **Validation:** Bắt buộc upload **tối thiểu 01 hình ảnh**.
 
-4.  **Submit:**
-    * User bấm "**Lưu Báo Cáo**".
+4.  **Submit — Lưu Báo Cáo:**
+    * User bấm "**✅ Lưu Báo Cáo**".
     * **Validation Frontend:**
         * Các trường chi phí thực tế phải >= 0.
         * Bắt buộc có ít nhất 1 hình ảnh.
-    * **Call API:** Update thông tin vào database `insert_form_seminar_hco_proof`.
+    * **Call API:** `insert_form_seminar_hco_proof` — POST multipart/form-data kèm ảnh + PDF.
+
+4b. **Submit — Không thực hiện nữa:** > ✏️ **[MỚI]**
+    * User bấm **"❌ Không thực hiện nữa"**.
+    * Hiện `window.confirm` để tránh bấm nhầm.
+    * **Validation:** Không cần ảnh.
+    * **Call API:** `insert_form_seminar_hco_cxm` — POST JSON `[{ id, status: 'X', manv, inserted_at }]`.
+    * Backend cập nhật `status = 'X'`, record sẽ biến mất khỏi danh sách.
 
 5.  **Feedback:**
-    * **Thành công:** Thông báo "Cập nhật chứng từ thành công".
+    * **Thành công:** Thông báo "Cập nhật chứng từ thành công" / "Đã cập nhật trạng thái!".
     * **Thất bại:** Hiển thị lỗi cụ thể.
 
 -----
@@ -185,7 +196,7 @@ File Excel cấu hình đầu vào gồm **3 Sheets**. Frontend cần parse và 
 | :--- | :--- | :--- |
 | `id` | text | **PK** - Format: `YYYYMMDD...` |
 | `manv` | text | Mã nhân viên tạo |
-| `status` | text | `H` (New), `I` (Pending CXM), `C` (Completed), `R` (Rejected) |
+| `status` | text | `H` (New), `I` (Pending CXM), `C` (Completed/CXM duyệt), `R` (Rejected), `U` (Updated/Đã lập chứng từ), `X` (Không thực hiện) | > ✏️ **[CẬP NHẬT]** Thêm 2 trạng thái mới: `U` và `X` |
 | `hco` | text | Mã HCO (pubcustid) |
 | `nganh_khoa_phong` | text | Danh sách khoa phòng (String, comma separated) |
 | `tong_sl_nvyt` | int | Tổng số lượng NVYT tại các khoa phòng đã chọn |
@@ -590,12 +601,15 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 #### **Function:** `insert_form_seminar_hco_cxm`
 
 * **Loại:** WRITE (Update Status)
-* **Mục đích:** Cập nhật trạng thái duyệt/từ chối cho danh sách các đơn đã chọn.
+* **Mục đích:** Cập nhật trạng thái duyệt/từ chối/không thực hiện cho danh sách các đơn đã chọn.
 * **Validation:** KHÔNG CÓ VALIDATION.
 * **Logic:**
     1.  Tạo bảng tạm từ JSON input.
-    2.  Update `status` và `updated_at` vào bảng chính.
-* **JSON Input (`body`):** *Array 2 phần tử ví dụ*
+    2.  Update `status` vào bảng chính.
+    3.  Nếu `status != 'X'`: update thêm `updated_at = inserted_at`.
+    4.  Nếu `status = 'X'`: update thêm `ngay_bao_cao = inserted_at`, **không update `updated_at`**. > ✏️ **[CẬP NHẬT]**
+* **Status hợp lệ:** `I` (CRM duyệt), `C` (CXM duyệt), `R` (Từ chối), `X` (Không thực hiện) > ✏️ **[MỚI]**
+* **JSON Input (`body`):** *Array nhiều phần tử*
     ```json
     [
         {
@@ -608,6 +622,12 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
             "id": "20251231_NV001_B",
             "status": "R",
             "manv": "MANAGER_01",
+            "inserted_at": "2025-12-31 10:00:00"
+        },
+        {
+            "id": "20251231_NV001_C",
+            "status": "X",
+            "manv": "NV001",
             "inserted_at": "2025-12-31 10:00:00"
         }
     ]
@@ -622,14 +642,14 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
 
 ### 6.3. Nhóm Chứng từ & Báo cáo (Proof)
 
-#### **Function:** `get_form_seminar_hco_proof`
+#### **Function:** `get_form_seminar_hco_proof` > ✏️ **[CẬP NHẬT]**
 
 * **Loại:** READ
 * **Mục đích:** Lấy danh sách seminar **đang thực hiện** để báo cáo.
 * **Logic:**
     1. Filter `manv` = Input `manv` (Lấy đơn chính chủ).
-    2. Filter `status` = **'C'** (Chỉ lấy đơn đã được CXM duyệt).
-    3. Sort `ngay_thuc_hien` DESC.
+    2. Filter `status IN ('C', 'U')` — bao gồm cả đơn đã lập chứng từ (để nhập lại).
+    3. Sort: `status ASC` (C trước U), rồi `ngay_thuc_hien DESC`.
 * **JSON Input:** 
 ```json 
     { "manv": "NV001" }
@@ -659,23 +679,25 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "thuc_te_chi_phi_bao_cao_vien": null,
                 "hinh_anh_1": null,
                 "hinh_anh_2": null,
-                "hinh_anh_3": null
+                "hinh_anh_3": null,
+                "status": "C"  // hoặc "U" nếu đã lập chứng từ rồi
             }
         ]
     }
     ```
 
-#### **Function:** `insert_form_seminar_hco_proof`
+#### **Function:** `insert_form_seminar_hco_proof` > ✏️ **[CẬP NHẬT]**
 
 * **Loại:** WRITE (UPSERT theo `id`)
-* **Mục đích:** User cập nhật chi phí thực tế và đóng hồ sơ.
-* **Validation:**: KHÔNG CẦN VALIDATION.
-* **Logic:**
+* **Mục đích:** User cập nhật chi phí thực tế và đóng hồ sơ. Hoặc đánh dấu **Không thực hiện** (status X).
+* **Validation:** KHÔNG CẦN VALIDATION.
+* **Logic — Case 1 (Lưu báo cáo):**
     1. Update các cột `thuc_te_*`.
     2. Update 3 cột ảnh `hinh_anh_1` (bắt buộc từ FE), `hinh_anh_2`, `hinh_anh_3`.
     3. Update `ngay_bao_cao`.
     4. **Quan trọng:** Update `status` = **'U'** (Updated).
-* **JSON Input:** Array chỉ có 1 phần tử
+* **Lưu ý:** Chỉ xử lý **Case 1 (Lưu báo cáo)**. Trường hợp `status = 'X'` (Không thực hiện) gửi qua `insert_form_seminar_hco_cxm`. > ✏️ **[CẬP NHẬT]**
+* **JSON Input Case 1 (Lưu báo cáo):** Array chỉ có 1 phần tử — multipart/form-data
     ```json
     [{
         "id": "20251231_NV001_A",
@@ -702,6 +724,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
         "file_2":"https://storage.googleapis.com/bucket/file_2.pdf"
     }]
     ```
+
 * **JSON Output:**
     ```json
     { "status": "ok", "success_message": "Báo cáo thành công! Hồ sơ đã hoàn tất." }
