@@ -55,7 +55,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 * Nếu danh sách **thừa người**: tick chọn để đánh dấu không tham gia.
 
 **B2: Chọn CXM hỗ trợ**
-* Chọn một hoặc nhiều CXM. Hệ thống cảnh báo nếu CXM đã có lịch trùng.
+* Chọn một hoặc nhiều CXM.
 * **Ghi chú:** CXS được tự động gán dựa theo tài khoản đăng nhập khi CRS/CRM vào form, không cần chọn thủ công.
 
 **B3: Chọn nhãn tập trung và nhãn còn lại**
