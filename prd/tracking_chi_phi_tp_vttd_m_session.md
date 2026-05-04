@@ -657,10 +657,27 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "status": "ok",
         "rows": 2,
         "chucdanhengtitlesum": "CX-Staff",
+        "cxm_options": [
+            // lọc từ csx_cxm_incharge WHERE vai_tro = 'CXM'
+            {
+                "ma_cxm": "MR2458",
+                "ten_cxm": "Nguyễn Tường Thanh",
+                "vai_tro":"CXM"
+            }
+        ],
+        "cxs_options": [
+            // lọc từ csx_cxm_incharge WHERE vai_tro = 'CSX'
+            {
+                "ma_cx": "MR3196",
+                "ten_cx": "Phạm Thanh Thảo",
+                "vai_tro":"CSX"
+            }
+        ],
         "data": [
             {
                 "m_session_id": "NT001-04-2026-Xk9aB2",
                 "manv": "MR1077",
+                "ten_crs": "Nguyễn Văn CRSS",
                 "ma_crm": "MR0319",
                 "ten_crm": "Nguyễn Văn CRM",
                 "manv_csx": "MR3196",
