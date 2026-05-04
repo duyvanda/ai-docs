@@ -363,6 +363,16 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                         "ma_cx": "MR3196",
                         "ten_cx": "Phạm Thanh Thảo",
                         "ngay_ban": "29/04/2026"
+                    },
+                    {
+                        "ma_cx": "MR3196",
+                        "ten_cx": "Phạm Thanh Thảo",
+                        "ngay_ban": "26/05/2026"
+                    },
+                    {
+                        "ma_cx": "MR3196",
+                        "ten_cx": "Phạm Thanh Thảo",
+                        "ngay_ban": "29/05/2026"
                     }
                 ],
                 "data_vttd_gm": [
