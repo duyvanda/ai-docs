@@ -728,7 +728,9 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 "url_zip_image": null,
                 "inserted_at": "2026-04-23T10:00:00.000",
                 "approved_at": null,
-                "rejected_at": null
+                "rejected_at": null,
+                "in_progressed_at": null,
+                "submitted_at": null
             }
         ]
     }
