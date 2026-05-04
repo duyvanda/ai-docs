@@ -673,6 +673,18 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                 "vai_tro":"CSX"
             }
         ],
+        "data_vttd_gm": [
+            {
+                "ma_vat_tu": "VT80385",
+                "ten_vat_tu": "Bút BenitaXylo",
+                "gia_tien": 7400
+            },
+            {
+                "ma_vat_tu": "VT80065",
+                "ten_vat_tu": "Balo",
+                "gia_tien": 110000
+            }
+        ],
         "data": [
             {
                 "m_session_id": "NT001-04-2026-Xk9aB2",
