@@ -301,7 +301,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
             "appid": "tracking_chi_phi_tp_m_session",
             "manv": "MR1682",
             "inserted_at": "2026-04-23T10:00:00.000",
-            "applyfor":"2026-01-01T00:00:00", // giá trị mặc định
+            "applyfor": "2026-01-01T00:00:00",
             "settings_data": {
                 "nhan_tap_trung": [
                     "ENT",
@@ -332,8 +332,22 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
                         "ten_crm": "Huỳnh Văn Huy"
                     },
                     {
+                        "ma_cx": "MR4082",
+                        "ten_cx": "Võ Thị Như Thảo",
+                        "vai_tro": "CXS",
+                        "ma_crm": "MR3048",
+                        "ten_crm": "Nguyễn Văn Án"
+                    },
+                    {
                         "ma_cx": "MR2458",
                         "ten_cx": "Nguyễn Tường Thanh",
+                        "vai_tro": "CXM",
+                        "ma_crm": null,
+                        "ten_crm": null
+                    },
+                    {
+                        "ma_cx": "MR1682",
+                        "ten_cx": "Đinh Thị Ngọc Mẫn",
                         "vai_tro": "CXM",
                         "ma_crm": null,
                         "ten_crm": null
@@ -436,7 +450,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **JSON Input (`url_param`):**
     ```json
     {
-        "manv": "MR1077",
+        "manv": "MR1705",
         "version": "2026-04-23"
     }
     ```
