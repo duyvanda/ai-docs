@@ -28,7 +28,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 | Vai trò | Mô tả công việc trên hệ thống |
 | :--- | :--- |
-| **Admin** | - Upload file Excel settings và danh sách NVBH bên ngoài qua Google Stitch.<br>- Dữ liệu cấu hình được đồng bộ vào hệ thống để phục vụ các luồng nghiệp vụ. |
+| **Admin** | - Upload file Excel settings và danh sách NVBH bên ngoài.<br>- Dữ liệu cấu hình được đồng bộ vào hệ thống để phục vụ các luồng nghiệp vụ. |
 | **CRS (Trình dược viên)** | - Lập đề xuất M.Session: chọn NT, danh sách người tham gia, CXS/CXM hỗ trợ, nhãn, ngày giờ, địa điểm, chi phí.<br>- Nộp chứng từ sau sự kiện (hình ảnh, hóa đơn PDF). |
 | **CRM (Quản lý trực tiếp)** | - Xem và theo dõi các đề xuất M.Session của nhân viên cấp dưới.<br>- Nộp chứng từ sau sự kiện. |
 | **CXS (Chuyên viên sản phẩm)** | - Xem danh sách đề xuất được giao, lọc theo CRM/CXS/Mã NT.<br>- Điền danh mục vật tư cần mang theo.<br>- Điều chỉnh người đi nói bài và CXM hỗ trợ.<br>- Duyệt đề xuất.<br>- Ghi nhận thực tế vật tư đã dùng sau sự kiện. |
