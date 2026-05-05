@@ -131,7 +131,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 > CRS/CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
 
-#### CXS – Ghi nhận vật tư thực tế
+#### CRS/CRM – Ghi nhận vật tư thực tế
 **B1:** Chọn mã M.SESSION đã được duyệt.
 **B2:** Ghi nhận lại số lượng vật tư **thực tế đã sử dụng** (đối chiếu với đề xuất ban đầu của CRS).
 **B3:** Submit.
@@ -551,9 +551,11 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** WRITE (Insert / Upsert)
 * **Mục đích:** CRS/CRM gửi đề xuất M.Session mới. `m_session_id` được **Frontend sinh ra** theo format `{custid}-{mm-yyyy}-{short_uuid}`. Nếu `m_session_id` đã tồn tại (edit lại đề xuất đang ở trạng thái `H`) thì xóa và insert lại.
 * **Bảng ảnh hưởng:** `tracking_chi_phi_tp_m_session`.
-* **Validation:** KHÔNG CÓ VALIDATION.
+* **Validation:**
+    1. Input `status` phải là `'H'`, nếu không → trả về lỗi.
+    2. Nếu `m_session_id` đã tồn tại trong DB với `status ≠ 'H'` (đã được xử lý) → từ chối, trả về lỗi.
 * **Logic:**
-    1. Nếu `m_session_id` đã tồn tại → DELETE dòng cũ.
+    1. Nếu `m_session_id` đã tồn tại (và đang ở `status = 'H'`) → DELETE dòng cũ.
     2. INSERT dòng mới với `inserted_at` từ input.
 
 * **JSON Input (`body`):** *Array chỉ có duy nhất 1 phần tử*
