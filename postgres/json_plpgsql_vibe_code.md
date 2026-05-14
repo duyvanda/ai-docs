@@ -435,6 +435,6 @@ WHERE s.appid = 'planning_collect_hcp_gift_exclude';
 | Tách mảng / làm phẳng | json_array_elements |
 | Gom mảng | json_agg |
 | Map JSON array → typed record (có sẵn type) | jsonb_populate_recordset |
-| Map JSON array → record inline (không cần type) | jsonb_to_recordset |
+| Map JSON array → record inline (không cần type) | jsonb_to_recordset, json_array_elements  |
 
 ---
