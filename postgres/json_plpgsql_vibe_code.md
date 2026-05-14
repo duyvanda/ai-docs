@@ -288,6 +288,143 @@ $$ LANGUAGE plpgsql;
 
 ---
 
+## 7️⃣ jsonb_populate_recordset – Map JSON array vào typed record
+
+### Khái niệm
+- Nhận vào một **JSONB array** và "ép" từng phần tử vào **kiểu record cụ thể** (table type hoặc composite type).
+- Tự động map key ↔ tên cột, tự động cast kiểu dữ liệu.
+- Phù hợp khi bạn đã có sẵn một bảng/type làm khuôn mẫu.
+
+### Cú pháp
+```sql
+SELECT * FROM jsonb_populate_recordset(NULL::<type>, <jsonb_array>);
+```
+
+### Ví dụ thực tế
+
+**Giả sử bảng `qr_scan_quan_ly_tai_san` có cấu trúc:**
+
+| cot | kieu |
+|-----|------|
+| asset_id | text |
+| asset_name | text |
+| quantity | int |
+
+**Input JSON (truyền qua biến hoặc tham số hàm):**
+```json
+[
+  {"asset_id": "TS001", "asset_name": "Máy tính", "quantity": 5},
+  {"asset_id": "TS002", "asset_name": "Bàn ghế",  "quantity": 10}
+]
+```
+
+```sql
+-- json_input là biến jsonb chứa mảng trên
+SELECT *
+FROM jsonb_populate_recordset(NULL::qr_scan_quan_ly_tai_san, json_input);
+```
+
+**Output**
+| asset_id | asset_name | quantity |
+|----------|------------|----------|
+| TS001 | Máy tính | 5 |
+| TS002 | Bàn ghế | 10 |
+
+### Dùng trong PL/pgSQL (INSERT hàng loạt từ JSON)
+```sql
+CREATE OR REPLACE FUNCTION import_tai_san(json_input jsonb)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO qr_scan_quan_ly_tai_san (asset_id, asset_name, quantity)
+  SELECT asset_id, asset_name, quantity
+  FROM jsonb_populate_recordset(NULL::qr_scan_quan_ly_tai_san, json_input);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+📌 Ghi nhớ:
+- `NULL::<type>` là cách khai báo kiểu mẫu – không dùng giá trị thật.
+- Các key trong JSON **phải khớp tên cột** (case-insensitive).
+- Cột nào không có trong JSON → nhận giá trị `NULL`.
+
+---
+
+## 8️⃣ jsonb_to_recordset – Map JSON array với schema khai báo inline
+
+### Khái niệm
+- Tương tự `jsonb_populate_recordset` nhưng **không cần bảng/type có sẵn**.
+- Khai báo schema trực tiếp trong câu query: `AS x(col1 type1, col2 type2, ...)`.
+- Linh hoạt hơn khi chỉ cần lấy **một số cột nhất định** từ JSON, hoặc JSON không khớp hoàn toàn với bất kỳ bảng nào.
+
+### Cú pháp
+```sql
+SELECT x.*
+FROM <table_or_subquery>,
+     jsonb_to_recordset(<jsonb_column>) AS x(col1 type1, col2 type2, ...);
+```
+
+### Ví dụ thực tế
+
+**Bảng `settings_data`:**
+
+| appid | js (jsonb) |
+|-------|-----------|
+| planning_collect_hcp_gift_exclude | `[{"stt":1,"ma_hcp_2":"HCP001"},{"stt":2,"ma_hcp_2":"HCP002"}]` |
+
+```sql
+SELECT x.*
+FROM settings_data s,
+     jsonb_to_recordset(s.js) AS x(stt int, ma_hcp_2 text)
+WHERE s.appid = 'planning_collect_hcp_gift_exclude';
+```
+
+**Output**
+| stt | ma_hcp_2 |
+|-----|----------|
+| 1 | HCP001 |
+| 2 | HCP002 |
+
+### Cách thay thế: dùng `json_array_elements` + `->>` (không cần khai báo type)
+
+Khi không muốn dùng `jsonb_to_recordset`, có thể dùng `json_array_elements` rồi tự extract từng field:
+
+```sql
+SELECT
+  (x.val ->> 'stt')::int  AS stt,
+  x.val ->> 'ma_hcp_2'    AS ma_hcp_2
+FROM settings_data s,
+     json_array_elements(s.js::json) AS x(val)
+WHERE s.appid = 'planning_collect_hcp_gift_exclude';
+```
+
+**Output**
+| stt | ma_hcp_2 |
+|-----|----------|
+| 1 | HCP001 |
+| 2 | HCP002 |
+
+📌 Ghi nhớ:
+- `json_array_elements` trả về mỗi phần tử là **1 json value** → phải dùng `->>` để lấy từng field.
+- Phải **tự cast** kiểu dữ liệu (ví dụ `::int`), không tự động như `jsonb_to_recordset`.
+- Phù hợp khi muốn **thêm logic tính toán** trên từng field trong cùng câu SELECT.
+
+---
+
+### So sánh với jsonb_populate_recordset
+
+| Tiêu chí | `jsonb_populate_recordset` | `jsonb_to_recordset` |
+|----------|---------------------------|----------------------|
+| Cần type/bảng có sẵn? | ✅ Có | ❌ Không cần |
+| Khai báo schema | Lấy từ type | Inline trong query |
+| Linh hoạt chọn cột | Lấy tất cả cột của type | Chỉ khai báo cột cần |
+| Dùng trong hàm PL/pgSQL | Phổ biến hơn | Tiện cho query nhanh |
+
+📌 Ghi nhớ:
+- Dùng `jsonb_to_recordset` khi query **ad-hoc**, không muốn phụ thuộc vào type.
+- Dùng `jsonb_populate_recordset` khi đã có bảng khuôn và cần **INSERT / bulk load**.
+
+---
+
 ## 🧠 Tóm tắt nhanh
 
 | Hành động | Hàm |
@@ -297,5 +434,7 @@ $$ LANGUAGE plpgsql;
 | Lấy index | arr -> index |
 | Tách mảng / làm phẳng | json_array_elements |
 | Gom mảng | json_agg |
+| Map JSON array → typed record (có sẵn type) | jsonb_populate_recordset |
+| Map JSON array → record inline (không cần type) | jsonb_to_recordset |
 
 ---

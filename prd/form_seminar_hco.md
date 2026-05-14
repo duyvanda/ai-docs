@@ -588,6 +588,7 @@ Hệ thống sử dụng **PostgreSQL Stored Functions** nhận và trả về J
                 "chi_phi_teabreak": 500000,
                 "chi_phi_bao_cao_vien": 2000000,
                 "chi_phi_smn_thuc_te_khoa_duoc":0,
+                "chi_phi_thuc_te_hco_khoa":0,
                 "tang_pham": 0,
                 "cp_seminar": 0,
                 "cp_sms": 0,

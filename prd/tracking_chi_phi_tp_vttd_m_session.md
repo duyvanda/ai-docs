@@ -214,8 +214,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `manv_csx` | text | Mã CXS hỗ trợ (tự động gán theo tài khoản đăng nhập) |
 | `ten_csx` | text |  |
 | `manv_cxm_array` | jsonb | Danh sách CXM hỗ trợ. VD: `[{"ma_cxm": "MR001", "ten_cxm": "Nguyễn Văn A"}, {"ma_cxm": "MR002", "ten_cxm": "Trần Thị B"}]` |
-| `nhan_tap_trung` | jsonb | Danh sách nhãn tập trung (tối đa 4). VD: `["ENT", "EYE"]` |
-| `nhan_con_lai` | jsonb | Danh sách nhãn còn lại (không tập trung) được chọn trong buổi. VD: `["DERMA", "ORAL CARE"]` *(nullable)* |
+| `nhan_tap_trung` | jsonb | Danh sách ngành hàng (tối đa 4). VD: `["ENT", "EYE"]` |
+| `nhan_con_lai` | jsonb | Danh sách nhãn hàng (không tập trung) được chọn trong buổi. VD: `["DERMA", "ORAL CARE"]` *(nullable)* |
 | `ngay_su_kien` | date | Ngày diễn ra sự kiện |
 | `ca_thuc_hien` | jsonb | Danh sách ca thực hiện. VD: `[{"ca": 1, "gio_bat_dau": "09:00", "gio_ket_thuc": "11:00"}, {"ca": 2, "gio_bat_dau": "14:00", "gio_ket_thuc": "16:00"}]` |
 | `dia_diem_loai` | text | Loại địa điểm: `tai_nt` hoặc `ben_ngoai` |
