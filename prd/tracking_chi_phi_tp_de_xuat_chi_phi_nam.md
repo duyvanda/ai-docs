@@ -158,6 +158,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 
 * **Loại:** WRITE (Configuration Upsert)
 * **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống. Frontend xử lý 2 sheet Excel thành JSON rồi gửi xuống.
+* **File mẫu:** https://bi.meraplion.com/DMS/excel_file/tp_setting_de_xuat_chi_phi_hoat_dong_nam.xlsx
 * **Bảng ảnh hưởng:** `settings_data`
 * **Validation:** Người nhập phải có chức danh là CX.
 * **Logic:** Upsert dựa trên `appid` và `applyfor`.
