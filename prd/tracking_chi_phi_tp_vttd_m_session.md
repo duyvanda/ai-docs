@@ -120,7 +120,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 ### 4.4. Luồng Chứng từ sau sự kiện
 
-#### CRS/CRM – Nộp chứng từ
+#### CRM – Nộp chứng từ
 **B1:** Chọn mã M.SESSION có trạng thái `I` (đã xác nhận tham dự).
 **B2:** Upload chứng từ:
 * **File PDF:** 4 files (hóa đơn).
@@ -129,7 +129,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 **B3:** Submit. Trạng thái chuyển sang **`U` (Updated – Đã nộp chứng từ)**.
 
-> CRS/CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
+> CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
 
 #### CRS/CRM – Ghi nhận vật tư thực tế
 **B1:** Chọn mã M.SESSION đã được duyệt.
@@ -451,7 +451,7 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
 * **Loại:** READ
 * **Mục đích:** Lấy toàn bộ dữ liệu khởi tạo cần thiết cho form lập đề xuất M.Session của CRS/CRM. Bao gồm: danh sách NT theo tuyến, danh sách người tham gia tại từng NT (Zalo OA + file rời), cấu hình settings (nhãn, vật tư, CXM, lịch bận), và thông tin role người đăng nhập.
 * **Logic:**
-    * Lấy danh sách NT theo tuyến của `manv` từ `api_f_thongtin_tuyen_mcp_tp_pcl` (kênh TP).
+    * Lấy danh sách NT theo tuyến của `manv`, nếu `manv` là sup thì lấy tất cả nhân viên của sup, data từ `api_f_thongtin_tuyen_mcp_tp_pcl` (kênh TP).
     * Với mỗi NT, tổng hợp danh sách người tham gia từ 2 nguồn: `f_crawl_activate_ecom` (nguon: `zalo_oa`) và `tracking_chi_phi_tp_m_session_danh_sach_khach_hang_file_roi` (nguon: `file_roi`), lọc theo `custid`.
     * Lấy settings từ `settings_data` với `appid = 'tracking_chi_phi_tp_m_session'`.
     * Xác định `manv_csx` tự động: tra trong `csx_cxm_incharge` (settings) theo `manv` đăng nhập. Nếu `manv` là CXS thì `manv_csx = manv`, nếu là CRS thì tra CXS phụ trách.
