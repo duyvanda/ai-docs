@@ -109,7 +109,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 **B5: Duyệt đề xuất**
 * CXS xác nhận duyệt. Trạng thái đơn chuyển sang **`C` (Đã duyệt)**.
 
-### 4.3. Luồng CRS/CRM – Xác nhận trước sự kiện
+### 4.3. Luồng chỉ CRM – Xác nhận trước sự kiện
 
 *Áp dụng sau khi đề xuất đã được CXS duyệt (`C`), trước ngày diễn ra sự kiện.*
 
@@ -120,7 +120,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 ### 4.4. Luồng Chứng từ sau sự kiện
 
-#### CRM – Nộp chứng từ
+#### CRS/CRM – Nộp chứng từ
 **B1:** Chọn mã M.SESSION có trạng thái `I` (đã xác nhận tham dự).
 **B2:** Upload chứng từ:
 * **File PDF:** 4 files (hóa đơn).
@@ -129,7 +129,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 **B3:** Submit. Trạng thái chuyển sang **`U` (Updated – Đã nộp chứng từ)**.
 
-> CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
+> CRS/CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
 
 #### CRS/CRM – Ghi nhận vật tư thực tế
 **B1:** Chọn mã M.SESSION đã được duyệt.
