@@ -131,11 +131,6 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 > CRS/CRM vẫn có quyền **Hủy / Từ chối** ở bước này. Trạng thái chuyển sang **`X` (Cancelled)**. Yêu cầu điền lý do.
 
-#### CRS/CRM – Ghi nhận vật tư thực tế
-**B1:** Chọn mã M.SESSION đã được duyệt.
-**B2:** Ghi nhận lại số lượng vật tư **thực tế đã sử dụng** (đối chiếu với đề xuất ban đầu của CRS).
-**B3:** Submit.
-
 ---
 
 ### 4.5. Bảng trạng thái (Status Reference)
