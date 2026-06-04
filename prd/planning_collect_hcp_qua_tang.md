@@ -137,13 +137,15 @@ Lưu trữ các tham số vận hành cho chương trình quà tặng HCP hiện
 | `chi_phi_thang` | date | Tháng ghi nhận chi phí |
 
 **Table 3: `planning_collect_hcp_qua_tang_dinh_muc_crm`** (Bảng Định mức Ngân sách)
-Quản lý hạn mức chi tiêu cho CRS và CRM theo từng chương trình.
+Quản lý hạn mức chi tiêu cho CRS và CRM theo từng chương trình và từng vật tư.
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `ma_crm` | text | Mã nhân viên (CRS hoặc CRM) |
 | `ten_crm` | text | Tên nhân viên (CRS hoặc CRM) |
-| `dinh_muc` | double precision | Số tiền ngân sách tối đa được phép sử dụng |
+| `ma_vat_tu` | text | Mã vật tư/quà tặng |
+| `ten_vat_tu` | text | Tên vật tư/quà tặng |
+| `dinh_muc` | double precision | Số tiền ngân sách tối đa được phép sử dụng cho vật tư này |
 | `ten_chuong_trinh` | text | Tên chương trình áp dụng |
 
 **Table 4: `planning_collect_hcp_qua_tang_product_list`** (Bảng Danh mục Quà tặng)
@@ -209,6 +211,13 @@ Hệ thống hoạt động theo mô hình 2 lớp:
                 "don_gia": 200000
             }
         ],
+        "dinh_muc": [
+            {
+                "ma_vat_tu": "Q01",
+                "ten_vat_tu": "Balo",
+                "dinh_muc": 5000000
+            }
+        ],
         "nguoi_upload_file_data": ["MR1119", "MR0474", "MR2616", "MR2417"]
     }
     ```
@@ -229,7 +238,7 @@ Hệ thống hoạt động theo mô hình 2 lớp:
     2.  Join với các bảng cấu hình để tính toán và lấy định mức.
     3.  Kiểm tra các Validation rules.
     4.  Nếu Passed: `INSERT INTO planning_collect_hcp_qua_tang`.
-    5.  Return thành công kèm tổng tiền đã nhập.
+    5.  Return thành công kèm tổng tiền đã nhập theo CT hiện tại.
 
 * **JSON Input (`body`):**
     ```json
@@ -330,4 +339,46 @@ Hệ thống hoạt động theo mô hình 2 lớp:
             }
         ]
     }
+    ```
+
+### 6.3. Nhóm Lịch sử Đề xuất (Lịch sử)
+
+#### **Function:** `get_planning_collect_hcp_qua_tang_history`
+
+* **Loại:** READ
+* **Mục đích:** Lấy danh sách lịch sử các đề xuất quà tặng của nhân viên (và nhân viên cấp dưới nếu user là CRM).
+* **Nguyên tắc lọc dữ liệu (Logic):**
+    1. Lấy thông tin từ bảng `planning_collect_hcp_qua_tang`.
+    2. Lọc danh sách theo `manv` (hiển thị đơn của chính nhân viên). Nếu người dùng là CRM, dùng hàm `strpos` để lấy thêm các đơn của CRS cấp dưới dựa vào chuỗi quản lý/cây nhân sự (`sup`).
+    3. Join với bảng `view_list_hcp` để lấy `ten_hcp_2`.
+    4. Join với các bảng nhân sự (`d_users`, `d_hr_dsns`) để lấy `ten_crs`, mã CRM (`ma_crm` hoặc `supid`) và tên CRM (`ten_crm`).
+    5. Map `status` sang `ten_trang_thai` (tiếng Việt): `H` = Chờ duyệt, `C` = Đã duyệt, `R` = Từ chối.
+
+* **JSON Input (`url_param`):**
+    ```json
+    {
+        "manv": "MR1234"
+    }
+    ```
+* **JSON Output Specification:**
+    ```json
+    [
+        {
+            "uuid": "u-1234",
+            "ma_hcp_2": "HCP001",
+            "ten_hcp_2": "Nguyễn Văn A",
+            "manv": "MR1234",
+            "ten_crs": "Trần Trình Dược",
+            "ma_crm": "MR9999",
+            "ten_crm": "Lê Quản Lý",
+            "qua_tang": "Balo",
+            "so_luong": 2,
+            "price": 200000,
+            "status": "H",
+            "ten_trang_thai": "Chờ duyệt",
+            "ten_chuong_trinh": "Chương trình quà tặng tháng 6",
+            "chi_phi_thang": "2026-06-01T00:00:00",
+            "inserted_at": "2026-06-04T10:00:00"
+        }
+    ]
     ```
