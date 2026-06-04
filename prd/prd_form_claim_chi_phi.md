@@ -57,6 +57,7 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
             * `Người tiếp`: **Ẩn** ô nhập liệu này.
             * `Nội dung`: Bắt buộc **chọn từ Dropdown** (Danh sách định sẵn).
             * `Bác sĩ (HCP)`: **Hiển thị** dropdown, bắt buộc chọn HCP tương ứng.
+                * *Ràng buộc:* Nếu chọn nội dung là dịp sinh nhật, chỉ được phép chọn duy nhất **1 HCP**.
             * `Kênh`: **Hiển thị** dropdown cho phép chọn (CLC, INS, PCL, hoặc CLC & INS).
                 * *Lưu ý:* Nếu chọn `CLC & INS`, hiển thị thêm ô chọn `Tỷ lệ` (5:5, 6:4...).
 
@@ -244,6 +245,7 @@ Lưu trữ thông tin đăng ký kế hoạch chi phí (Plan).
 | `pubcustname` | text | Tên khách hàng tổng |
 | `chon_hcp` | text | Mã bác sĩ (HCP ID) |
 | `ten_hcp` | text | Tên bác sĩ |
+| `array_hcp` | jsonb | array các hcp từ fontend |
 | `nguoi_tiep` | text | **Họ tên người tiếp (Dành cho nhóm TP/MT)** |
 | `qua_tang` | text | Phân loại: "Quà tặng" hoặc "Giao tiếp - Mời cơm" |
 | `kenh` | text | Kênh chi phí (CLC, INS, PCL, CLC & INS) |
@@ -526,7 +528,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         * Nếu tất cả các bước Validation đều vượt qua (Pass), hệ thống thực hiện lệnh `INSERT` dữ liệu đã được xử lý vào bảng `form_claim_chi_phi`.
         * Trả về thông báo thành công.
 
-  * **JSON Input (`body`):**
+  * **JSON Input (`body`):** *Array 1 phần tử*
     ```json
     [
         {
@@ -539,6 +541,12 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "pubcustname": "BV QUẬN TÂN PHÚ - SG",
             "chon_hcp": "HCP00021426-H",
             "ten_hcp": "PHAN NGUYỄN ANH KHOA",
+            "array_hcp": [
+                {
+                    "ma_hcp_2": "HCP00021426-H",
+                    "ten_hcp": "PHAN NGUYỄN ANH KHOA"
+                }
+            ],
             "qua_tang": "Quà tặng",
             "kenh": "CLC",
             "ty_le": "5:5",
