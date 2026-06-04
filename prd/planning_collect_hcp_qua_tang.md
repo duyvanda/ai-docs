@@ -137,12 +137,14 @@ Lưu trữ các tham số vận hành cho chương trình quà tặng HCP hiện
 | `chi_phi_thang` | date | Tháng ghi nhận chi phí |
 
 **Table 3: `planning_collect_hcp_qua_tang_dinh_muc_crm`** (Bảng Định mức Ngân sách)
-Quản lý hạn mức chi tiêu cho CRS và CRM.
+Quản lý hạn mức chi tiêu cho CRS và CRM theo từng chương trình.
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `ma_crm` | text | Mã nhân viên (CRS hoặc CRM) |
-| `dinh_muc` | numeric | Số tiền ngân sách tối đa được phép sử dụng |
+| `ten_crm` | text | Tên nhân viên |
+| `dinh_muc` | double precision | Số tiền ngân sách tối đa được phép sử dụng |
+| `ten_chuong_trinh` | text | Tên chương trình áp dụng |
 
 **Table 4: `planning_collect_hcp_qua_tang_product_list`** (Bảng Danh mục Quà tặng)
 Lưu danh sách các mặt hàng có thể chọn để tặng.
