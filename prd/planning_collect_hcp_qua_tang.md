@@ -142,7 +142,7 @@ Quản lý hạn mức chi tiêu cho CRS và CRM theo từng chương trình.
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `ma_crm` | text | Mã nhân viên (CRS hoặc CRM) |
-| `ten_crm` | text | Tên nhân viên |
+| `ten_crm` | text | Tên nhân viên (CRS hoặc CRM) |
 | `dinh_muc` | double precision | Số tiền ngân sách tối đa được phép sử dụng |
 | `ten_chuong_trinh` | text | Tên chương trình áp dụng |
 
