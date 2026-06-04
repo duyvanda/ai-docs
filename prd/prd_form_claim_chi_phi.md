@@ -485,6 +485,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         * Nếu nội dung đăng ký là **"Chi phí quà tặng dịp sinh nhật"**, hệ thống sẽ tự động tra cứu ngày sinh của HCP trong view `view_list_hcp`.
         * Nếu không tìm thấy thông tin tháng sinh (`p_thang_sinh` IS NULL) trong hệ thống.
         * *Thông báo lỗi:* `"Khách hàng không có thông tin ngày sinh"`.
+        * Nếu tháng sinh (`p_thang_sinh` ) nhỏ hơn tháng hiện tại.
+        * *Thông báo lỗi:* `"Đã quá thời gian chọn quà sinh nhật cho khách hàng"`.
     3.  **Kiểm tra trùng lặp (Duplication Check):**
         * **Nguyên tắc:** Một HCP/Khách hàng không được nhận quà (hoặc mời cơm) quá 1 lần trong cùng một tháng cho cùng một loại hình.
         * **Logic kiểm tra:** Hệ thống quét bảng `form_claim_chi_phi`, tìm kiếm xem có bản ghi nào thỏa mãn đồng thời các điều kiện sau:
