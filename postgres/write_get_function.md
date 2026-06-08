@@ -171,14 +171,12 @@ get list seminar hco
 
 ---
 
-## **9. Quy tắc Logic**
+## **9. Quy tắc Logic Phân Quyền Dùng STRPOS**
 
-### **Luôn dùng STRPOS thay vì LIKE nếu chỉ tìm substring**
-
-→ tốc độ nhanh hơn nhiều
+### **Luôn dùng STRPOS chứa data của người request, nếu người request là sup thì lấy luôn data của các nhân viên**
 
 ```sql
-WHERE STRPOS(manv, p_manv) > 0
+WHERE STRPOS(COALESCE(manv, '') || COALESCE(supid, ''), p_manv) > 
 ```
 ---
 

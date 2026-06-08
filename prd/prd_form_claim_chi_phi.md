@@ -176,8 +176,13 @@ Bảng quản lý thông tin cây phân cấp nhân sự, được sử dụng �
 
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `manv` | text | **PK** - Mã nhân viên (Khớp với `d_hr_dsns`) |
+| `manv` | text | **PK** - Mã nhân viên |
+| `usertypes` | text | Loại user (VD: CRS, CRM, Admin...) |
+| `position` | text | Vị trí / chức vụ |
+| `tencvbh` | text | Tên nhân viên |
 | `supid` | text | **Permission** - Mã nhân viên của người quản lý trực tiếp (Line Manager) |
+| `tenquanlytt` | text | Tên người quản lý trực tiếp (Denormalized — dùng để hiển thị tên CRM mà không cần join thêm bảng khác) |
+
 
 ## View: `view_list_hcp` 
 
@@ -1345,3 +1350,129 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     ]
     ```
   * **JSON Output:** `{"status": "ok", "success_message": "Đã nhận thành công"}`
+
+-----
+
+### 6.6. Nhóm Lịch sử Claim (History)
+
+#### **Function:** `get_form_claim_chi_phi_history`
+
+* **Loại:** READ
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy toàn bộ lịch sử claim chi phí của một nhân viên (hoặc toàn bộ nhân viên trong nhóm của CRM) theo tháng chi phí. Mỗi bản ghi kế hoạch trả về kèm mảng `list_invoices` chứa toàn bộ hóa đơn đã gắn (từ bảng `form_claim_chi_phi_hoa_don`).
+
+* **Nguyên tắc lọc dữ liệu:**
+    1. **Parse input:**
+        * `p_manv`: Mã nhân viên truy vấn (NV tự xem hoặc CRM xem nhân viên).
+        * `p_thang_chi_phi`: Tháng chi phí cần lọc (timestamp dạng `YYYY-MM-01`).
+
+    2. **Xác định phân quyền (Permission via `strpos`):**
+        * Lấy `supid` của `p_manv` từ bảng `d_users`.
+        * Dùng `STRPOS` để lọc: chỉ lấy các bản ghi trong `form_claim_chi_phi` mà chuỗi kết hợp `(manv || ' ' || supid_cua_manv_do)` chứa `p_manv`.
+        * **Ý nghĩa:** Nhân viên tự xem phiếu của mình; CRM xem được phiếu của tất cả nhân viên cấp dưới.
+
+    3. **Lọc theo tháng chi phí:**
+        * Điều kiện: `thang_chi_phi = p_thang_chi_phi` (so sánh theo tháng).
+
+    4. **Tổng hợp hóa đơn (`list_invoices`):**
+        * Với mỗi `id` trong `form_claim_chi_phi`, lấy tất cả bản ghi tương ứng từ `form_claim_chi_phi_hoa_don` (theo `khid`).
+        * Gom thành mảng JSON (`jsonb_agg`) đặt tên `list_invoices`. Nếu không có hóa đơn nào thì trả về `[]`.
+
+    5. **Làm giàu dữ liệu (Data Enrichment - CRM Info):**
+        * Join bảng `d_users` (theo `manv = f.manv`) để lấy `supid` làm `ma_crm` và `tenquanlytt` làm `ten_crm`.
+        * Không cần join thêm `d_hr_dsns` — tên CRM đã có sẵn trong `d_users.tenquanlytt`.
+        * Trả về thêm 2 field: `ma_crm` và `ten_crm`.
+
+* **JSON Input (`url_param`):**
+    ```json
+    {
+        "manv": "MR0673",
+        "thang_chi_phi": "2025-10-01"
+    }
+    ```
+
+* **JSON Output Specification:**
+    ```json
+    {
+        "status": "ok",
+        "rows": 2,
+        "data": [
+            {
+                "id": "CCP20251012171819772",
+                "status": "D",
+                "manv": "MR0673",
+                "tencvbh": "Hồ Thị Hồng Gấm",
+                "ma_crm": "MR1137",
+                "ten_crm": "Vũ Mừng",
+                "phongdeptsummary": "HCP",
+                "chon_kh_chung": "000214",
+                "pubcustname": "BV QUẬN TÂN PHÚ - SG",
+                "chon_hcp": "HCP00021426-H",
+                "ten_hcp": "PHAN NGUYỄN ANH KHOA",
+                "qua_tang": "Quà tặng",
+                "kenh": "CLC",
+                "ty_le": "5:5",
+                "noi_dung": "Chi phí quà tặng ngày phụ nữ Việt Nam 20/10",
+                "ghi_chu": "abc",
+                "ma_dip": "phunuvietnam",
+                "so_ke_hoach": 666666,
+                "max_ke_hoach": 2000000,
+                "approved_so_ke_hoach": 666666,
+                "so_tien_claim_hoa_don": 666666,
+                "thang_chi_phi": "2025-10-01T00:00:00",
+                "ky_chi_phi_kt": "2025-11-01T00:00:00",
+                "inserted_at": "2025-10-12T17:18:19.772",
+                "approved_at": "2025-10-13T09:00:00",
+                "approved_manv": "MR1137",
+                "claim_approved_at": "2025-10-20T14:00:00",
+                "list_invoices": [
+                    {
+                        "khid": "CCP20251012171819772",
+                        "id_duy_nhat_cua_hoa_don": "019b1124ef32775aa5fd80199daf5623",
+                        "ten_nguoi_ban": "TRUNG TÂM Y TẾ HOA LƯ",
+                        "so_hoa_don": "000018820",
+                        "ngay_hoa_don": "2025-10-12T00:00:00",
+                        "tong_tien_thanh_toan": 862100,
+                        "so_tien_claim": 666666,
+                        "selected_time": "2025-10-13T09:00:00",
+                        "check_tm": 0,
+                        "manv": "MR0673",
+                        "cost_type": null
+                    }
+                ]
+            },
+            {
+                "id": "CCP20251012171819773",
+                "status": "I",
+                "manv": "MR0673",
+                "tencvbh": "Hồ Thị Hồng Gấm",
+                "ma_crm": "MR1137",
+                "ten_crm": "Vũ Mừng",
+                "phongdeptsummary": "HCP",
+                "chon_kh_chung": "007987",
+                "pubcustname": "PK NGUYỄN THỊ BÍCH NGỌC - SG",
+                "chon_hcp": "HCP1000001511-P",
+                "ten_hcp": "VÕ THỊ NGỌC TRÂM",
+                "qua_tang": "Quà tặng",
+                "kenh": "CLC",
+                "ty_le": null,
+                "noi_dung": "Chi phí quà tặng dịp sinh nhật",
+                "ghi_chu": "",
+                "ma_dip": "sinhnhat",
+                "so_ke_hoach": 500000,
+                "max_ke_hoach": 2000000,
+                "approved_so_ke_hoach": 500000,
+                "so_tien_claim_hoa_don": null,
+                "thang_chi_phi": "2025-10-01T00:00:00",
+                "ky_chi_phi_kt": "2025-11-01T00:00:00",
+                "inserted_at": "2025-10-12T10:00:00",
+                "approved_at": "2025-10-13T08:00:00",
+                "approved_manv": "MR1137",
+                "claim_approved_at": null,
+                "list_invoices": []
+            }
+        ]
+    }
+    ```
+
+* **SQL Function:** Xem file riêng tại [get_form_claim_chi_phi_history.sql](file:///d:/ai-docs/postgres/functions/get_form_claim_chi_phi_history.sql)
