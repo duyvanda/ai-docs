@@ -1466,6 +1466,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "manv": "MR1391",
             "ky_chi_phi_kt": "2026-06-01T00:00:00",
             "js_value": {},
+            "raw_from_be":{},
             "inserted_at": "2026-06-08T18:00:00"
         }
     ]
