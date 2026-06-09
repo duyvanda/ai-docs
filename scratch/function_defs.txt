@@ -1,0 +1,1653 @@
+CREATE OR REPLACE FUNCTION public.insert_form_claim_chi_phi_crm_claimed(input_json jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+    --input_json_first_el jsonb := input_json -> 0;
+
+BEGIN
+CREATE TEMP TABLE crm_result ON COMMIT DROP AS
+    SELECT
+        el ->> 'id' AS id,
+        el ->> 'manv' AS manv,
+        el ->> 'status' AS status,
+		el ->> 'ghi_chu' AS ghi_chu,
+        (el ->> 'inserted_at')::timestamp AS inserted_at
+    FROM jsonb_array_elements(input_json) AS el;
+
+DELETE FROM form_claim_chi_phi_hoa_don cp
+USING crm_result b
+WHERE cp.khid = b.id AND b.status = 'E';
+
+UPDATE form_claim_chi_phi p
+    SET
+        status = b.status,
+        approved_manv = b.manv,
+		ghi_chu = b.ghi_chu,
+        claim_approved_at = b.inserted_at
+    FROM
+        crm_result b
+    WHERE
+        p.id = b.id;
+
+    RETURN (
+        SELECT jsonb_build_object(
+            'status', 'ok',
+            'data', (SELECT jsonb_agg(f) FROM crm_result f),
+			'success_message','Đã nhận thành công'
+			
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', SQLERRM
+        );
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_crm_claimed(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+p_manv text := COALESCE(url_param->>'manv', '');
+
+BEGIN
+
+CREATE TEMP TABLE lst_duyet_hoa_don ON COMMIT DROP AS (
+SELECT 
+a.*,
+true as checked
+FROM form_claim_chi_phi a
+LEFT JOIN d_users c ON c.manv = a.manv
+where
+c.supid = p_manv
+AND a.status in ('I')
+ORDER BY inserted_at DESC
+);
+
+RETURN (
+	SELECT jsonb_build_object(
+	'lst_duyet_hoa_don',COALESCE((SELECT jsonb_agg(lst_duyet_hoa_don) FROM lst_duyet_hoa_don), '[]'::jsonb)
+	)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+	RETURN jsonb_build_object(
+	'status', 'fail',
+	'error_message', SQLERRM
+	);
+	
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_crm_approved(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+p_manv text := COALESCE(url_param->>'manv', '');
+
+BEGIN
+
+CREATE TEMP TABLE lst_da_duyet ON COMMIT DROP AS (
+WITH noi_manv_supid AS(
+SELECT 
+a.*,
+a.approved_so_ke_hoach as so_tien_claim,
+COALESCE(a.manv || ' - ' || c.supid, '') as mnv_supid
+FROM form_claim_chi_phi a
+LEFT JOIN d_users c ON c.manv = a.manv
+where a.status in ('C')
+)
+SELECT
+*
+FROM noi_manv_supid
+WHERE strpos(mnv_supid,p_manv) > 0
+);
+
+RETURN (
+	SELECT jsonb_build_object(
+	'status', 'ok',
+	'lst_da_duyet',COALESCE((SELECT jsonb_agg(lst_da_duyet) FROM lst_da_duyet), '[]'::jsonb)
+	)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+	RETURN jsonb_build_object(
+	'status', 'fail',
+	'error_message', SQLERRM
+	);
+	
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.insert_form_claim_chi_phi_crm(input_json jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+    --input_json_first_el jsonb := input_json -> 0;
+
+BEGIN
+    -- Create a temporary table to hold the exploded JSON data
+    -- The subquery in the FROM clause now uses the input_json_first_el variable directly
+    CREATE TEMP TABLE crm_result ON COMMIT DROP AS
+    SELECT
+        el ->> 'id' AS id,
+        el ->> 'manv' AS manv,
+        el ->> 'status' AS status,
+		el ->> 'ghi_chu' AS ghi_chu,
+		(el ->> 'duyet_so_ke_hoach')::double precision  AS duyet_so_ke_hoach,
+        (el ->> 'inserted_at')::timestamp AS inserted_at
+    FROM jsonb_array_elements(input_json) AS el;
+
+	DELETE FROM form_claim_chi_phi p
+    USING crm_result b
+    WHERE p.id = b.id AND b.status = 'X';
+
+    UPDATE form_claim_chi_phi p
+    SET
+        status = b.status,
+        approved_manv = b.manv,
+		ghi_chu = b.ghi_chu,
+		approved_so_ke_hoach = b.duyet_so_ke_hoach,
+        approved_at = b.inserted_at
+    FROM
+        crm_result b
+    WHERE
+        p.id = b.id
+		AND b.status != 'X';
+
+    RETURN (
+        SELECT jsonb_build_object(
+            'status', 'ok',
+			'success_message','Đã nhận thành công'
+            -- 'data', (SELECT jsonb_agg(f) FROM crm_result f)
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', SQLERRM
+        );
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_crm(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+
+DECLARE
+p_manv text := COALESCE(url_param->>'manv', '');
+v_chuc_danh TEXT;
+v_ten TEXT;
+
+BEGIN
+/*Nếu chucdanhengtitlesum chứa từ KAM thì đổi thành CRM, nếu chứa từ KAS thì đổi thành CRS*/
+SELECT 
+    REPLACE(REPLACE(chucdanhengtitlesum, 'KAM', 'CRM'), 'KAS', 'CRS'), 
+    hovatenfullname 
+INTO v_chuc_danh, v_ten 
+FROM d_hr_dsns 
+WHERE msnvcsmmoi = p_manv;
+
+CREATE TEMP TABLE lst_chon_ke_hoach ON COMMIT DROP AS (
+SELECT 
+a.*,
+true as checked,
+a.so_ke_hoach as duyet_so_ke_hoach
+FROM form_claim_chi_phi a
+LEFT JOIN d_users du ON du.manv = a.manv
+where
+STRPOS(a.manv || du.supid, p_manv) > 0
+AND a.status in ('H')
+);
+
+RETURN (
+	SELECT jsonb_build_object(
+	'chuc_danh', v_chuc_danh,
+	'ten', v_ten,
+	'lst_chon_ke_hoach',COALESCE((SELECT jsonb_agg(lst_chon_ke_hoach) FROM lst_chon_ke_hoach), '[]'::jsonb)
+	)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+	RETURN jsonb_build_object(
+	'status', 'fail',
+	'error_message', SQLERRM
+	);
+	
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.insert_form_claim_chi_phi_chung_tu(json_input jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    /* Biến chứa object input đầu tiên từ mảng */
+    v_json_input jsonb;
+
+BEGIN
+    /* ==============================================================
+       1. PARSE INPUT
+       - Lấy phần tử đầu tiên của mảng input (json_input->0)
+       ============================================================== */
+    v_json_input := json_input->0;
+
+    /* ==============================================================
+       2. TẠO TEMP TABLE (RAW INPUT)
+       - Parse các trường từ JSON
+       - Cast đúng kiểu dữ liệu (Date, Timestamp, Text)
+       ============================================================== */
+    CREATE TEMP TABLE input_raw ON COMMIT DROP AS
+    SELECT
+        (v_json_input ->> 'id')::TEXT            AS id,
+        (v_json_input ->> 'manv')::TEXT          AS manv,
+        (v_json_input ->> 'file_1')::TEXT        AS file_1,
+        (v_json_input ->> 'from_date')::DATE     AS from_date,
+        (v_json_input ->> 'to_date')::DATE       AS to_date,
+        (v_json_input ->> 'inserted_at')::TIMESTAMP AS inserted_at;
+
+    /* ==============================================================
+       3. VALIDATION
+       - Theo yêu cầu: Không có validation logic chặn lỗi
+       ============================================================== */
+    
+    /* ==============================================================
+       4. INSERT / UPSERT DỮ LIỆU
+       - Lấy dữ liệu từ temp table input_raw
+       - Sử dụng ON CONFLICT (id) để update nếu trùng
+       ============================================================== */
+    INSERT INTO form_claim_chi_phi_chung_tu (
+        id,
+        manv,
+        file_1,
+        from_date,
+        to_date,
+        inserted_at
+    )
+    SELECT
+        id,
+        manv,
+        file_1,
+        from_date,
+        to_date,
+        inserted_at
+    FROM input_raw
+    ON CONFLICT (id) DO UPDATE
+    SET
+        manv        = EXCLUDED.manv,
+        file_1      = EXCLUDED.file_1,
+        from_date   = EXCLUDED.from_date,
+        to_date     = EXCLUDED.to_date,
+        inserted_at = EXCLUDED.inserted_at;
+
+    /* ==============================================================
+       5. RETURN KẾT QUẢ THÀNH CÔNG
+       - Trả về đúng format yêu cầu
+       ============================================================== */
+    RETURN jsonb_build_object(
+        'status', 'ok',
+        'success_message', 'Đã nhận thành công'
+    );
+
+    /* ==============================================================
+       6. EXCEPTION HANDLING
+       ============================================================== */
+    EXCEPTION WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', SQLERRM
+        );
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_hoa_don_misa(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+--p_manv text := COALESCE(url_param->>'manv', '');
+
+BEGIN
+
+CREATE TEMP TABLE so_tien_cl ON COMMIT DROP AS (
+WITH so_tien_da_claim AS (
+SELECT
+id_duy_nhat_cua_hoa_don,
+SUM(so_tien_claim) as so_tien_claim
+FROM form_claim_chi_phi_hoa_don
+GROUP BY 1
+)
+SELECT
+hd.id_duy_nhat_cua_hoa_don,
+SUM(COALESCE(cl.so_tien_claim, 0)) as so_tien_claim,
+hd.tong_tien_thanh_toan,
+hd.tong_tien_thanh_toan - SUM(COALESCE(cl.so_tien_claim, 0)) AS tien_con_lai
+FROM d_misa_invoice hd
+LEFT JOIN so_tien_da_claim cl ON hd.id_duy_nhat_cua_hoa_don = cl.id_duy_nhat_cua_hoa_don
+GROUP BY 1,3
+);
+
+CREATE TEMP TABLE hoa_don_misa ON COMMIT DROP AS (
+SELECT
+to_char(a.ngay_hoa_don,'DD-MM-YYYY') AS ngay_hoa_don,
+a.ten_nguoi_ban,
+LPAD(a.so_hoa_don,9,'0') as so_hoa_don,
+a.tong_tien_thanh_toan,
+a.id_duy_nhat_cua_hoa_don,
+b.tien_con_lai as so_tien_claim,
+b.tien_con_lai,
+'' as selected_time,
+COALESCE(a.ten_nguoi_ban || ' | ' || LPAD(a.so_hoa_don,9,'0') || ' | ' || to_char(a.ngay_hoa_don,'DD-MM-YYYY') || ' | ' || a.ma_so_thue || ' | ', '') AS ten_hien_thi,
+COALESCE(upper(unaccent(a.ten_nguoi_ban)) || ' | ' || a.so_hoa_don || ' | ' || to_char(a.ngay_hoa_don,'DD-MM-YYYY') || ' | ' || a.ma_so_thue || ' | ', '') AS clean_ten,
+ROW_NUMBER() OVER(ORDER BY a.ngay_hoa_don DESC, a.ten_nguoi_ban DESC, a.so_hoa_don DESC, a.tong_tien_thanh_toan DESC) as stt,
+FALSE as check,
+FALSE as check_tm
+FROM d_misa_invoice a
+LEFT JOIN so_tien_cl b ON b.id_duy_nhat_cua_hoa_don = a.id_duy_nhat_cua_hoa_don
+WHERE date(a.ngay_hoa_don) >= DATE_TRUNC('month',CURRENT_DATE) - INTERVAL '1 month' -- AND date(a.ngay_hoa_don) <= '2025-08-31'
+AND b.tien_con_lai >= 10000
+ORDER BY a.ngay_hoa_don DESC, a.ten_nguoi_ban DESC, a.so_hoa_don DESC, a.tong_tien_thanh_toan DESC
+);
+
+RETURN (
+	SELECT jsonb_build_object(
+	'lst_invoices', COALESCE((SELECT jsonb_agg (d) FROM hoa_don_misa d ), '[]'::jsonb)
+	)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+	RETURN jsonb_build_object(
+	'status', 'fail',
+	'error_message', SQLERRM
+	);
+	
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.insert_form_cong_tac_phi(input_json jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+	p_check_hoa_don INT;
+	arr_length INT;
+
+BEGIN
+arr_length := jsonb_array_length(input_json -> 0 -> 'lst_chon_invoices');
+RAISE NOTICE 'Full arr_length: %', arr_length;
+
+CREATE TEMP TABLE data_input ON COMMIT DROP AS
+    SELECT
+        el ->> 'khid' AS khid,
+        el ->> 'manv' AS manv,
+		(el ->> 'tong_tien_ve_xe')::double precision AS tong_tien_ve_xe,
+		(el ->> 'tong_tien_khach_san')::double precision AS tong_tien_khach_san,
+		TO_TIMESTAMP(el ->> 'ky_chi_phi_kt', 'YYYY-MM-DD')::TIMESTAMP AS ky_chi_phi_kt,
+		(el ->> 'tu_ngay')::timestamp AS tu_ngay,
+		(el ->> 'den_ngay')::timestamp AS den_ngay,
+		el ->> 'tinh' AS tinh,
+		NULLIF(el ->> 'phu_cap_di_lai', '')::double precision AS phu_cap_di_lai,
+		NULLIF(el ->> 'phu_cap_an_uong', '')::double precision AS phu_cap_an_uong,
+		el ->> 'khoan_muc' AS khoan_muc,
+
+		(el ->> 'inserted_at')::timestamp as inserted_at,
+		NULLIF(el ->> 've_xe_cong_tac', '')::double precision AS ve_xe_cong_tac,
+		
+		-- (CASE 
+	 --    WHEN el ->> 'inserted_at' = '' THEN NULL 
+  --   	ELSE (el ->> 'inserted_at')::timestamp
+ 	-- 	END) AS inserted_at,
+
+		lst_chon_invoices ->> 'check_tm' AS check_tm,
+		lst_chon_invoices ->> 'clean_ten' AS clean_ten,
+		lst_chon_invoices ->> 'so_hoa_don' AS so_hoa_don,
+		(CASE 
+	    WHEN lst_chon_invoices ->> 'ngay_hoa_don' = '' THEN NULL 
+    	ELSE TO_TIMESTAMP(lst_chon_invoices ->> 'ngay_hoa_don', 'DD-MM-YYYY')
+ 		END) AS ngay_hoa_don,
+		 
+		lst_chon_invoices ->> 'ten_hien_thi' AS ten_hien_thi,
+		(lst_chon_invoices ->> 'tien_con_lai')::double precision AS tien_con_lai,
+		(CASE 
+    	WHEN lst_chon_invoices ->> 'selected_time' = '' 
+    	THEN (current_timestamp AT TIME ZONE 'UTC') 
+    	ELSE TO_TIMESTAMP(lst_chon_invoices ->> 'selected_time', 'DD-MM-YYYY')
+ 		END) AS selected_time,
+	
+		(lst_chon_invoices ->> 'so_tien_claim')::double precision AS so_tien_claim,
+		lst_chon_invoices ->> 'ten_nguoi_ban' AS ten_nguoi_ban,
+		(lst_chon_invoices ->> 'tong_tien_thanh_toan')::double precision AS tong_tien_thanh_toan,
+		lst_chon_invoices ->> 'id_duy_nhat_cua_hoa_don' AS id_duy_nhat_cua_hoa_don,
+		lst_chon_invoices ->> 'cost_type' AS cost_type
+		
+	FROM jsonb_array_elements(input_json) AS el
+	LEFT JOIN LATERAL 
+    jsonb_array_elements(el -> 'lst_chon_invoices') AS lst_chon_invoices ON TRUE
+;
+
+SELECT count(*) INTO p_check_hoa_don
+FROM form_claim_chi_phi_hoa_don a
+LEFT JOIN data_input b ON b.id_duy_nhat_cua_hoa_don = a.id_duy_nhat_cua_hoa_don
+WHERE b.id_duy_nhat_cua_hoa_don iS NOT NULL;
+
+IF p_check_hoa_don >= 1 THEN
+	RETURN (
+    SELECT jsonb_build_object(
+        'status', 'fail',
+        'error_message', 'Hóa đơn đã được chọn')
+	);
+END IF;
+
+-- always
+INSERT INTO public.form_cong_tac_phi (
+    khid, 
+    manv, 
+    ky_chi_phi_kt, 
+    tu_ngay, 
+    den_ngay, 
+    tinh, 
+    phu_cap_di_lai, 
+    phu_cap_an_uong, 
+    khoan_muc, 
+    tong_tien_ve_xe, 
+    tong_tien_khach_san, 
+    inserted_at, 
+    ve_xe_cong_tac -- Cột mới thêm
+)
+SELECT
+DISTINCT
+	khid,
+    manv,
+    ky_chi_phi_kt,
+    tu_ngay,
+    den_ngay,
+    tinh,
+    phu_cap_di_lai,
+    phu_cap_an_uong,
+    khoan_muc,
+    tong_tien_ve_xe,
+    tong_tien_khach_san,
+    inserted_at,
+    ve_xe_cong_tac
+FROM data_input;
+
+IF arr_length >= 1 THEN
+	INSERT INTO form_claim_chi_phi_hoa_don
+	SELECT 
+	khid,
+	id_duy_nhat_cua_hoa_don,
+	ten_nguoi_ban,
+	so_hoa_don,
+	ngay_hoa_don::timestamp as ngay_hoa_don,
+	tong_tien_thanh_toan,
+	so_tien_claim,
+	selected_time::timestamp as selected_time,
+	 0 AS check_tm,
+	manv,
+	cost_type
+	FROM data_input;
+END IF;
+
+RETURN (
+    SELECT jsonb_build_object(
+        'status', 'ok',
+        'success_message', 'Đã nhận thành công'
+    )
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+RETURN jsonb_build_object('status','fail','error_message', SQLERRM);
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_excel_form(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+p_manv text := COALESCE(url_param->>'manv', '');
+p_fromDate date := COALESCE(url_param->>'fromDate', '1900-01-01')::date;
+p_toDate date := COALESCE(url_param->>'toDate', '1900-01-01')::date;
+file_id text := COALESCE(url_param->>'file_id', '');
+
+p_so_tien_bang_chu text;
+p_bmkt002_tong_so_tien text;
+p_nguoi_de_nghi text;
+p_department text;
+p_bmkt013_tong_ke_hoach text;
+p_bmkt013_tong_duyet text;
+p_bmkt013_tong_thuc_hien text;
+p_bmkt005_so_tien_bang_chu text;
+
+/* Biến cho Email và HTML */
+p_job_title text; -- Vị trí (chức vụ)
+p_supid text;
+p_ma_nv_kt text;
+p_email_content text;
+p_send_email_info jsonb;
+    
+/* Biến tính toán riêng cho email */
+p_total_giao_tiep numeric := 0;
+p_total_cong_tac numeric := 0;
+p_total_tong numeric := 0;
+
+BEGIN
+
+SELECT hovatenfullname, phongdeptsummary, chucdanhengtitle 
+INTO p_nguoi_de_nghi, p_department, p_job_title
+FROM d_hr_dsns 
+WHERE msnvcsmmoi = p_manv;
+
+SELECT phongdeptsummary INTO p_department FROM d_hr_dsns WHERE msnvcsmmoi = p_manv;
+
+SELECT supid INTO p_supid FROM d_users WHERE manv = p_manv LIMIT 1;
+
+SELECT ma_nv_kt INTO p_ma_nv_kt 
+FROM form_claim_chi_phi_email_kt 
+WHERE ma_ql = p_supid 
+LIMIT 1;
+
+CREATE TEMP TABLE lst_chi_phi ON COMMIT DROP AS (
+/* Bước 1: Làm sạch Master theo từng nhóm Kênh cụ thể */
+WITH master_tp AS (
+    SELECT DISTINCT 
+        custid,
+		custnameinvoice,
+        shortterritorydescr
+    FROM d_master_khachhang
+    WHERE custid IS NOT NULL AND custid <> '' AND channel IN ('TP')
+),
+master_kenh_hcp AS (
+    SELECT DISTINCT 
+        pubcustid, 
+        max(shortterritorydescr) as shortterritorydescr
+    FROM d_master_khachhang
+    WHERE pubcustid IS NOT NULL AND pubcustid <> '' AND (channel NOT IN ('TP') OR channel IS NULL)
+	group by pubcustid
+)
+
+/* Bước 2: Cập nhật đoạn JOIN trong bảng lst_chi_phi */
+SELECT 
+	COALESCE(d_tp.shortterritorydescr, d_hcp.shortterritorydescr) AS khu_vuc,
+	c.supid,
+	c.tenquanlytt,
+	c.supid as supid_2,
+	c.tenquanlytt as tenquanlytt_2,
+	a.chon_kh_chung as ma_kh, -- cột F
+	CASE
+		WHEN a.kenh in ('TP') THEN d_tp.custnameinvoice
+		ELSE a.pubcustname END as ten_kh,
+	
+	CASE
+		WHEN a.kenh in ('TP','MT') THEN a.nguoi_tiep
+		ELSE a.ten_hcp END as ho_ten_nguoi_tiep,
+	
+	--a.ten_hcp as ho_ten_nguoi_tiep,
+	
+	CASE
+		WHEN a.kenh in ('CLC & INS') THEN a.kenh || ' (' || ty_le || ')'
+		ELSE a.kenh
+	END AS kenh,
+	
+	a.noi_dung,
+	a.id as so_khid, -- cột K
+	CASE 
+	    WHEN ROW_NUMBER() OVER (PARTITION BY a.id ORDER BY NULL ) = 1 THEN a.so_ke_hoach 
+	    ELSE 0 
+	END as de_xuat_kh,
+	CASE 
+	    WHEN ROW_NUMBER() OVER (PARTITION BY a.id ORDER BY NULL) = 1 THEN a.approved_so_ke_hoach 
+	    ELSE 0 
+	END as duyet_kh,
+	DATE(cl.ngay_hoa_don) as ngay_thuc_hien,
+	cl.so_tien_claim as tong_tien_thuc_hien,
+	cl.so_hoa_don,
+	a.ghi_chu,
+	a.ky_chi_phi_kt
+FROM form_claim_chi_phi a
+LEFT JOIN d_users c ON c.manv = a.manv
+LEFT JOIN form_claim_chi_phi_hoa_don cl ON cl.khid = a.id
+LEFT JOIN master_tp d_tp 
+    ON a.kenh IN ('TP') AND d_tp.custid = a.chon_kh_chung
+LEFT JOIN master_kenh_hcp d_hcp
+    ON a.kenh NOT IN ('TP') AND d_hcp.pubcustid = a.chon_kh_chung
+where a.manv = p_manv
+AND a.status in ('D')
+AND DATE(a.ky_chi_phi_kt) >= p_fromDate AND DATE(a.ky_chi_phi_kt) <= p_toDate
+ORDER BY DATE(a.ky_chi_phi_kt) DESC, a.kenh ASC, a.pubcustname ASC
+);
+
+CREATE TEMP TABLE ds_chi_phi_tiep_khach ON COMMIT DROP AS (
+SELECT
+	'Thanh toán chi phí giao tiếp tháng: ' || TO_CHAR(MAX(ky_chi_phi_kt), 'MM-YYYY') AS noi_dung,
+	NULL AS so_hoa_don,
+    NULL::DATE AS ngay_hoa_don,
+	'Trước ngày 20 tháng sau' as thoi_gian_de_nghi,
+	p_manv || ' - ' || p_nguoi_de_nghi as nguoi_nhan_tien,
+	'Bảng kê chi tiết đính kèm' AS ghi_chu,
+	SUM(cp.tong_tien_thuc_hien) as so_tien
+	--ROW_NUMBER() OVER (ORDER BY NULL) as stt
+FROM lst_chi_phi cp
+LEFT JOIN form_claim_chi_phi_hoa_don cl ON cl.khid = cp.so_khid and cl.so_hoa_don = cp.so_hoa_don
+GROUP BY 4,5
+);
+
+/* update 1: ds phụ cấp công tác không cần chia 2 nguồn có hóa đơn hay ko có hóa đơn.
+- lấy dòng tổng có số tiền trực tiếp từ bảng form_cong_tac_phi cả 5 cột chi phí
+- mapping với bảng form_claim_chi_phi_hoa_don để lấy tata cả các hóa đơn
+- Lưu ý: số tiền chỉ thể hiện ở 1 dòng duy nhất, hãy đánh stt và chỉ hiển thị dòng tổng tại vị trí đầu tiên.
+*/
+
+CREATE TEMP TABLE lst_cong_tac_phi ON COMMIT DROP AS (
+    WITH base_ctp AS (
+        SELECT 
+            'Công tác ' || COALESCE(cp.tinh, '') || ' từ ngày ' || TO_CHAR(cp.tu_ngay, 'DD/MM') || ' đến ' || TO_CHAR(cp.den_ngay, 'DD/MM') AS noi_dung_chi_tiet,
+            (cp.den_ngay::date - cp.tu_ngay::date) + 1 AS so_ngay,
+            COALESCE(cp.tong_tien_khach_san, 0) AS chi_phi_khach_san,
+            COALESCE(cp.phu_cap_an_uong, 0) AS phu_cap_an_uong,
+            COALESCE(cp.phu_cap_di_lai, 0) AS phu_cap_di_lai,
+            COALESCE(cp.ve_xe_cong_tac, 0) + COALESCE(cp.tong_tien_ve_xe, 0) AS ve_xe,
+            0 AS chi_phi_giao_tiep,
+            (COALESCE(cp.tong_tien_khach_san, 0) + COALESCE(cp.phu_cap_an_uong, 0) + COALESCE(cp.phu_cap_di_lai, 0) + COALESCE(cp.ve_xe_cong_tac, 0) + COALESCE(cp.tong_tien_ve_xe, 0) ) AS tong_tien,
+            cpd.so_hoa_don,
+            TO_CHAR(cpd.ngay_hoa_don, 'DD/MM/YYYY') AS ngay_hoa_don,
+            cp.khoan_muc,
+            p_manv || ' - ' || COALESCE(u.tencvbh, p_nguoi_de_nghi) AS nguoi_nhan_tien,
+            NULL::text AS ghi_chu,
+            ROW_NUMBER() OVER (PARTITION BY cp.khid ORDER BY cpd.ngay_hoa_don ASC, cpd.so_hoa_don ASC) AS rn,
+            cp.khid,
+			cp.tu_ngay
+        FROM public.form_cong_tac_phi cp
+        LEFT JOIN d_users u ON cp.manv = u.manv
+        LEFT JOIN public.form_claim_chi_phi_hoa_don cpd on cp.khid = cpd.khid
+        WHERE cp.manv = p_manv
+          AND cp.ky_chi_phi_kt::date >= p_fromDate 
+          AND cp.ky_chi_phi_kt::date <= p_toDate
+    )
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY khid ASC, rn ASC) AS stt,
+		noi_dung_chi_tiet,
+        so_ngay,
+        CASE WHEN rn = 1 AND chi_phi_khach_san > 0 THEN chi_phi_khach_san ELSE NULL END AS chi_phi_khach_san,
+        CASE WHEN rn = 1 AND phu_cap_an_uong > 0 THEN phu_cap_an_uong ELSE NULL END AS phu_cap_an_uong,
+        CASE WHEN rn = 1 AND phu_cap_di_lai > 0 THEN phu_cap_di_lai ELSE NULL END AS phu_cap_di_lai,
+        CASE WHEN rn = 1 AND ve_xe > 0 THEN ve_xe ELSE NULL END AS ve_xe,
+        CASE WHEN rn = 1 AND chi_phi_giao_tiep > 0 THEN chi_phi_giao_tiep ELSE NULL END AS chi_phi_giao_tiep,
+        CASE WHEN rn = 1 THEN tong_tien ELSE NULL END AS tong_tien,
+        so_hoa_don,
+        ngay_hoa_don,
+        khoan_muc,
+        nguoi_nhan_tien,
+        ghi_chu
+    FROM base_ctp
+	ORDER BY khid ASC, rn ASC
+);
+
+/* update 2: tổng số tiền lấy từ bảng đã update 1*/
+CREATE TEMP TABLE tong_hop_ctp ON COMMIT DROP AS (
+    SELECT
+		'Công tác phí tháng: ' || TO_CHAR(p_fromDate, 'MM-YYYY') AS noi_dung,
+        NULL::text AS so_hoa_don,
+        NULL::date AS ngay_hoa_don,
+        'Trước ngày 20 tháng sau' AS thoi_gian_de_nghi,
+        p_manv || ' - ' || p_nguoi_de_nghi AS nguoi_nhan_tien,
+        'Bảng kê chi tiết đính kèm' AS ghi_chu,
+        COALESCE(SUM(tong_tien), 0) AS tong_tien
+    FROM lst_cong_tac_phi
+);
+
+CREATE TEMP TABLE ds_tong_hop_thanh_toan ON COMMIT DROP AS (
+WITH lst_payment_un AS
+	(
+		SELECT * FROM ds_chi_phi_tiep_khach
+		UNION ALL
+		SELECT * FROM tong_hop_ctp
+	)
+SELECT
+    *,
+    ROW_NUMBER() OVER (ORDER BY NULL) AS stt
+FROM lst_payment_un
+);
+
+SELECT to_char(SUM(de_xuat_kh), 'FM999,999,999,990') INTO p_bmkt013_tong_ke_hoach FROM lst_chi_phi;
+SELECT to_char(SUM(duyet_kh), 'FM999,999,999,990') INTO p_bmkt013_tong_duyet FROM lst_chi_phi;
+SELECT to_char(SUM(tong_tien_thuc_hien), 'FM999,999,999,990') INTO p_bmkt013_tong_thuc_hien FROM lst_chi_phi;
+
+SELECT utils_convert_number_to_vietnamese_text(SUM(so_tien)::BIGINT) INTO p_so_tien_bang_chu FROM ds_tong_hop_thanh_toan;
+SELECT to_char(SUM(so_tien), 'FM999,999,999,990') INTO p_bmkt002_tong_so_tien FROM ds_tong_hop_thanh_toan;
+/*Tính toán tách biệt cho email */
+/* Tổng Giao tiếp */
+SELECT COALESCE(SUM(so_tien), 0) INTO p_total_giao_tiep FROM ds_chi_phi_tiep_khach;
+/* Tổng Công tác phí (CTP = Phụ cấp + Hóa đơn) */
+
+SELECT COALESCE(SUM(tong_tien), 0) INTO p_total_cong_tac FROM tong_hop_ctp;
+SELECT utils_convert_number_to_vietnamese_text(p_total_cong_tac::BIGINT) INTO p_bmkt005_so_tien_bang_chu;
+
+p_total_tong := p_total_giao_tiep + p_total_cong_tac;
+/* Tạo nội dung HTML (Theo mẫu commit) */
+p_email_content := format(
+'<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #000;">
+	<p><strong>Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng %s/năm %s</strong></p>
+	<table border="0" cellpadding="0" cellspacing="0" style="width: 100%%; max-width: 600px;">
+		<tr>
+			<td style="padding: 5px 0; width: 160px;"><strong>Mã người lập ĐNTT:</strong></td>
+			<td style="border-bottom: 1px dotted #000;">%s</td>
+		</tr>
+		<tr>
+			<td style="padding: 5px 0;"><strong>Tên người lập ĐNTT:</strong></td>
+			<td style="border-bottom: 1px dotted #000;">%s</td>
+		</tr>
+		<tr>
+			<td style="padding: 5px 0;"><strong>Phòng ban:</strong></td>
+			<td style="border-bottom: 1px dotted #000;">%s</td>
+		</tr>
+		<tr>
+			<td style="padding: 5px 0; color: #800000;"><strong>Vị trí:</strong></td>
+			<td style="border-bottom: 1px dotted #000;">%s</td>
+		</tr>
+	</table>
+	<br>
+	<p>1. Số tiền giao tiếp/quà tặng đề nghị thanh toán Tháng %s/Năm %s là: %s VNĐ</p>
+	<p>2. Số tiền công tác phí đề nghị thanh toán Tháng %s/Năm %s là: %s VNĐ</p>
+	<p><strong>Tổng cộng số tiền đề nghị thanh toán là: %s VNĐ</strong></p>
+	<br>
+	<p>📂 <strong>File đính kèm:</strong> <a href="https://bi.meraplion.com/DMS/form_claim_chi_phi_excel_output/%s.xlsx" target="_blank" style="color: #0000EE; text-decoration: underline;">Tải file chi tiết tại đây</a></p>
+</div>',
+TO_CHAR(p_fromDate, 'MM'), TO_CHAR(p_fromDate, 'YYYY'),         -- Tiêu đề
+p_manv,                                                         -- Mã NV
+p_nguoi_de_nghi,                                                -- Tên NV
+COALESCE(p_department, ''),                                     -- Phòng ban
+COALESCE(p_job_title, ''),                                      -- Vị trí
+TO_CHAR(p_fromDate, 'MM'), TO_CHAR(p_fromDate, 'YYYY'), TO_CHAR(p_total_giao_tiep, 'FM999,999,999,990'), -- Dòng 1
+TO_CHAR(p_fromDate, 'MM'), TO_CHAR(p_fromDate, 'YYYY'), TO_CHAR(p_total_cong_tac, 'FM999,999,999,990'),  -- Dòng 2
+TO_CHAR(p_total_tong, 'FM999,999,999,990'),                      -- Tổng cộng
+file_id
+);
+
+ /* 3. Tạo Object send_email_info */
+    p_send_email_info := jsonb_build_object(
+        'email_to', (
+            SELECT jsonb_agg(t) FROM (
+                SELECT p_manv as receive_code WHERE p_manv IS NOT NULL AND p_manv <> ''
+                UNION ALL
+                SELECT p_supid as receive_code WHERE p_supid IS NOT NULL AND p_supid <> ''
+                UNION ALL
+                SELECT p_ma_nv_kt as receive_code WHERE p_ma_nv_kt IS NOT NULL AND p_ma_nv_kt <> ''
+            ) t
+        ),
+        'subject', 'Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng ' || TO_CHAR(p_fromDate, 'MM/YYYY'),
+        'content', p_email_content,
+        'email_bcc', '[]'::jsonb
+    );
+
+RETURN (
+		SELECT jsonb_build_object(
+		'status', 'ok',
+		'id', file_id,
+		'BMKT013', COALESCE((SELECT jsonb_agg(lst_chi_phi) FROM lst_chi_phi), '[]'::jsonb),
+		'BMKT002', COALESCE((SELECT jsonb_agg(ds_tong_hop_thanh_toan) FROM ds_tong_hop_thanh_toan), '[]'::jsonb),
+		'BMKT005', COALESCE((SELECT jsonb_agg(lst_cong_tac_phi) FROM lst_cong_tac_phi), '[]'::jsonb),
+		'bmkt013_tong_tien_ke_hoach', p_bmkt013_tong_ke_hoach,
+		'bmkt013_tong_tien_duyet', p_bmkt013_tong_duyet,
+		'bmkt013_tong_tien_thuc_hien', p_bmkt013_tong_thuc_hien,
+		'p_bmkt005_tong_cong_tac_phi', to_char(p_total_cong_tac, 'FM999,999,999,990'),
+		'bmkt002_department', p_department,
+		'bmkt002_tong_so_tien', p_bmkt002_tong_so_tien,
+		'bmkt002_nguoi_nhan',  p_manv || ' - ' || p_nguoi_de_nghi,
+		'bmkt002_nguoi_de_nghi', p_manv || ' - ' || p_nguoi_de_nghi,
+		'bmkt002_ly_do_thanh_toan', 'Thanh toán chi phí giao tiếp tháng: ' || TO_CHAR(p_fromDate, 'MM-YYYY'),
+		'bmkt002_so_tien_bang_chu', p_so_tien_bang_chu,
+		'bmkt002_ma_nv', p_manv,
+		'bmkt002_ma_quan_ly', p_supid,
+		'bmkt002_ma_nv_kt', 'MR2931',
+		'bmkt002_ma_nguoi_duyet', 'MR2931',
+		'send_email_info', p_send_email_info,
+		'bmkt005_ly_do_thanh_toan', 'Thanh toán tiền công tác phí tháng: ' || TO_CHAR(p_fromDate, 'MM-YYYY'),
+		'bmkt005_so_tien_bang_chu', p_bmkt005_so_tien_bang_chu,
+		'time', TO_CHAR(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS.US')
+		)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+		RETURN jsonb_build_object(
+		'status', 'fail',
+		'error_message', SQLERRM
+		);
+
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.insert_form_claim_chi_phi(json_input jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+    p_sl_hcp       INT;
+    p_vuot_dm      INT;
+    p_ten_hcp      INT;
+    p_gift_history INT;
+    p_qua_tang     TEXT  := (json_input->0->>'qua_tang');
+    p_thang_sinh   INT;
+    p_chon_hcp     TEXT  := (json_input->0->>'chon_hcp');
+    p_noi_dung     TEXT  := (json_input->0->>'noi_dung');
+    
+    _log_output    jsonb;
+
+BEGIN
+
+    /* 
+     * STEP 1: Parse JSON từ Frontend 
+     * data_nhap sẽ chỉ chứa 1 dòng duy nhất (do gửi lên 1 object kèm array_hcp).
+     */
+    CREATE TEMP TABLE data_nhap 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            *
+        FROM 
+            jsonb_populate_recordset(NULL::form_claim_chi_phi, json_input)
+    );
+ 
+    /* 
+     * STEP 2: Tạo bảng bóc tách (Explode) HCP 
+     * Bóc tách array_hcp từ 1 dòng thành N dòng tương ứng với số lượng HCP.
+     * Bảng data_nhap_exploded này chuyên dùng để chạy các câu query kiểm tra (validation).
+     */
+    CREATE TEMP TABLE data_nhap_exploded 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            a.id, 
+            a.status, 
+            a.phongdeptsummary, 
+            a.chon_kh_chung, 
+            a.pubcustname,
+            hcp.ma_hcp_2    AS chon_hcp,
+            hcp.ten_hcp     AS ten_hcp,
+            a.qua_tang, 
+            a.noi_dung, 
+            a.so_ke_hoach, 
+            a.thang_chi_phi, 
+            a.ky_chi_phi_kt, 
+            a.ma_dip
+        FROM 
+            data_nhap a
+        LEFT JOIN LATERAL (
+            SELECT 
+                elem->>'ma_hcp_2' AS ma_hcp_2,
+                elem->>'ten_hcp'  AS ten_hcp
+            FROM 
+                jsonb_array_elements(
+                    CASE 
+                        WHEN jsonb_typeof(a.array_hcp) = 'array' 
+                        THEN a.array_hcp 
+                        ELSE '[]'::jsonb 
+                    END
+                ) AS elem
+        ) hcp ON true
+    );
+
+    /* 
+     * STEP 3: Lấy thông tin tháng sinh của HCP (Nếu là quà tặng sinh nhật)
+     */
+    SELECT 
+        b.thang_sinh 
+    INTO 
+        p_thang_sinh
+    FROM 
+        data_nhap_exploded a
+    LEFT JOIN 
+        view_list_hcp b 
+        ON a.chon_hcp = b.ma_hcp_2
+    WHERE 
+        a.noi_dung = 'Chi phí quà tặng dịp sinh nhật'
+    LIMIT 1;
+ 
+    /* 
+     * STEP 4: Đếm số lượng HCP được chọn để làm cơ sở chia tiền (so_ke_hoach)
+     */
+    SELECT 
+        COALESCE(COUNT(chon_hcp), 0) 
+    INTO 
+        p_sl_hcp 
+    FROM 
+        data_nhap_exploded;
+ 
+    /* 
+     * STEP 5: Lưu tạm thông tin ngày sinh khách hàng
+     */
+    CREATE TEMP TABLE ngay_sinh_kh 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            ma_hcp_2, 
+            ngay_sinh, 
+            thang_sinh, 
+            nam_sinh
+        FROM 
+            public.view_list_hcp
+        WHERE 
+            ma_hcp_2 IN (
+                SELECT 
+                    chon_hcp 
+                FROM 
+                    data_nhap_exploded 
+                WHERE 
+                    chon_hcp IS NOT NULL
+            )
+    );
+ 
+    /* 
+     * STEP 6: Chuẩn bị bảng data_insert (Chỉ 1 dòng) để Insert vào bảng gốc
+     * Vẫn select từ data_nhap (1 dòng) để giữ đúng cấu trúc.
+     */
+    CREATE TEMP TABLE data_insert 
+    ON COMMIT DROP 
+    AS (
+        SELECT
+            a.id, 
+            a.status, 
+            a.manv, 
+            a.tencvbh, 
+            a.phongdeptsummary, 
+            a.chon_kh_chung, 
+            a.pubcustname,
+            a.chon_hcp      AS chon_hcp, 
+            a.ten_hcp       AS ten_hcp, 
+            a.array_hcp, 
+            a.qua_tang, 
+            a.kenh, 
+            a.ty_le, 
+            a.noi_dung, 
+            a.ghi_chu, 
+            a.so_ke_hoach,
+            CASE
+                WHEN a.phongdeptsummary IN ('HCP') THEN 2000000 * p_sl_hcp
+                WHEN a.phongdeptsummary IN ('TP')  THEN 5000000
+                ELSE 2000000 
+            END AS max_ke_hoach,
+            a.inserted_at, 
+            a.ma_dip,
+            CASE
+                WHEN a.noi_dung = 'Chi phí quà tặng dịp sinh nhật' 
+                 AND p_thang_sinh >= EXTRACT(MONTH FROM CURRENT_DATE)
+                THEN (EXTRACT(YEAR FROM CURRENT_DATE) || '-' || p_thang_sinh || '-' || '01')::DATE
+                
+                ELSE COALESCE(thang_chi_phi, ky_chi_phi_kt::DATE::TIMESTAMP)::"timestamp"
+            END AS thang_chi_phi,
+            
+            a.ky_chi_phi_kt::DATE::TIMESTAMP AS ky_chi_phi_kt,
+            a.nguoi_tiep
+        FROM 
+            data_nhap a
+    );
+ 
+    /* 
+     * STEP 7: Lấy các dữ liệu chi phí đã nhập trước đó của (các) HCP này
+     */
+    CREATE TEMP TABLE tach_data_da_nhap 
+    ON COMMIT DROP 
+    AS (
+        SELECT
+            a.id, 
+            a.phongdeptsummary, 
+            a.chon_kh_chung, 
+            a.thang_chi_phi,
+            UNNEST(STRING_TO_ARRAY(COALESCE(a.chon_hcp, a.chon_kh_chung), ',')) AS chon_hcp,
+            COALESCE(
+                a.so_tien_claim_hoa_don,
+                COALESCE(a.approved_so_ke_hoach, a.so_ke_hoach)
+            ) AS so_ke_hoach,
+            b.thang_chi_phi AS thang_insert, 
+            a.ma_dip
+        FROM 
+            form_claim_chi_phi a
+        LEFT JOIN 
+            data_insert b 
+            ON a.thang_chi_phi::date = b.thang_chi_phi::date
+        WHERE 
+                a.status != 'R' 
+            AND b.thang_chi_phi IS NOT NULL 
+            AND a.qua_tang = p_qua_tang
+    );
+ 
+    /* 
+     * STEP 8: Kiểm tra lịch sử Marketing (đã tặng sinh nhật trong năm chưa)
+     */
+    CREATE TEMP TABLE gift_history_mkt 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            ma_hcp_2, 
+            ten_hcp, 
+            nam_thuc_hien, 
+            chi_phi_thuc_hien_dong
+        FROM 
+            public.d_tracking_cost_hcp_v2
+        WHERE 
+                LOWER(hoat_dong) LIKE '%quà tặng%'
+            AND ma_hcp_2 IN (
+                SELECT 
+                    chon_hcp 
+                FROM 
+                    data_nhap_exploded 
+                WHERE 
+                    chon_hcp IS NOT NULL
+            )
+            AND nam_thuc_hien = (EXTRACT(YEAR FROM CURRENT_DATE))
+    );
+ 
+    /* 
+     * STEP 9: Tổng hợp số tiền cũ của từng HCP đã nhập trong tháng
+     */
+    CREATE TEMP TABLE so_tien_da_nhap 
+    ON COMMIT DROP 
+    AS (
+        WITH so_tien_theo_hcp AS (
+            SELECT 
+                id, 
+                CASE 
+                    WHEN phongdeptsummary = 'HCP' THEN NULL 
+                    ELSE chon_kh_chung 
+                END AS chon_kh_chung,
+                chon_hcp, 
+                thang_chi_phi, 
+                ma_dip, 
+                COUNT(id) OVER (PARTITION BY id) AS sl_hcp,
+                CASE 
+                    WHEN phongdeptsummary ='HCP' 
+                    THEN so_ke_hoach / COUNT(id) OVER (PARTITION BY id, thang_chi_phi) 
+                    ELSE so_ke_hoach 
+                END AS so_ke_hoach
+            FROM 
+                tach_data_da_nhap
+            GROUP BY 
+                id, 
+                so_ke_hoach, 
+                chon_hcp, 
+                chon_kh_chung, 
+                thang_chi_phi, 
+                phongdeptsummary, 
+                ma_dip
+        )
+        SELECT 
+            chon_kh_chung, 
+            chon_hcp, 
+            thang_chi_phi, 
+            ma_dip, 
+            SUM(so_ke_hoach) AS so_ke_hoach
+        FROM 
+            so_tien_theo_hcp 
+        GROUP BY 
+            chon_kh_chung, 
+            chon_hcp, 
+            thang_chi_phi, 
+            ma_dip
+    );
+ 
+    /* 
+     * STEP 10: Tính tổng số tiền (Tiền form hiện tại + Tiền các form cũ) để check định mức
+     * Dùng data_nhap_exploded để map chính xác từng HCP
+     */
+    CREATE TEMP TABLE tong_tien_claim 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            a.chon_kh_chung, 
+            a.chon_hcp, 
+            a.phongdeptsummary,
+            CASE 
+                WHEN a.phongdeptsummary = 'HCP' 
+                THEN a.so_ke_hoach / NULLIF(p_sl_hcp, 0) 
+                ELSE a.so_ke_hoach 
+            END AS so_ke_hoach_1,
+            
+            COALESCE(b.so_ke_hoach, 0) AS so_ke_hoach_2,
+            
+            CASE 
+                WHEN a.phongdeptsummary = 'HCP' AND a.noi_dung = 'Chi phí quà tặng dịp sinh nhật' 
+                THEN COALESCE(c.chi_phi_thuc_hien_dong, 0) 
+                ELSE 0 
+            END AS so_ke_hoach_3
+        FROM 
+            data_nhap_exploded a
+        LEFT JOIN 
+            so_tien_da_nhap b 
+            ON COALESCE(b.chon_hcp, b.chon_kh_chung) = COALESCE(a.chon_hcp, a.chon_kh_chung)
+           AND DATE_TRUNC('month', b.thang_chi_phi) = COALESCE(a.thang_chi_phi, DATE_TRUNC('month', CURRENT_DATE))::"timestamp"
+        LEFT JOIN 
+            gift_history_mkt c 
+            ON a.chon_hcp = c.ma_hcp_2
+    );
+ 
+    /* 
+     * STEP 11: Lịch sử nhận quà dip này để chặn nếu đã nhận
+     */
+    CREATE TEMP TABLE gift_history 
+    ON COMMIT DROP 
+    AS (
+        SELECT 
+            a.chon_kh_chung, 
+            a.chon_hcp, 
+            a.ma_dip
+        FROM 
+            data_nhap_exploded a
+        LEFT JOIN 
+            tach_data_da_nhap b 
+            ON COALESCE(b.chon_hcp, b.chon_kh_chung) = COALESCE(a.chon_hcp, a.chon_kh_chung) 
+           AND b.ma_dip = a.ma_dip
+        WHERE 
+            b.ma_dip IS NOT NULL
+    );
+ 
+    /* 
+     * STEP 12: Đếm số liệu để làm cờ (flag) validation
+     */
+    SELECT 
+        COUNT(*) 
+    INTO 
+        p_gift_history 
+    FROM 
+        gift_history;
+ 
+    SELECT 
+        COUNT(*) 
+    INTO 
+        p_vuot_dm
+    FROM 
+        tong_tien_claim
+    WHERE 
+        so_ke_hoach_1 + so_ke_hoach_2 + so_ke_hoach_3 >= 
+            CASE
+                WHEN phongdeptsummary IN ('HCP') THEN 2000000
+                WHEN phongdeptsummary IN ('TP')  THEN 5000000
+                ELSE 2000000 
+            END;
+ 
+    SELECT 
+        COUNT(*) 
+    INTO 
+        p_ten_hcp
+    FROM 
+        data_nhap_exploded
+    WHERE 
+            phongdeptsummary = 'HCP' 
+        AND ten_hcp IS NULL;
+ 
+    /* 
+     * STEP 13: KHỐI LỆNH VALIDATION (Kiểm tra lỗi và trả về)
+     */
+    IF p_thang_sinh IS NULL AND p_noi_dung = 'Chi phí quà tặng dịp sinh nhật' THEN
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'fail', 
+                'error_message', 'Khách hàng không có thông tin ngày sinh '
+            )
+        );
+        
+    ELSIF p_noi_dung = 'Chi phí quà tặng dịp sinh nhật' AND p_thang_sinh < EXTRACT(MONTH FROM CURRENT_DATE) THEN
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'fail', 
+                'error_message', 'Đã quá thời gian chọn quà sinh nhật cho khách hàng'
+            )
+        );
+        
+    ELSIF p_gift_history >= 1 THEN
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'fail', 
+                'error_message', 'Dịp này khách hàng đã được nhận '
+            )
+        );
+        
+    ELSIF p_ten_hcp >= 1 THEN
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'fail', 
+                'error_message', 'Chưa chọn HCP'
+            )
+        );
+        
+    ELSIF p_vuot_dm >= 1 THEN
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'fail', 
+                'error_message', 'Số tiền kế hoạch vượt định mức'
+            )
+        );
+        
+    /* 
+     * STEP 14: QUA ĐƯỢC HẾT LỖI -> THỰC HIỆN INSERT VÀO BẢNG
+     * Khai báo rõ tên các cột để không bị sai lệch Column Mismatch (như lỗi text vs jsonb)
+     */
+    ELSE
+        INSERT INTO form_claim_chi_phi (
+            id, 
+            status, 
+            manv, 
+            tencvbh, 
+            phongdeptsummary, 
+            chon_kh_chung, 
+            pubcustname, 
+            chon_hcp, 
+            ten_hcp, 
+            array_hcp, 
+            qua_tang, 
+            kenh, 
+            ty_le, 
+            noi_dung, 
+            ghi_chu, 
+            so_ke_hoach, 
+            max_ke_hoach, 
+            inserted_at, 
+            ma_dip, 
+            thang_chi_phi, 
+            ky_chi_phi_kt, 
+            nguoi_tiep
+        )
+        SELECT 
+            * 
+        FROM 
+            data_insert;
+            
+        RETURN (
+            SELECT jsonb_build_object(
+                'status', 'ok', 
+                'success_message', 'Đã nhận thành công'
+            )
+        );
+        
+    END IF;
+ 
+    /* 
+     * STEP 15: BẮT LỖI HỆ THỐNG
+     */
+    EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status', 'fail', 
+            'error_message', SQLERRM
+        );
+        
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.insert_form_claim_chi_phi_hoa_don(input_json jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+	p_check_hoa_don INT;
+	v_json_record JSONB;
+	p_check_crs INT;
+
+BEGIN
+
+SELECT input_json->0 INTO v_json_record;
+
+CREATE TEMP TABLE data_nhap ON COMMIT DROP AS (
+	SELECT
+	(v_json_record ->> 'khid')::TEXT AS khid,
+	(el ->> 'id_duy_nhat_cua_hoa_don')::TEXT AS id_duy_nhat_cua_hoa_don,
+	(el ->> 'ten_nguoi_ban')::TEXT AS ten_nguoi_ban,
+	(el ->> 'so_hoa_don')::TEXT AS so_hoa_don,
+	TO_DATE(el ->> 'ngay_hoa_don', 'DD-MM-YYYY')::TIMESTAMP AS ngay_hoa_don,
+	(el ->> 'tong_tien_thanh_toan')::INT AS tong_tien_thanh_toan,
+	(el ->> 'so_tien_claim')::INT AS so_tien_claim,
+	(el ->> 'selected_time')::TIMESTAMP AS selected_time,
+	(el ->> 'check_tm')::INT AS check_tm,
+	(v_json_record ->> 'manv')::TEXT AS manv,
+	NULL as cost_type,
+	(el ->> 'zip_file_url')::TEXT AS zip_file_url
+	FROM jsonb_array_elements(v_json_record -> 'lst_chon_invoices') as el
+);
+
+CREATE TEMP TABLE so_tien_cl ON COMMIT DROP AS (
+	WITH data_input AS (
+	SELECT
+	id_duy_nhat_cua_hoa_don,
+	so_tien_claim
+	FROM data_nhap 
+	)
+	,thanh_toan_truoc AS(
+	SELECT
+	cp.id_duy_nhat_cua_hoa_don,
+	SUM(cp.so_tien_claim) AS so_tien_claim
+	FROM form_claim_chi_phi_hoa_don cp
+	INNER JOIN data_nhap dt ON dt.id_duy_nhat_cua_hoa_don = cp.id_duy_nhat_cua_hoa_don
+	GROUP BY 1
+	)
+	,tong_thanh_toan AS (
+	SELECT
+	t.id_duy_nhat_cua_hoa_don,
+	SUM(t.so_tien_claim) + SUM(cl.so_tien_claim) AS so_tien_claim
+	FROM data_input t
+	LEFT JOIN thanh_toan_truoc cl ON cl.id_duy_nhat_cua_hoa_don = t.id_duy_nhat_cua_hoa_don
+	GROUP BY 1
+	)
+	SELECT
+	tt.id_duy_nhat_cua_hoa_don,
+	hd.tong_tien_thanh_toan,
+	SUM(tt.so_tien_claim) as tong_so_tien_claim
+	FROM tong_thanh_toan tt
+	LEFT JOIN d_misa_invoice hd ON hd.id_duy_nhat_cua_hoa_don = tt.id_duy_nhat_cua_hoa_don
+	GROUP BY 1,2
+);
+
+SELECT count(*) INTO p_check_hoa_don
+FROM so_tien_cl a
+WHERE tong_so_tien_claim > tong_tien_thanh_toan;
+
+CREATE TEMP TABLE tong_tien_claim ON COMMIT DROP AS (
+SELECT
+	(v_json_record ->> 'khid')::TEXT AS khid,
+	(v_json_record ->> 'status')::TEXT AS status,
+	SUM(so_tien_claim) as so_tien_claim
+FROM data_nhap
+GROUP BY 1,2
+);
+
+CREATE TEMP TABLE khid_crs_nhap ON COMMIT DROP AS (
+SELECT
+	a.id_duy_nhat_cua_hoa_don,
+	a.manv,
+	COALESCE(b.manv,a.manv) as manv_da_nhap
+FROM data_nhap a
+LEFT JOIN form_claim_chi_phi_hoa_don b ON a.id_duy_nhat_cua_hoa_don = b.id_duy_nhat_cua_hoa_don
+);
+
+SELECT count(*) INTO p_check_crs
+FROM khid_crs_nhap where manv != manv_da_nhap
+;
+
+IF p_check_crs >= 1 THEN
+RETURN (
+	SELECT jsonb_build_object(
+	'status', 'fail',
+	'error_message', 'Hóa đơn đã được chọn bởi CRS trước đó'
+	)
+);
+
+ELSEIF p_check_hoa_don >= 1 THEN
+RETURN (
+SELECT jsonb_build_object(
+		'status', 'fail',
+		'error_message','Số tiền đã vượt mức hóa đơn'
+	)
+);
+
+ELSE
+INSERT INTO form_claim_chi_phi_hoa_don
+SELECT * FROM data_nhap;
+
+UPDATE form_claim_chi_phi c
+SET 
+	status = d.status,
+	so_tien_claim_hoa_don = d.so_tien_claim
+FROM tong_tien_claim d
+WHERE c.id = d.khid;
+RETURN (
+SELECT jsonb_build_object(
+        'status', 'ok',
+        'success_message', 'Đã nhận thành công'
+		)
+);
+
+END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', SQLERRM
+        );
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi_history(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    p_manv           text      := url_param->>'manv';
+    p_thang_chi_phi  timestamp := (url_param->>'thang_chi_phi')::timestamp;
+BEGIN
+    RETURN (
+        WITH
+        /* Lấy danh sách phiếu claim, kèm thông tin CRM và list hóa đơn */
+        rows_data AS (
+            SELECT
+                f.id,
+                f.status,
+                CASE f.status
+                    WHEN 'H' THEN 'Chờ duyệt'
+                    WHEN 'C' THEN 'Đã duyệt'
+                    WHEN 'R' THEN 'Từ chối'
+                    WHEN 'I' THEN 'Đã gắn hóa đơn'
+                    WHEN 'D' THEN 'Đã thanh toán'
+                    WHEN 'E' THEN 'Từ chối thanh toán'
+                    ELSE f.status
+                END                     AS status_vn,
+                f.manv,
+                f.tencvbh,
+                du.supid                AS ma_crm,
+                du.tenquanlytt          AS ten_crm,
+                f.phongdeptsummary,
+                f.chon_kh_chung,
+                f.pubcustname,
+                f.chon_hcp,
+                f.ten_hcp,
+                f.array_hcp,
+                f.nguoi_tiep,
+                f.qua_tang,
+                f.kenh,
+                f.ty_le,
+                f.noi_dung,
+                f.ghi_chu,
+                f.ma_dip,
+                f.so_ke_hoach,
+                f.max_ke_hoach,
+                f.approved_so_ke_hoach,
+                f.so_tien_claim_hoa_don,
+                f.thang_chi_phi,
+                f.ky_chi_phi_kt,
+                f.inserted_at,
+                f.approved_at,
+                f.approved_manv,
+                f.claim_approved_at,
+
+                /* Gom hóa đơn thành mảng list_invoices */
+                COALESCE(
+                    (
+                        SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'khid',                    hd.khid,
+                                'id_duy_nhat_cua_hoa_don', hd.id_duy_nhat_cua_hoa_don,
+                                'ten_nguoi_ban',           hd.ten_nguoi_ban,
+                                'so_hoa_don',              hd.so_hoa_don,
+                                'ngay_hoa_don',            hd.ngay_hoa_don,
+                                'tong_tien_thanh_toan',    hd.tong_tien_thanh_toan,
+                                'so_tien_claim',           hd.so_tien_claim,
+                                'selected_time',           hd.selected_time,
+                                'check_tm',                hd.check_tm,
+                                'manv',                    hd.manv,
+                                'cost_type',               hd.cost_type,
+								'zip_file_url',            hd.zip_file_url
+								
+                            )
+                            ORDER BY hd.selected_time
+                        )
+                        FROM form_claim_chi_phi_hoa_don hd
+                        WHERE hd.khid = f.id
+                    ),
+                    '[]'::jsonb
+                )                       AS list_invoices
+
+            FROM form_claim_chi_phi f
+            LEFT JOIN d_users du ON du.manv = f.manv
+
+            WHERE
+                f.thang_chi_phi = p_thang_chi_phi
+                /* Phân quyền: NV tự xem hoặc CRM xem cấp dưới — nối chuỗi + strpos */
+                AND STRPOS(f.manv || ' ' || COALESCE(du.supid, ''), p_manv) > 0
+
+            ORDER BY f.inserted_at DESC
+        )
+
+        SELECT jsonb_build_object(
+            'status', 'ok',
+            'rows',   (SELECT COUNT(*) FROM rows_data),
+            'data',   COALESCE((SELECT jsonb_agg(f) FROM rows_data f), '[]'::jsonb)
+        )
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'status',        'fail',
+            'error_message', SQLERRM
+        );
+END;
+$function$
+
+CREATE OR REPLACE FUNCTION public.get_form_claim_chi_phi(url_param jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+	p_manv text := COALESCE(url_param->>'manv', '');
+	p_phong_nv text;
+	data_hcp JSONB;
+	p_data_kh_chung JSONB;
+BEGIN
+
+SELECT phongdeptsummary  INTO p_phong_nv
+FROM d_hr_dsns WHERE msnvcsmmoi = p_manv
+LIMIT 1;
+
+CREATE TEMP TABLE list_hcp ON COMMIT DROP AS (
+SELECT
+hco_bv,
+ten_hcp,
+ma_hcp_2,
+pubcustname,
+kenh_lam_viec
+FROM view_list_hcp
+WHERE strpos(concat_crs_sup, p_manv) > 0
+AND status in ('active')
+);
+
+CREATE TEMP TABLE manv_info ON COMMIT DROP AS (
+SELECT
+	msnvcsmmoi as manv,
+	hovatenfullname as tencvbh,
+	phongdeptsummary
+	FROM d_hr_dsns
+	WHERE strpos(msnvcsmmoi, p_manv) > 0
+);
+
+CREATE TEMP TABLE data_kh_chung_hcp ON COMMIT DROP AS (
+	SELECT
+	DISTINCT hco_bv,
+	pubcustname
+	FROM view_list_hcp
+	WHERE strpos(concat_crs_sup, p_manv) > 0
+	AND status in ('active')
+);
+
+CREATE TEMP TABLE data_kh_chung_cua_tp ON COMMIT DROP AS (
+	WITH data_nt AS(
+	SELECT
+	custid as hco_bv,
+	custname as pubcustname,
+	COALESCE(ma_nvbh || ' - ' || supid, '') as mnv_supid
+	FROM d_master_khachhang
+	WHERE channel = 'TP'
+	)
+	SELECT
+	hco_bv,
+	pubcustname
+	FROM data_nt
+	WHERE strpos(mnv_supid,p_manv) > 0
+);
+
+CREATE TEMP TABLE data_kh_chung_cua_mt ON COMMIT DROP AS (
+
+	SELECT
+	pubcustid as hco_bv,
+	custname as pubcustname,
+	/*MT thì không cần phải chia theo nhân viên*/
+	'' as mnv_supid 
+	FROM d_master_khachhang
+	WHERE channel = 'MT' and pubcustid is not null
+	ORDER BY pubcustid ASC
+
+);
+
+IF p_phong_nv = 'HCP' THEN
+	SELECT jsonb_agg(f) INTO data_hcp FROM list_hcp f;
+ELSE data_hcp := '[]'::jsonb;
+END IF;
+
+IF p_phong_nv = 'HCP' THEN
+    SELECT jsonb_agg(f) INTO p_data_kh_chung FROM data_kh_chung_hcp f;
+    
+ELSIF p_phong_nv = 'MT' THEN
+    -- Thêm điều kiện xử lý riêng cho phòng MT
+    SELECT jsonb_agg(f) INTO p_data_kh_chung FROM data_kh_chung_cua_mt f;
+    
+ELSE 
+    -- Các trường hợp còn lại (bao gồm cả TP_MT nếu có)
+    SELECT jsonb_agg(f) INTO p_data_kh_chung FROM data_kh_chung_cua_tp f;
+END IF;
+
+RETURN (
+SELECT jsonb_build_object(
+ 	'data_hcp',data_hcp,
+	'manv_info',COALESCE((SELECT jsonb_agg(f) FROM manv_info f), '[]'::jsonb),
+ 	'data_kh_chung',COALESCE(p_data_kh_chung, '[]'::jsonb),
+ 	'lst_kenh','["CLC & INS","CLC","INS","PCL"]'::jsonb,
+	'lst_noi_dung', COALESCE((SELECT jsonb_agg(f) FROM form_claim_chi_phi_content_list f where qua_tang = 'Quà tặng' and trang_thai_dip = 1), '[]'::jsonb),
+   	'lst_noi_dung_giao_tiep', COALESCE((SELECT jsonb_agg(f) FROM form_claim_chi_phi_content_list f where qua_tang = 'Giao tiếp - Mời cơm' and trang_thai_dip = 1), '[]'::jsonb),
+	'lst_loai_qua_tang','[
+"Quà tặng",
+"Giao tiếp - Mời cơm"
+]'::jsonb
+	)
+);
+
+EXCEPTION
+WHEN OTHERS THEN
+	RETURN jsonb_build_object(
+	'status', 'fail',
+	'error_message', SQLERRM
+	);
+	
+END;
+$function$
+

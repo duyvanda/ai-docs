@@ -97,17 +97,18 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 2.  **Display:**
     * Load danh sách kế hoạch đã duyệt (`Status = C`).
     * Load danh sách hóa đơn đỏ từ Misa (API: `get_form_claim_chi_phi_hoa_don_misa`).
-3.  **Open Modal:** User bấm nút **HĐ** tại một dòng kế hoạch cụ thể.
-4.  **Select Invoice (Trong Modal):**
-    * User tìm kiếm hóa đơn (theo số HĐ, tên NCC).
-    * User gạt nút Switch để chọn hóa đơn.
-    * **Frontend Logic:** Tính tổng tiền các hóa đơn đang chọn (`total_amount`).
-        * Nếu `total_amount` > `Số tiền duyệt`: Hiển thị Modal phụ yêu cầu nhập số tiền điều chỉnh (Cắt bớt tiền claim của hóa đơn đó).
+3.  **Open Form:** User bấm nút **HĐ** tại một dòng kế hoạch cụ thể. Hệ thống hiển thị giao diện xử lý mở rộng ngay dưới dòng đó (Inline Form).
+4.  **Select Invoice & Upload Proof:**
+    * **Chọn hóa đơn:** User tìm kiếm hóa đơn (theo số HĐ, tên NCC) và gạt nút Switch để chọn.
+    * **Tự động điều chỉnh (Auto Adjust):** Frontend tự động tính tổng tiền các hóa đơn đang chọn. Nếu tổng tiền vượt quá số tiền duyệt, hệ thống sẽ **tự động cắt giảm số tiền** của hóa đơn vừa chọn sao cho tổng khớp chính xác với số tiền được duyệt (không cần popup phụ).
+    * **Phương thức thanh toán:** Chọn "Chuyển khoản" hoặc "Tiền mặt" cho hóa đơn vừa chọn. Mặc định là Tiền mặt.
+    * **Upload Chứng từ:** User **bắt buộc** phải tải lên chứng từ (kéo thả hình ảnh/pdf) riêng biệt cho từng hóa đơn. **Validate:** Phải có tối thiểu 2 file (1 hình CK & 1 hình quán ăn/quà) cho mỗi hóa đơn mới cho phép lưu.
 5.  **Submit:**
-    * User bấm nút "Xác nhận".
-    * **Call API:** `insert_form_claim_chi_phi_hoa_don` (Method: POST).
-    * **Data:** Chuyển trạng thái plan sang `I` (Invoiced) và lưu mapping vào bảng `form_claim_chi_phi_hoa_don`.
-6.  **Feedback:** Đóng Modal và hiển thị thông báo thành công.
+    * User bấm nút "Xác nhận & Tải Lên".
+    * **Frontend Logic:** Hệ thống gom các hình ảnh/chứng từ của MỖI hóa đơn thành từng file ZIP riêng biệt (giữ nguyên tên gốc của ảnh bên trong ZIP).
+    * **Call API:** Đẩy Multipart/FormData chứa các file ZIP và chuỗi JSON tới API, từ đó gọi `insert_form_claim_chi_phi_hoa_don` (Method: POST).
+    * **Data:** Chuyển trạng thái plan sang `I` (Invoiced), sinh `zip_file_url` lưu trực tiếp vào từng hóa đơn tương ứng, và lưu data vào bảng `form_claim_chi_phi_hoa_don`.
+6.  **Feedback:** Đóng form hiển thị inline và hiện thông báo thành công.
 
 ---
 
@@ -145,12 +146,13 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
     * **Call API:** `insert_form_cong_tac_phi` (Method: POST).
     * **Payload:** Gửi object bao gồm thông tin chuyến đi (`form_cong_tac_phi`) và danh sách hóa đơn kèm loại chi phí (`lst_chon_invoices`).
 
-### 4.6. Tải và xác nhận excel
+### 4.6. Tải và xác nhận excel (Chốt dữ liệu)
 
 **User Flow**: 
-    1 - Vào mục claim chọn Tải dữ liệu và upload
-        **Call API:** `post_form_claim_chi_phi_excel_form` (Method: POST) để hiển thị file excel url.
-        **Call API:** `insert_form_claim_chi_phi_chung_tu` (Method: POST) để ghi nhận data.
+    1. Vào mục duyệt hóa đơn, chọn kỳ chi phí và bấm "Chốt HĐ / Tải Biểu Mẫu".
+    2. **Call API:** `post_form_claim_chi_phi_excel_form` (Method: POST) để sinh báo cáo Excel tổng hợp và hiển thị nút "Tải xuống dữ liệu".
+    3. User bấm nút **"✍️ Tôi đã xem và tiến hành ký số thông qua MLID"** để xác nhận chốt sổ gửi email.
+    4. **Call API:** `insert_form_claim_chi_phi_chung_tu` (Method: POST) để ghi nhận hoàn tất và gửi email thông báo cho hệ thống.
 
 -----
 
@@ -344,6 +346,18 @@ Bảng lưu trữ thông tin đi kèm với chứng từ chi phí được uploa
 | `from_date` | date | Thời gian bắt đầu của kỳ claim. |
 | `to_date` | date | Thời gian kết thúc của kỳ claim. |
 | `file_1` | text | Đường dẫn file chứng từ/hình ảnh (URL). |
+| `inserted_at` | timestamp | Thời gian ghi nhận dữ liệu (Default: `CURRENT_TIMESTAMP`). |
+
+### Table 7: `form_claim_chi_phi_internal_signature_form`
+
+Lưu trữ dữ liệu phục vụ quy trình ký nội bộ cho form claim chi phí.
+
+| Column Name | Data Type | Description |
+| --- | --- | --- |
+| `id` | text | **PK** - Mã định danh. |
+| `manv` | text | Mã nhân viên. |
+| `ky_chi_phi_kt` | timestamp | Kỳ chi phí kế toán. |
+| `js_value` | jsonb | Nội dung dữ liệu. |
 | `inserted_at` | timestamp | Thời gian ghi nhận dữ liệu (Default: `CURRENT_TIMESTAMP`). |
 
 -----
@@ -575,6 +589,12 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "pubcustname": "BV QUẬN TÂN PHÚ - SG",
             "chon_hcp": "HCP00021367-H",
             "ten_hcp": "TRƯƠNG ÁNH TUYẾT",
+            "array_hcp": [
+                {
+                    "ma_hcp_2": "HCP00021426-H",
+                    "ten_hcp": "PHAN NGUYỄN ANH KHOA"
+                }
+            ],
             "qua_tang": "Quà tặng",
             "kenh": "CLC",
             "ty_le": "5:5",
@@ -845,24 +865,52 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
       * *Lưu ý: Định dạng ngày tháng bắt buộc là DD-MM-YYYY.*
     <!-- end list -->
       ```json
-      [
-          {
-              "khid": "CCP001",
-              "manv": "MR0673",
-              "status": "I",
-              "lst_chon_invoices": [
-                  {
-                      "id_duy_nhat_cua_hoa_don": "INV_XYZ",
-                      "ten_nguoi_ban": "Cty TNHH ABC",
-                      "so_hoa_don": "0012345",
-                      "ngay_hoa_don": "12-10-2025", 
-                      "tong_tien_thanh_toan": 1000000,
-                      "so_tien_claim": 500000,
-                      "selected_time": "2025-10-12T10:00:00"
-                  }
-              ]
-          }
-      ]
+    [
+    {
+        "khid": "CCP20260608170549642",
+        "manv": "MR0055",
+        "so_tien_claim": 600000,
+        "lst_chon_invoices": [
+        {
+            "stt": 12,
+            "check": true,
+            "check_tm": 1,
+            "clean_ten": "CONG TY TNHH DAU TU VA PHAT TRIEN HE THONG DAU THAU QUA MANG QUOC GIA | 00174256 | 08-06-2026 | 0108930466 | ",
+            "so_hoa_don": "000174256",
+            "ngay_hoa_don": "08-06-2026",
+            "ten_hien_thi": "CÔNG TY TNHH ĐẦU TƯ VÀ PHÁT TRIỂN HỆ THỐNG ĐẤU THẦU QUA MẠNG QUỐC GIA | 000174256 | 08-06-2026 | 0108930466 | ",
+            "tien_con_lai": 330000,
+            "selected_time": "2026-06-08T17:06:14.322",
+            "so_tien_claim": 330000,
+            "ten_nguoi_ban": "CÔNG TY TNHH ĐẦU TƯ VÀ PHÁT TRIỂN HỆ THỐNG ĐẤU THẦU QUA MẠNG QUỐC GIA",
+            "tong_tien_thanh_toan": 330000,
+            "id_duy_nhat_cua_hoa_don": "019ea5bb498f71379cb0c8e7d8875221",
+            "original_so_tien_claim": 330000,
+            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_CCP20260608170549642.zip"
+        },
+        {
+            "stt": 13,
+            "check": true,
+            "check_tm": 1,
+            "clean_ten": "CONG TY TNHH DAU TU VA PHAT TRIEN HE THONG DAU THAU QUA MANG QUOC GIA | 00173965 | 08-06-2026 | 0108930466 | ",
+            "so_hoa_don": "000173965",
+            "ngay_hoa_don": "08-06-2026",
+            "ten_hien_thi": "CÔNG TY TNHH ĐẦU TƯ VÀ PHÁT TRIỂN HỆ THỐNG ĐẤU THẦU QUA MẠNG QUỐC GIA | 000173965 | 08-06-2026 | 0108930466 | ",
+            "tien_con_lai": 220000,
+            "selected_time": "2026-06-08T17:06:20.377",
+            "so_tien_claim": 220000,
+            "ten_nguoi_ban": "CÔNG TY TNHH ĐẦU TƯ VÀ PHÁT TRIỂN HỆ THỐNG ĐẤU THẦU QUA MẠNG QUỐC GIA",
+            "tong_tien_thanh_toan": 220000,
+            "id_duy_nhat_cua_hoa_don": "019ea5bb498d7367990ff54cd36eb274",
+            "original_so_tien_claim": 220000,
+            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/1_CCP20260608170549642.zip"
+        }
+        ],
+        "status": "I",
+        "inserted_at": "2026-06-08T17:06:40.049"
+    }
+    ]
+
       ```
   * **JSON Output:**
     * **Thành công:**
@@ -1171,162 +1219,215 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     3.  **Logic tổng hợp cho biểu mẫu BMKT002 (Đề nghị thanh toán):**
           **Nguyên tắc tổng hợp dữ liệu (Data Aggregation Logic):**
 
-          Dữ liệu trả về (đặc biệt là mảng `BMKT002`) được tổng hợp (UNION) từ 3 nguồn dữ liệu khác nhau với logic lọc riêng biệt:
+          Dữ liệu trả về (đặc biệt là mảng `BMKT002`) được tổng hợp (UNION) từ 2 nguồn dữ liệu khác nhau với logic lọc riêng biệt:
 
           | Nguồn dữ liệu | Loại chi phí | Logic lọc (Filter Criteria) | Logic hiển thị |
           | :--- | :--- | :--- | :--- |
-          | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị tổng tiền hóa đơn, người thụ hưởng (xem ví dụ). |
-          | **Nguồn 2**<br>(`ds_phu_cap_ctp`) | **Phụ cấp CTP**<br>(Đi lại + Ăn uống + Vé xe) | **Số tiền:** Tổng phụ cấp \> 0.<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Gom thành 1 dòng: "CTP THÁNG... từ... đến...".<br>Số hóa đơn = NULL. |
-          | **Nguồn 3**<br>(`ds_hoa_don_ctp`) | **Hóa đơn CTP**<br>(Vé xe, KS...) | **Điều kiện:** Phải có hóa đơn đi kèm (ID Not Null).<br>**Thời gian:** Lọc theo **NGÀY CHÍNH XÁC** (`ky_chi_phi_kt` = `fromDate`). | Hiển thị chi tiết từng hóa đơn (Vé xe, KS) phát sinh trong chuyến đi. |
+          | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị 1 dòng tổng thanh toán chi phí giao tiếp tháng. |
+          | **Nguồn 2**<br>(`tong_hop_ctp`) | **Tổng hợp Công tác phí**<br>(Đi lại + Ăn uống + Vé xe + KS) | **Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Gom thành 1 dòng tổng quát: "Công tác phí tháng: [MM-YYYY]". |
 
           **Ví dụ nguồn 1:**
 
         | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
         | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-        | 1 | Chi phí gặp gỡ giao tiếp trao đổi thông tin | 1,999,928 | 000003066 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
-        | 2 | Chi phí giao tiếp đánh giá về hiệu quả của thuốc | 3,950,000 | 000002850 | 20/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
-        | 3 | Chi phí gặp gỡ giao tiếp trao đổi thông tin | 1,000,072 | 000001782 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | |
-        | **** | **Thanh toán chi phí giao tiếp tháng: [MM-YYYY]** | **6,950,000** | **Trống** | **Trống** | **Trước ngày 20 tháng sau** | **MR0673 - Hồ Thị Hồng Gấm** | **Bảng kê đính kèm** |
+        | **** | **Thanh toán chi phí giao tiếp tháng: [MM-YYYY]** | **6,950,000** | **Trống** | **Trống** | **Trước ngày 20 tháng sau** | **MR0673 - Hồ Thị Hồng Gấm** | **Bảng kê chi tiết đính kèm** |
 
-        **Ví dụ nguồn 2:**
-
+          **Ví dụ nguồn 2:**
 
         | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
         | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-        | 4 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 600,000 | | | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | Phụ cấp đi lại (100,000đ), Phụ cấp ăn uống (200,000đ), Vé xe công tác (300,000đ) |
+        | **** | **Công tác phí tháng: [MM-YYYY]** | **4,556,849** | **Trống** | **Trống** | **Trước ngày 20 tháng sau** | **MR0055 - Phan Thị Bình Khê** | **Bảng kê chi tiết đính kèm** |
 
-        **Ví dụ nguồn 3:**
+    4.  **Logic tổng hợp cho biểu mẫu BMKT005 (Chi tiết Công tác phí):**
+          * Danh sách chi tiết phụ cấp công tác (Đi lại, Ăn uống, Vé xe, Khách sạn) và các hóa đơn tương ứng.
+          * Trả về chi tiết các hóa đơn và các dòng phụ cấp. Lưu ý số tiền tổng hợp chỉ được hiển thị ở dòng đầu tiên của mỗi nhóm (dòng có STT = 1 của từng khid), các dòng sau của cùng khoản công tác sẽ để trống (null) số tiền.
 
-        | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
-        | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-        | 5 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 400,000 | 000000987 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | A2 - Xe |
-        | 5 | CTP THÁNG :12-2025, từ : 01-12-2025 đến: 03-12-2025 | 300,000 | 000000988 | 19/12/2025 | Trước ngày 20 tháng sau | MR0673 - Hồ Thị Hồng Gấm | A3 - Khách sạn |
-
-        **Định dạng cột Nội dung (`noi_dung`):**
-              * Đối với các dòng là Công tác phí (CTP), hệ thống tự động ghép chuỗi theo định dạng:
-                  `"CTP THÁNG : [MM-YYYY], từ : [Ngày đi] đến: [Ngày về]"`
-        **Cấu trúc Footer (JSON Keys) cho BMKT002:**
-          * Ngoài 2 mảng dữ liệu chính, hàm trả về các **Keys** riêng biệt để điền vào phần chân trang/chữ ký của biểu mẫu Excel:
-              * `tong_so_tien`: Tổng số tiền đã được định dạng có dấu phẩy (Ví dụ: "800,000").
-              * `so_tien_bang_chu`: Tổng số tiền được chuyển đổi thành chữ tiếng Việt (Ví dụ: "Tám trăm ngàn đồng").
-              * `ly_do_thanh_toan`: Chuỗi cố định `"Thanh toán chi phí giao tiếp tháng: [MM-YYYY]"`.
-              * `thoi_gian_de_nghi`: Gán mặc định là `"Trước ngày 20 tháng sau"`.
-              * `nguoi_nhan` & `nguoi_de_nghi`: Được ghép tự động theo công thức `[Mã NV] + " - " + [Họ tên]` (Ví dụ: "MR0673 - Nguyễn Văn A").
-              * `ghi_chu`:
-                    + Phụ cấp đi lại + Phụ cấp ăn uống + Vé xe công tác = 1 dòng và Ghi chú là Phụ cấp đi lại [số tiền], Phục cấp ăn uống [số tiền], Vé xe công tác [Số tiền]
-                    + Nếu chọn hóa đơn => Ghi chú là: [Tên Khoản mục] ([Xe hoặc Khách sản động theo hóa đơn chọn])
-
-    4.  **Xử lý Footer:**
-        * Tính tổng số tiền và tự động chuyển đổi số tiền thành chữ tiếng Việt (Ví dụ: "Một triệu đồng chẵn").
-
-    5.  **Email info:**
-        * Thông tin gửi email.
-
+    5.  **Cấu trúc Footer (JSON Keys) cho các biểu mẫu:**
+          * Ngoài mảng dữ liệu chính, hàm trả về các **Keys** riêng biệt để điền vào phần chân trang/chữ ký của biểu mẫu Excel:
+              * `bmkt002_tong_so_tien`: Tổng số tiền đã được định dạng.
+              * `bmkt002_so_tien_bang_chu`: Tổng số tiền được chuyển đổi thành chữ tiếng Việt.
+              * `bmkt005_so_tien_bang_chu`: Số tiền công tác phí viết bằng chữ.
+              * `bmkt002_ly_do_thanh_toan`: Chuỗi `"Thanh toán chi phí giao tiếp tháng: [MM-YYYY]"`.
+              * `bmkt005_ly_do_thanh_toan`: Chuỗi `"Thanh toán tiền công tác phí tháng: [MM-YYYY]"`.
+              * `send_email_info`: Cấu trúc JSON chứa thông tin gửi email, bao gồm danh sách người nhận (email_to) và nội dung HTML template sẵn có.
+    
   * **JSON Input (`url_param`):**
     ```json
     {
-        "from_date": "2025-11-01",
-        "to_date": "2025-11-01",
-        "manv": "MR1137",
-        "id": "MNV123_15_01_2026"
+        "fromDate": "2026-06-01",
+        "toDate": "2026-06-01",
+        "manv": "MR0055",
+        "file_id": "MR0055_2026-06-01"
     }
     ```
   * **JSON Output:**
     ```json
     {
-      "status": "ok",
-      "BMKT002": [
+    "id": "MR0055_2026-06-01",
+    "time": "2026-06-08T17:45:06.997607",
+    "status": "ok",
+    "BMKT002": [
         {
-          "stt": 1,
-          "ghi_chu": "Tùy biến",
-          "so_tien": 666666,
-          "noi_dung": "Chi phí quà tặng dịp sinh nhật",
-          "so_hoa_don": "000000397",
-          "ngay_hoa_don": "2025-12-12T00:00:00",
-          "nguoi_nhan_tien": "MR1137 - Vũ Mừng",
-          "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
-        }
-      ],
-      "BMKT013": [
+        "stt": 1,
+        "ghi_chu": "Bảng kê chi tiết đính kèm",
+        "so_tien": 2831004,
+        "noi_dung": "Thanh toán chi phí giao tiếp tháng: 06-2026",
+        "so_hoa_don": null,
+        "ngay_hoa_don": null,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
+        },
         {
-          "kenh": "CLC",
-          "ma_kh": "007987",
-          "supid": "MR1137",
-          "ten_kh": "PK NGUYỄN THỊ BÍCH NGỌC - SG",
-          "ghi_chu": "abc",
-          "khu_vuc": "",
-          "so_khid": "CCP20251212151104775",
-          "supid_2": "MR1137",
-          "duyet_kh": 666666,
-          "noi_dung": "Chi phí quà tặng dịp sinh nhật",
-          "de_xuat_kh": 666666,
-          "so_hoa_don": "000000397",
-          "tenquanlytt": "Vũ Mừng",
-          "tenquanlytt_2": "Vũ Mừng",
-          "ngay_thuc_hien": "2025-12-12",
-          "ho_ten_nguoi_tiep": "VÕ THỊ NGỌC TRÂM",
-          "tong_tien_thuc_hien": 666666
+        "stt": 2,
+        "ghi_chu": "Bảng kê chi tiết đính kèm",
+        "so_tien": 4556849,
+        "noi_dung": "Công tác phí tháng: 06-2026",
+        "so_hoa_don": null,
+        "ngay_hoa_don": null,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
         }
-      ],
-        "bmkt013_tong_tien_ke_hoach": "600,000",
-        "bmkt013_tong_tien_duyet": "500,000",
-        "bmkt013_tong_tien_thuc_hien": "2,500,000",
-
-        "bmkt002_department": "HCP",
-        "bmkt002_tong_so_tien": "666,666",
-        "bmkt002_nguoi_nhan": "MR1137 - Vũ Mừng",
-        "bmkt002_nguoi_de_nghi": "MR1137 - Vũ Mừng",
-        "bmkt002_ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 11-2025",
-        "bmkt002_so_tien_bang_chu": "sáu trăm sáu mươi sáu nghìn sáu trăm sáu mươi sáu đồng",
-        "send_email_info": {
-            "email_to":[
-                {
-                    "receive_code": "Mã NV"
-                },
-                {
-                    "receive_code": "Mã QL"
-                },
-                {
-                    "receive_code": "Mã NVKT phụ trách của QL"
-                }
-            ],
-            "subject":"Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng xx/năm xxxx",
-            // content xài html
-            "content": """
-                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #000;">
-                    
-                    <p><strong>Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng .../năm....</strong></p>
-
-                    <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 600px;">
-                        <tr>
-                            <td style="padding: 5px 0; width: 160px;"><strong>Mã người lập ĐNTT:</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 5px 0;"><strong>Tên người lập ĐNTT:</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 5px 0;"><strong>Phòng ban:</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 5px 0; color: #800000;"><strong>Vị trí:</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                        </tr>
-                    </table>
-
-                    <br>
-
-                    <p>1. Số tiền giao tiếp/quà tặng đề nghị thanh toán Tháng .../Năm là: .................... VNĐ</p>
-                    <p>2. Số tiền công tác phí đề nghị thanh toán Tháng .../Năm là: .................... VNĐ</p>
-
-                    <p><strong>Tổng cộng số tiền đề nghị thanh toán là: .................... VNĐ</strong></p>
-
-                </div>
-                """,
-                "bcc_to":[]
+    ],
+    "BMKT005": [
+        {
+        "stt": 1,
+        "ve_xe": 2555949,
+        "ghi_chu": null,
+        "so_ngay": 1,
+        "khoan_muc": "a2",
+        "tong_tien": 2556849,
+        "so_hoa_don": "000000162",
+        "ngay_hoa_don": "05/06/2026",
+        "phu_cap_di_lai": 300,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "phu_cap_an_uong": 600,
+        "chi_phi_giao_tiep": null,
+        "chi_phi_khach_san": null,
+        "noi_dung_chi_tiet": "Công tác An Giang từ ngày 05/06 đến 05/06"
+        },
+        {
+        "stt": 2,
+        "ve_xe": null,
+        "ghi_chu": null,
+        "so_ngay": 1,
+        "khoan_muc": "a2",
+        "tong_tien": null,
+        "so_hoa_don": "000000700",
+        "ngay_hoa_don": "05/06/2026",
+        "phu_cap_di_lai": null,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "phu_cap_an_uong": null,
+        "chi_phi_giao_tiep": null,
+        "chi_phi_khach_san": null,
+        "noi_dung_chi_tiet": "Công tác An Giang từ ngày 05/06 đến 05/06"
+        },
+        {
+        "stt": 3,
+        "ve_xe": null,
+        "ghi_chu": null,
+        "so_ngay": 1,
+        "khoan_muc": "a2",
+        "tong_tien": null,
+        "so_hoa_don": "000004086",
+        "ngay_hoa_don": "05/06/2026",
+        "phu_cap_di_lai": null,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "phu_cap_an_uong": null,
+        "chi_phi_giao_tiep": null,
+        "chi_phi_khach_san": null,
+        "noi_dung_chi_tiet": "Công tác An Giang từ ngày 05/06 đến 05/06"
+        },
+        {
+        "stt": 4,
+        "ve_xe": null,
+        "ghi_chu": null,
+        "so_ngay": 1,
+        "khoan_muc": "A2",
+        "tong_tien": 2000000,
+        "so_hoa_don": "000001052",
+        "ngay_hoa_don": "29/05/2026",
+        "phu_cap_di_lai": 200000,
+        "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+        "phu_cap_an_uong": 200000,
+        "chi_phi_giao_tiep": null,
+        "chi_phi_khach_san": 1600000,
+        "noi_dung_chi_tiet": "Công tác Bà Rịa - Vũng Tàu từ ngày 08/06 đến 08/06"
         }
+    ],
+    "BMKT013": [
+        {
+        "kenh": "INS",
+        "ma_kh": "000477",
+        "supid": "MR0055",
+        "ten_kh": "BV LÂM ĐỒNG II - LD",
+        "ghi_chu": "test",
+        "khu_vuc": "MD1",
+        "so_khid": "CCP20260605164015647",
+        "supid_2": "MR0055",
+        "duyet_kh": 100000,
+        "noi_dung": "Chi phí giao tiếp đánh giá về hiệu quả của thuốc",
+        "de_xuat_kh": 100000,
+        "so_hoa_don": "001269910",
+        "tenquanlytt": "Phan Thị Bình Khê",
+        "ky_chi_phi_kt": "2026-06-01T00:00:00",
+        "tenquanlytt_2": "Phan Thị Bình Khê",
+        "ngay_thuc_hien": "2026-06-06",
+        "ho_ten_nguoi_tiep": "HOÀNG THỊ THU HƯƠNG",
+        "tong_tien_thuc_hien": 81000
+        },
+        {
+        "kenh": "INS",
+        "ma_kh": "001444",
+        "supid": "MR0055",
+        "ten_kh": "PKĐK TÂM AN SÀI GÒN - BTH",
+        "ghi_chu": "test",
+        "khu_vuc": "NTB",
+        "so_khid": "CCP20260604155939343",
+        "supid_2": "MR0055",
+        "duyet_kh": 3500000,
+        "noi_dung": "Chi phí gặp gỡ giao tiếp trao đổi thông tin",
+        "de_xuat_kh": 3500000,
+        "so_hoa_don": null,
+        "tenquanlytt": "Phan Thị Bình Khê",
+        "ky_chi_phi_kt": "2026-06-01T00:00:00",
+        "tenquanlytt_2": "Phan Thị Bình Khê",
+        "ngay_thuc_hien": null,
+        "ho_ten_nguoi_tiep": "NGUYỄN THẢO,NGÔ GIANG VŨ",
+        "tong_tien_thuc_hien": null
+        }
+    ],
+    "bmkt002_ma_nv": "MR0055",
+    "send_email_info": {
+        "content": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #000;\">\n\t<p><strong>Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng 06/năm 2026</strong></p>\n\t<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"width: 100%; max-width: 600px;\">\n\t\t<tr>\n\t\t\t<td style=\"padding: 5px 0; width: 160px;\"><strong>Mã người lập ĐNTT:</strong></td>\n\t\t\t<td style=\"border-bottom: 1px dotted #000;\">MR0055</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td style=\"padding: 5px 0;\"><strong>Tên người lập ĐNTT:</strong></td>\n\t\t\t<td style=\"border-bottom: 1px dotted #000;\">Phan Thị Bình Khê</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td style=\"padding: 5px 0;\"><strong>Phòng ban:</strong></td>\n\t\t\t<td style=\"border-bottom: 1px dotted #000;\">HCP</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td style=\"padding: 5px 0; color: #800000;\"><strong>Vị trí:</strong></td>\n\t\t\t<td style=\"border-bottom: 1px dotted #000;\">Senior Customer Relation Manager (HCP)</td>\n\t\t</tr>\n\t</table>\n\t<br>\n\t<p>1. Số tiền giao tiếp/quà tặng đề nghị thanh toán Tháng 06/Năm 2026 là: 2,831,004 VNĐ</p>\n\t<p>2. Số tiền công tác phí đề nghị thanh toán Tháng 06/Năm 2026 là: 4,556,849 VNĐ</p>\n\t<p><strong>Tổng cộng số tiền đề nghị thanh toán là: 7,387,853 VNĐ</strong></p>\n\t<br>\n\t<p>📂 <strong>File đính kèm:</strong> <a href=\"https://bi.meraplion.com/DMS/form_claim_chi_phi_excel_output/MR0055_2026-06-30.xlsx\" target=\"_blank\" style=\"color: #0000EE; text-decoration: underline;\">Tải file chi tiết tại đây</a></p>\n</div>",
+        "subject": "Thông tin đề nghị thanh toán chi phí công tác/giao tiếp/quà tặng Tháng 06/2026",
+        "email_to": [
+        {
+            "receive_code": "MR0055"
+        },
+        {
+            "receive_code": "MR0055"
+        },
+        {
+            "receive_code": "MR3119"
+        }
+        ],
+        "email_bcc": []
+    },
+    "bmkt002_ma_nv_kt": "MR2931",
+    "bmkt002_department": "HCP",
+    "bmkt002_ma_quan_ly": "MR0055",
+    "bmkt002_nguoi_nhan": "MR0055 - Phan Thị Bình Khê",
+    "bmkt002_tong_so_tien": "7,387,853",
+    "bmkt002_nguoi_de_nghi": "MR0055 - Phan Thị Bình Khê",
+    "bmkt002_ma_nguoi_duyet": "MR2931",
+    "bmkt013_tong_tien_duyet": "7,800,000",
+    "bmkt002_ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 06-2026",
+    "bmkt002_so_tien_bang_chu": "bảy triệu ba trăm tám mươi bảy nghìn tám trăm năm mươi ba đồng",
+    "bmkt005_ly_do_thanh_toan": "Thanh toán tiền công tác phí tháng: 06-2026",
+    "bmkt005_so_tien_bang_chu": "bốn triệu năm trăm năm mươi sáu nghìn tám trăm bốn mươi chín đồng",
+    "bmkt013_tong_tien_ke_hoach": "7,800,000",
+    "bmkt013_tong_tien_thuc_hien": "2,831,004",
+    "bmkt005_tong_cong_tac_phi": "4,556,849"
     }
     ```
 
@@ -1346,6 +1447,26 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "id": "MNV123_15_01_2026",
             "file_1": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_MNV123_15_01_2026.zip",
             "inserted_at": "2026-01-01 11:11:11"
+        }
+    ]
+    ```
+  * **JSON Output:** `{"status": "ok", "success_message": "Đã nhận thành công"}`
+
+#### **Function:** `insert_form_claim_chi_phi_internal_signature_form`
+
+* **Loại:** WRITE (UPSERT theo ID) vào bảng `form_claim_chi_phi_internal_signature_form`
+* **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
+* **Mục đích:** Lưu lại dữ liệu trình ký nội bộ cho form claim chi phí.
+* **Validation (Các quy tắc chặn lỗi):** Không có validation phức tạp.
+  * **JSON Input (`body` - Array wrapper):**
+    ```json
+    [
+        {
+            "id": "MR1391_2026-06-01",
+            "manv": "MR1391",
+            "ky_chi_phi_kt": "2026-06-01T00:00:00",
+            "js_value": {},
+            "inserted_at": "2026-06-08T18:00:00"
         }
     ]
     ```
@@ -1400,6 +1521,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             {
                 "id": "CCP20251012171819772",
                 "status": "D",
+                "status_vn": "Đã thanh toán",
                 "manv": "MR0673",
                 "tencvbh": "Hồ Thị Hồng Gấm",
                 "ma_crm": "MR1137",
@@ -1437,13 +1559,15 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
                         "selected_time": "2025-10-13T09:00:00",
                         "check_tm": 0,
                         "manv": "MR0673",
-                        "cost_type": null
+                        "cost_type": null,
+                        "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_CCP20251012171819772.zip"
                     }
                 ]
             },
             {
                 "id": "CCP20251012171819773",
                 "status": "I",
+                "status_vn": "Đã gắn hóa đơn",
                 "manv": "MR0673",
                 "tencvbh": "Hồ Thị Hồng Gấm",
                 "ma_crm": "MR1137",
@@ -1474,5 +1598,3 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         ]
     }
     ```
-
-* **SQL Function:** Xem file riêng tại [get_form_claim_chi_phi_history.sql](file:///d:/ai-docs/postgres/functions/get_form_claim_chi_phi_history.sql)

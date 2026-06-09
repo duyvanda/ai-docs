@@ -74,6 +74,21 @@ Dữ liệu được tích hợp chặt chẽ với:
 4.  **Kết quả hiển thị:**
     *   Hệ thống thông báo cập nhật thành công, danh sách chờ duyệt tự động làm mới để CRM tiếp tục xử lý.
 
+### 4.3. Phân hệ Cấu hình & Quản trị (Admin Settings)
+
+**Mục đích:** Hỗ trợ người dùng thuộc nhóm Admin/CXM (có mã nhân viên nằm trong danh sách cấu hình `nguoi_upload_file_data`) thay đổi file dữ liệu định mức quà tặng và dọn dẹp các đợt đề xuất cũ.
+
+1.  **Xem tab Cấu hình:**
+    *   Tab **Cấu hình** chỉ hiển thị trên thanh điều hướng đối với các tài khoản có quyền admin.
+2.  **Tải Excel mẫu hiện tại:**
+    *   Admin tải xuống file cấu hình hiện tại để thực hiện chỉnh sửa định mức, danh mục quà tặng hoặc mức chi phí.
+3.  **Cập nhật dữ liệu từ file mới:**
+    *   Admin chọn file Excel cấu hình đã sửa từ thiết bị cá nhân để tải lên (upload).
+    *   Hệ thống ghi nhận và cập nhật danh mục & định mức quà tặng áp dụng cho chu kỳ mới.
+4.  **Xóa toàn bộ đề xuất của một chương trình:**
+    *   Admin nhập tên chương trình quà tặng cần xóa và nhấn **XÓA DỮ LIỆU**.
+    *   Một hộp thoại Modal cảnh báo sẽ hiển thị để xác nhận lại thao tác nhằm tránh việc xóa nhầm dữ liệu quan trọng. Hành động này không thể hoàn tác.
+
 -----
 
 ## 5. Thiết kế Cơ sở dữ liệu (Database Schema)
@@ -121,6 +136,10 @@ Lưu chi tiết các quà tặng được đề xuất cho HCP.
 | `approved_manv` | text | Mã CRM đã duyệt đơn |
 | `approved_at` | timestamp | Thời gian CRM xử lý |
 | `inserted_at` | timestamp | Thời gian CRS tạo đề xuất |
+
+> [!NOTE]
+> * **Ràng buộc duy nhất (Unique Constraint):** `uq_hcp_chuong_trinh` trên bộ ba cột `(ma_hcp_2, ten_chuong_trinh, qua_tang)` để đảm bảo mỗi HCP chỉ nhận tối đa 1 lượt đăng ký đối với mỗi loại quà tặng trong cùng một chương trình.
+
 
 **Table 2: `planning_collect_hcp_qua_tang_settings`** (Bảng Cấu hình Chương trình)
 Lưu trữ các tham số vận hành cho chương trình quà tặng HCP hiện hành.
@@ -228,17 +247,18 @@ Hệ thống hoạt động theo mô hình 2 lớp:
 * **Mục đích:** Ghi nhận đề xuất xin cấp quà tặng cho HCP từ CRS.
 * **Validation (Các quy tắc chặn lỗi - Quan trọng):**
     Hệ thống kiểm tra tuần tự. Nếu vi phạm, trả lỗi ngay lập tức:
-    1.  **Check Trùng Lặp (Duplicate):** HCP truyền lên đã từng được submit trong đợt chương trình (có record status H, C). -> Lỗi: `"HCP <ma_hcp> đã được submit trước đó"`.
-    2.  **Check Định Mức HCP:** Tổng số lượng đề xuất cho 1 HCP > `dinh_muc_toi_da_hcp` (cấu hình trong settings). -> Lỗi: `"Đã vượt định mức HCP"`.
-    3.  **Check Định Mức CRS (Cá nhân):** Tổng số lượng toàn bộ các đơn đang submit + đơn đang nộp đợt này của user CRS (kiểm tra theo **mã nhân viên + sản phẩm/quà tặng**) > `dinh_muc` cá nhân (trong bảng `planning_collect_hcp_qua_tang_dinh_muc_crm`). -> Lỗi: `"Tổng số lượng đã nhập vượt quá định mức của nhân viên"`.
-    4.  **Check Định Mức CRM (Vùng):** Tổng số lượng toàn team dưới trướng của CRM (kiểm tra tổng team theo **mã crm + sản phẩm/quà tặng**) > `dinh_muc` team. -> Lỗi: `"Đã vượt định mức CRM"`.
+    1.  **Check Trùng Lặp (Duplicate):** Cặp HCP và món quà truyền lên đã từng được submit trong đợt chương trình (có record status H, C) hoặc trùng lặp ngay trong danh sách gửi lên. -> Lỗi: `"HCP <ma_hcp> đã được submit quà tặng <tên_quà> trước đó"`.
+    2.  **Check Định Mức HCP:** Tổng số lượng đề xuất cho 1 HCP (cũ + mới) > `dinh_muc_toi_da_hcp` (cấu hình trong settings). -> Lỗi: `"Đã vượt định mức HCP"`.
+    3.  **Check Định Mức CRS (Cá nhân):** Tổng số lượng (cũ + mới) của user CRS theo từng loại quà tặng > `dinh_muc` cá nhân (đối chiếu qua Tên vật tư sau khi cắt khoảng trắng thừa). -> Lỗi chi tiết: `"Tổng định mức cá nhân bị vượt: Sản phẩm [<Tên quà>] vượt định mức cá nhân (đã đăng ký <Số lượng>/<Định mức>)"`.
+    4.  **Check Định Mức CRM (Vùng):** Tổng số lượng (cũ + mới) toàn team dưới trướng của CRM theo từng loại quà tặng > `dinh_muc` team (đối chiếu qua Tên vật tư sau khi cắt khoảng trắng thừa). -> Lỗi chi tiết: `"Tổng định mức cả team vượt quá hạn mức CRM: Sản phẩm [<Tên quà>] vượt định mức CRM (đã đăng ký <Số lượng>/<Định mức>)"`.
 
 * **Logic (Quy trình xử lý dữ liệu):**
     1.  Parse array JSON đầu vào thành bảng tạm `data_nhap`.
-    2.  Join với các bảng cấu hình để tính toán và lấy định mức.
-    3.  Kiểm tra các Validation rules.
-    4.  Nếu Passed: `INSERT INTO planning_collect_hcp_qua_tang`.
-    5.  Return thành công kèm tổng số lượng đã nhập theo CT hiện tại.
+    2.  Chuẩn hóa và cắt bỏ các khoảng trắng thừa/dấu chấm ở cuối (`TRIM` và `TRIM(TRAILING '.')`) cho tên chương trình và tên quà tặng để tránh sai lệch dữ liệu.
+    3.  Join với các bảng cấu hình để tính toán định mức theo từng sản phẩm.
+    4.  Kiểm tra tuần tự các Validation rules.
+    5.  Nếu Passed: Thực hiện `INSERT INTO planning_collect_hcp_qua_tang` với danh sách cột được chỉ định rõ ràng.
+    6.  Return thành công kèm tổng chi phí đã nhập của chương trình hiện tại.
 
 * **JSON Input (`body`):**
     ```json
@@ -391,19 +411,17 @@ Hệ thống hoạt động theo mô hình 2 lớp:
 
 * **Loại:** WRITE (Delete)
 * **API Endpoint:** `POST /local/post_data/delete_planning_collect_hcp_qua_tang/`
-* **Mục đích:** CRS xóa một đề xuất quà tặng mà mình đã tạo (chỉ cho phép xóa đơn đang ở trạng thái **Chờ duyệt `H`**).
+* **Mục đích:** Xóa một đề xuất quà tặng theo `uuid` (cho phép xóa ở mọi trạng thái).
 * **Validation:**
-    1. Chỉ xóa record có `uuid` khớp VÀ `manv` khớp (đảm bảo CRS chỉ xóa được đề xuất của chính mình).
-    2. *(Khuyến nghị)* Chỉ cho phép xóa khi `status = 'H'` — không được xóa đơn đã duyệt (`C`) hoặc từ chối (`R`).
+    1. Chỉ xóa record có `uuid` khớp.
 * **Logic:**
-    1. Nhận `uuid` và `manv` từ request body.
+    1. Nhận `uuid` từ request body.
     2. Thực hiện `DELETE FROM planning_collect_hcp_qua_tang WHERE uuid = p_uuid`.
     3. Trả về kết quả thành công hoặc lỗi.
 * **JSON Input (`body`):**
     ```json
     {
-        "uuid": "u-1234",
-        "manv": "MR1234"
+        "uuid": "u-1234"
     }
     ```
 * **JSON Output:**
@@ -415,3 +433,31 @@ Hệ thống hoạt động theo mô hình 2 lớp:
         ```json
         { "status": "fail", "error_message": "[Nội dung lỗi]" }
         ```
+
+#### **Function:** `delete_planning_collect_hcp_qua_tang_by_chuong_trinh`
+
+* **Loại:** WRITE (Delete)
+* **API Endpoint:** `POST /local/post_data/delete_planning_collect_hcp_qua_tang_by_chuong_trinh/`
+* **Mục đích:** Xóa toàn bộ dữ liệu đề xuất quà tặng thuộc về một chương trình cụ thể dựa vào `ten_chuong_trinh`.
+* **Validation:**
+    1. Yêu cầu có `ten_chuong_trinh` trong dữ liệu gửi lên.
+* **Logic:**
+    1. Nhận `ten_chuong_trinh` từ request body.
+    2. Thực hiện `DELETE FROM planning_collect_hcp_qua_tang WHERE ten_chuong_trinh = p_ten_chuong_trinh`.
+    3. Trả về kết quả thành công hoặc lỗi.
+* **JSON Input (`body`):**
+    ```json
+    {
+        "ten_chuong_trinh": "QTCX: Ngày Dược sĩ Thế giới 25/9."
+    }
+    ```
+* **JSON Output:**
+    * **Thành công:**
+        ```json
+        { "status": "ok", "success_message": "Xóa toàn bộ đề xuất của chương trình thành công!" }
+        ```
+    * **Thất bại:**
+        ```json
+        { "status": "fail", "error_message": "[Nội dung lỗi]" }
+        ```
+
