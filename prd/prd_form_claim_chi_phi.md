@@ -154,6 +154,14 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
     3. User bấm nút **"✍️ Tôi đã xem và tiến hành ký số thông qua MLID"** để xác nhận chốt sổ gửi email.
     4. **Call API:** `insert_form_claim_chi_phi_chung_tu` (Method: POST) để ghi nhận hoàn tất và gửi email thông báo cho hệ thống.
 
+**Excel Export Logic**:
+API trả về JSON với các sheet data (`BMKT013`, `BMKT002`, `BMKT005`):
+- `BMKT013-KH-TH-CP`: Danh sách chi phí tổng hợp.
+- `BMKT002-DNTT`: Đề nghị thanh toán.
+- `BMKT005-DNTTCTP`: Đề nghị thanh toán chi phí công tác. 
+    - Header mapping: Ưu tiên lấy từ các field API trả về riêng (như `bmkt005_nguoi_de_nghi`, `bmkt005_department`, `bmkt005_ly_do_thanh_toan`, `bmkt005_tong_cong_tac_phi`, `bmkt005_so_tien_bang_chu`). Nếu thiếu, sẽ dùng giá trị dự phòng từ `BMKT002`.
+    - Cột mapping chi tiết cho `BMKT005`: `stt`, `noi_dung_chi_tiet`, `so_ngay`, `chi_phi_khach_san`, `phu_cap_an_uong`, `phu_cap_di_lai`, `ve_xe`, `chi_phi_giao_tiep`, `tong_tien`, `so_hoa_don`, `ngay_hoa_don`, `khoan_muc`, `nguoi_nhan_tien`, `ghi_chu`.
+
 -----
 
 ## 5. Thiết kế Cơ sở dữ liệu (Database Schema)
