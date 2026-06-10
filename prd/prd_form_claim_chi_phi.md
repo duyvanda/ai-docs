@@ -1047,6 +1047,43 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     }
     ```
 
+#### **Function:** `post_form_claim_chi_phi_hoan_tac`
+
+  * **Loại:** WRITE
+  * **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
+  * **Mục đích:** User thực hiện hoàn tác (bỏ duyệt) cho kế hoạch đã được duyệt.
+  * **Validation:**
+      * Chỉ cho phép hoàn tác khi trạng thái khác 'H' (Chờ duyệt). (FE đã chặn, Server có thể double check).
+  * **Logic (Thứ tự thực hiện theo Code):**
+    1.  **Khởi tạo dữ liệu:**
+          * Phân tích chuỗi JSON input thành bảng tạm bao gồm: `id`, `manv`, `status`, `inserted_at`.
+    2.  **Cập nhật trạng thái (Step-back Update):**
+          * Hệ thống xác định hành động lùi bước (step-back) dựa trên trạng thái hiện tại của phiếu:
+          * **Trạng thái 'C' (Đã duyệt) hoặc 'R' (Từ chối):** Lùi về 'H' (Chờ duyệt). Cập nhật `status` = 'H', xóa `approved_manv`, `approved_at`, `approved_so_ke_hoach`.
+          * **Trạng thái 'I' (Đã gắn HĐ):** Lùi về 'C' (Đã duyệt). Cập nhật `status` = 'C', `so_tien_claim_hoa_don` = null. Đồng thời thực hiện xóa các hóa đơn tương ứng trong `form_claim_chi_phi_hoa_don` (`khid` = `id`).
+          * **Trạng thái 'D' (CRM duyệt HĐ) hoặc 'E' (CRM từ chối HĐ):** Lùi về 'I' (Đã gắn HĐ). Cập nhật `status` = 'I', xóa `claim_approved_at`.
+    3.  **Trả kết quả:** Trả về thông báo thành công.
+
+  * **JSON Input (`body` - Array):**
+    ```json
+    [
+        {
+            "id": "CCP001",
+            "manv": "AM001",
+            "status": "C",
+            "inserted_at": "2025-10-12 14:30:00"
+        }
+    ]
+    ```
+
+  * **JSON Output:**
+    ```json
+    {
+        "status": "ok",
+        "success_message": "Hoàn tác thành công!"
+    }
+    ```
+
 -----
 
 ### 6.5. Nhóm Công tác phí & Báo cáo
