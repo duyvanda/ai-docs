@@ -523,11 +523,12 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             * Cùng **Tháng chi phí** (`thang_chi_phi`) với phiếu đang tạo.
             * Cùng **Phân loại** (`qua_tang` - Ví dụ: cùng là "Quà tặng").
             * Trạng thái phiếu cũ **không phải là Từ chối** (`status != 'R'`).
+            * Khác ID với phiếu đang xử lý (`a.id != b.id` - để hỗ trợ ghi đè khi thực hiện chức năng Điều chỉnh).
         * *Thông báo lỗi:* `"Dịp này khách hàng đã được nhận"`.
     4.  **Kiểm tra vượt định mức ngân sách (Budget Threshold Check):**
         * Hệ thống tính **Tổng tiền tích lũy** (Total Risk) bao gồm tổng của 3 nguồn:
             * `(1) Current`: Số tiền đang đăng ký trong phiếu hiện tại.
-            * `(2) Pending/Approved`: Tổng số tiền của các phiếu khác đang chờ duyệt hoặc đã duyệt trong cùng tháng/kỳ (Loại trừ các phiếu bị Reject).
+            * `(2) Pending/Approved`: Tổng số tiền của các phiếu khác đang chờ duyệt hoặc đã duyệt trong cùng tháng/kỳ (Loại trừ các phiếu bị Reject và **Loại trừ chính phiếu đang được điều chỉnh** `a.id != b.id`).
             * `(3) Historical`: Chi phí lịch sử Marketing đã thực hiện (Truy vấn từ bảng `d_tracking_cost_hcp_v2` với điều kiện `nam_thuc_hien` = năm hiện tại VÀ `hoat_dong` chứa từ khóa "quà tặng"). **Lưu ý:** Mục (3) chỉ được cộng dồn nếu nội dung phiếu hiện tại là "Chi phí quà tặng dịp sinh nhật".
         * So sánh Tổng tiền tích lũy với **Định mức trần (Cap)**:
             * Nhóm HCP: **2.000.000 VNĐ** / suất.
@@ -551,8 +552,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     3.  **Tính toán và Tổng hợp:**
         * Thực hiện logic truy vấn và cộng dồn dữ liệu từ 3 nguồn (Current, Pending, Historical) như mô tả ở phần Validation để ra con số cuối cùng so sánh với Cap.
 
-    4.  **Thực thi Lưu trữ (Insert):**
-        * Nếu tất cả các bước Validation đều vượt qua (Pass), hệ thống thực hiện lệnh `INSERT` dữ liệu đã được xử lý vào bảng `form_claim_chi_phi`.
+    4.  **Thực thi Lưu trữ (Thêm mới / Ghi đè):**
+        * Nếu tất cả các bước Validation đều vượt qua (Pass), hệ thống tiến hành lưu dữ liệu.
+        * Để hỗ trợ chức năng **Điều chỉnh** (Edit), hệ thống sẽ `DELETE` bản ghi cũ theo `id` trước (nếu có), sau đó thực hiện lệnh `INSERT` dữ liệu mới vào bảng `form_claim_chi_phi`. Do phiếu chỉ được điều chỉnh khi ở trạng thái 'H' (Chưa có hóa đơn gắn kèm) nên việc xóa này là an toàn tuyệt đối.
         * Trả về thông báo thành công.
 
   * **JSON Input (`body`):** *Array 1 phần tử*
