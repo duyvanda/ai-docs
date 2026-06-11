@@ -1503,8 +1503,13 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
 * **Loại:** WRITE (UPSERT theo ID) vào bảng `form_claim_chi_phi_internal_signature_form`
 * **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
-* **Mục đích:** Lưu lại dữ liệu trình ký nội bộ cho form claim chi phí.
-* **Validation (Các quy tắc chặn lỗi):** Không có validation phức tạp.
+* **Mục đích:** Lưu lại dữ liệu trình ký nội bộ cho form claim chi phí và truyền dữ liệu (`raw_from_be`) sang webhook để xử lý.
+* **Logic xử lý:**
+  1. Trích xuất dòng dữ liệu đầu tiên từ mảng JSON đầu vào.
+  2. Thực hiện **DELETE** bản ghi hiện tại trong bảng `form_claim_chi_phi_internal_signature_form` nếu trùng `id`.
+  3. Thực hiện **INSERT** bản ghi mới với các trường `id`, `manv`, `ky_chi_phi_kt`, `js_value`, và `inserted_at` (nếu không có thì lấy `CURRENT_TIMESTAMP`).
+  4. Lấy giá trị từ trường `raw_from_be` để truyền vào hàm webhook `public.post_python_eo_webhook` và lấy lại kết quả `webhook_response`.
+* **Validation (Các quy tắc chặn lỗi):** Không có validation phức tạp. Các lỗi SQL sinh ra trong quá trình thực thi sẽ được chặn và trả về dưới dạng `error_message`.
   * **JSON Input (`body` - Array wrapper):**
     ```json
     [
@@ -1513,12 +1518,45 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "manv": "MR1391",
             "ky_chi_phi_kt": "2026-06-01T00:00:00",
             "js_value": {},
-            "raw_from_be":{},
+            "raw_from_be": {},
             "inserted_at": "2026-06-08T18:00:00"
         }
     ]
     ```
-  * **JSON Output:** `{"status": "ok", "success_message": "Đã nhận thành công"}`
+  * **JSON Output:**
+    * **Thành công (Webhook gọi thành công và trả về JSON):**
+      ```json
+      {
+          "status": "ok",
+          "success_message": "Đã nhận thành công. Trạng thái ký số: Success - Đã nhận thành công !!!",
+          "webhook_response": {
+              "status": "Success",
+              "message": "Đã nhận thành công !!!" 
+          }
+      }
+      ```
+    * **Thành công xử lý DB nhưng Webhook lỗi (Timeout / Không đúng format JSON / Invalid input):**
+      ```json
+      {
+          "status": "ok",
+          "success_message": "Đã nhận thành công. Trạng thái ký số: error - Request timed out sau 10s",
+          "webhook_response": {
+              "status": "error",
+              "message": "Request timed out sau 10s"
+          }
+      }
+      ```
+    * **Thất bại (Lỗi SQL trong quá trình xử lý DB):**
+      ```json
+      {
+          "status": "fail",
+          "error_message": "Chi tiết lỗi (SQLERRM)",
+          "webhook_response": {
+              "status": "error",
+              "message": "Request timed out sau 10s"
+          }
+      }
+      ```
 
 -----
 
