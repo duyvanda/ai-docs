@@ -164,7 +164,9 @@ Dữ liệu được tích hợp chặt chẽ với:
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
 | `manv` | text | **PK** - Mã nhân viên |
+| `tencvbh` | text | Tên NV |
 | `supid` | text | Quản lý trực tiếp |
+| `tenquanlytt` | text | Tên sup |
 
 **Table `api_f_thongtin_tuyen_mcp_tp_pcl`** (Tuyến)
 | Column Name | Data Type | Description |
