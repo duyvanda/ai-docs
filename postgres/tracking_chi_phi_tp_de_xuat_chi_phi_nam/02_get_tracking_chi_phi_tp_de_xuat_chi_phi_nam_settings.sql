@@ -1,7 +1,7 @@
 /*
 Lấy cấu hình hệ thống (settings) cho đề xuất chi phí năm.
 */
-CREATE OR REPLACE FUNCTION local.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings(url_param jsonb)
+CREATE OR REPLACE FUNCTION public.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings(url_param jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$

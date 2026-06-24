@@ -1,7 +1,7 @@
 /*
 CXD Duyệt chốt/Từ chối đề xuất chi phí năm.
 */
-CREATE OR REPLACE FUNCTION local.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_cxd(json_input jsonb)
+CREATE OR REPLACE FUNCTION public.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_cxd(json_input jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$

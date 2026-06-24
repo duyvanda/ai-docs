@@ -1,7 +1,7 @@
 /*
 CRM submit form đề xuất chi phí năm. Upsert vào bảng tracking. Validate tổng tiền.
 */
-CREATE OR REPLACE FUNCTION local.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm(json_input jsonb)
+CREATE OR REPLACE FUNCTION public.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm(json_input jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
@@ -60,7 +60,7 @@ BEGIN
     CREATE TEMP TABLE calc_ngan_sach_tong ON COMMIT DROP AS
     SELECT 
         (el->>'makhdms')::text AS custid,
-        MAX((el->>'ngan_sach')::numeric) AS ngan_sach
+        SUM((el->>'ngan_sach')::numeric) AS ngan_sach_tong
     FROM public.settings_data s, jsonb_array_elements(s.js->'nt_options') AS el
     WHERE s.appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
     GROUP BY (el->>'makhdms')::text;
@@ -70,7 +70,7 @@ BEGIN
     SELECT 
         r.custid,
         (COALESCE(r.total_request, 0) + COALESCE(d.total_db, 0)) AS total_proposed,
-        COALESCE(ns.ngan_sach, 0) AS ngan_sach_tong
+        COALESCE(ns.ngan_sach_tong, 0) AS ngan_sach_tong
     FROM calc_request_summary r
     LEFT JOIN calc_db_summary d ON r.custid = d.custid AND r.applyfor = d.applyfor
     LEFT JOIN calc_ngan_sach_tong ns ON ns.custid = r.custid;

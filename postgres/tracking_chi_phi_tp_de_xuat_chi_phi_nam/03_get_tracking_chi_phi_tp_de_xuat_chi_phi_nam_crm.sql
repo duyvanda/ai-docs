@@ -1,7 +1,7 @@
 /*
 Lấy danh sách Khách hàng và các hoạt động đầu tư được phép đề xuất dành cho CRM.
 */
-CREATE OR REPLACE FUNCTION local.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm(url_param jsonb)
+CREATE OR REPLACE FUNCTION public.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm(url_param jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$

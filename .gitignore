@@ -1,2 +1,5 @@
 # Exclude bosung.md from version control
 prd/bosung.md
+
+# Exclude local AI agent configuration containing sensitive information
+.agents/

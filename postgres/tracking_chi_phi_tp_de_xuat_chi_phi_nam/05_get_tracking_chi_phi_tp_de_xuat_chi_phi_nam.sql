@@ -1,7 +1,7 @@
 /*
 Lấy toàn bộ danh sách chi phí đề xuất (Dùng chung cho List Data - CRD, CXD duyệt)
 */
-CREATE OR REPLACE FUNCTION local.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam(url_param jsonb)
+CREATE OR REPLACE FUNCTION public.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam(url_param jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
@@ -18,7 +18,7 @@ BEGIN
         WITH calc_ngan_sach_tong AS (
             SELECT 
                 (el->>'makhdms')::text AS custid,
-                MAX((el->>'ngan_sach')::numeric) AS ngan_sach
+                SUM((el->>'ngan_sach')::numeric) AS ngan_sach
             FROM public.settings_data s, jsonb_array_elements(s.js->'nt_options') AS el
             WHERE s.appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
             GROUP BY (el->>'makhdms')::text

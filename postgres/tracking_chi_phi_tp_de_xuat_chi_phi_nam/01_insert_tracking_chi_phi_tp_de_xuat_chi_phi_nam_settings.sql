@@ -1,7 +1,7 @@
 /*
 Insert/Update (Upsert) cấu hình cho đề xuất chi phí năm (settings_data).
 */
-CREATE OR REPLACE FUNCTION local.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings(json_input jsonb)
+CREATE OR REPLACE FUNCTION public.insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings(json_input jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
