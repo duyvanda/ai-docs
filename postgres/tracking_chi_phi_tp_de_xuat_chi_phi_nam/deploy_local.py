@@ -1,7 +1,15 @@
 import psycopg2
 import os
+from dotenv import load_dotenv
 
-postgres_conf = {"host": "101.99.42.30","port": 5432,"user": "postgres","password": "postgres321","database": "postgres"}
+load_dotenv()
+postgres_conf = {
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 5432)),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME")
+}
 conn = psycopg2.connect(**postgres_conf)
 conn.autocommit = True
 cursor = conn.cursor()
