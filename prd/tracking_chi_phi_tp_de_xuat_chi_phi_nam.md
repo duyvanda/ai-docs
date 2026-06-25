@@ -181,6 +181,8 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 
 #### Function: `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings`
 
+* Tải file mẫu settings: https://bi.meraplion.com/DMS/excel_file/tracking_chi_phi_tp_de_xuat_chi_phi_nam.xlsx
+
 * **Loại:** WRITE (Configuration Upsert)
 * **Mục đích:** Lưu trữ hoặc cập nhật cấu hình hệ thống.
 * **JSON Input (`body`):** 
