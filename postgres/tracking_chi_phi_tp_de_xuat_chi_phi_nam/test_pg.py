@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-load_dotenv()
+load_dotenv(override=True)
 postgres_conf = {
     "host": os.getenv("DB_HOST"),
     "port": int(os.getenv("DB_PORT", 5432)),
@@ -22,6 +22,7 @@ try:
     print("Connected to DB.")
     
     create_table_sql = """
+    DROP TABLE IF EXISTS public.tracking_chi_phi_tp_de_xuat_chi_phi_nam CASCADE;
     CREATE TABLE IF NOT EXISTS public.tracking_chi_phi_tp_de_xuat_chi_phi_nam (
         id text PRIMARY KEY,
         custid text,
@@ -30,6 +31,7 @@ try:
         manv_crm text,
         so_tien_de_xuat numeric,
         ghi_chu text,
+        cx_note text,
         so_tien_duyet_crd numeric,
         so_tien_duyet_cxd numeric,
         status text,
@@ -83,7 +85,8 @@ try:
                     "ngan_sach": 100000000,
                     "hoat_dong_id": "tracking_chi_phi_tp_conference",
                     "ten_hoat_dong": "Hội nghị KH",
-                    "ngan_sach_uoc_luong": 30000000
+                    "ngan_sach_uoc_luong": 30000000,
+                    "cx_note": "Ghi chú CX 1"
                 },
                 {
                     "makhdms": "000691",
@@ -114,6 +117,12 @@ try:
     res = cursor.fetchone()
     print("Result:", json.dumps(res[0], indent=2, ensure_ascii=False))
 
+    print("\n--- Testing API 02: Get Settings ---")
+    get_settings_payload = {"manv": "MR1682"}
+    cursor.execute("SELECT public.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings(%s::jsonb);", (json.dumps(get_settings_payload),))
+    res = cursor.fetchone()
+    print("Result:", json.dumps(res[0], indent=2, ensure_ascii=False))
+
     print("\n--- Testing API 04: CRM Submit ---")
     crm_payload = [
         {
@@ -124,6 +133,7 @@ try:
             "manv_crm": "MR1035",
             "so_tien_de_xuat": 40000000,
             "ghi_chu": "Làm event lớn vượt mức",
+            "cx_note": "Ghi chú CX 1",
             "applyfor": "2026-01-01"
         }
     ]
@@ -138,7 +148,7 @@ try:
     print("Result:", json.dumps(res[0], indent=2, ensure_ascii=False))
     
     print("\n--- Testing API 05: Get List ---")
-    get_all_payload = {"manv": "MR0001"}
+    get_all_payload = {"manv": "MR1035"}
     cursor.execute("SELECT public.get_tracking_chi_phi_tp_de_xuat_chi_phi_nam(%s::jsonb);", (json.dumps(get_all_payload),))
     res = cursor.fetchone()
     print("Result:", json.dumps(res[0], indent=2, ensure_ascii=False))

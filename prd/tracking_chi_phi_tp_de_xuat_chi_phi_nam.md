@@ -39,7 +39,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 1. CX chọn **năm áp dụng** (`applyfor`) trên giao diện trước khi upload (VD: `2026`). Đây là khóa để upsert settings và lọc dữ liệu về sau.
 2. CX chuẩn bị file Excel gồm 2 sheet:
-   - **Sheet `nt_options`:** Danh sách KH mục tiêu, gồm: Mã KH, Tên KH, Mã/Tên CRM phụ trách, Tỉnh, Tổng ngân sách được duyệt, và Danh sách các hoạt động được gắn kèm **mức ngân sách ước lượng** của từng hoạt động.
+   - **Sheet `nt_options`:** Danh sách KH mục tiêu, gồm: Mã KH, Tên KH, Mã/Tên CRM phụ trách, Tỉnh, Tổng ngân sách được duyệt, và Danh sách các hoạt động được gắn kèm **mức ngân sách ước lượng** của từng hoạt động, cùng với **Ghi chú** của CX (`cx_note`).
    - **Sheet `hoat_dong_options`:** Danh mục các loại hoạt động đầu tư, gồm: Loại (Chiến lược / Commercial), `ten_hoat_dong`, `hoat_dong_id`.
 3. CX chọn file và nhấn Upload. Frontend xử lý 2 sheet thành JSON, gắn `applyfor` từ bước 1, rồi gọi hàm `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings`. Dữ liệu ghi vào `settings_data`.
 
@@ -139,6 +139,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `manv_crm` | text | Mã CRM tạo đề xuất |
 | `so_tien_de_xuat` | numeric | Số tiền CRM đề xuất |
 | `ghi_chu` | text | Ghi chú của CRM cho hoạt động này *(nullable)* |
+| `cx_note` | text | Ghi chú của CX cho hoạt động này *(nullable)* |
 | `so_tien_duyet_crd` | numeric | Số tiền CRD duyệt *(nullable, điền khi status = C)* |
 | `so_tien_duyet_cxd` | numeric | Số tiền CXD duyệt chốt *(nullable, điền khi status = D)* |
 | `status` | text | Trạng thái: `H` (Hold), `C` (Confirmed), `D` (Done), `R` (Rejected) |
@@ -206,7 +207,8 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                         "ngan_sach": 100000000,
                         "hoat_dong_id": "tracking_chi_phi_tp_conference",
                         "ten_hoat_dong": "Hội nghị KH",
-                        "ngan_sach_uoc_luong": 30000000
+                        "ngan_sach_uoc_luong": 30000000,
+                        "cx_note": "Note từ CX"
                     },
                     {
                         "makhdms": "000691",
@@ -216,7 +218,8 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                         "ngan_sach": 100000000,
                         "hoat_dong_id": "tracking_chi_phi_tp_m_session",
                         "ten_hoat_dong": "Đào tạo CMSP (M.Session)",
-                        "ngan_sach_uoc_luong": 70000000
+                        "ngan_sach_uoc_luong": 70000000,
+                        "cx_note": ""
                     }
                 ],
                 "hoat_dong_options": [
@@ -269,6 +272,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "hoat_dong_id": "tracking_chi_phi_tp_conference",
                 "ten_hoat_dong": "Hội nghị KH",
                 "ngan_sach_uoc_luong": 30000000,
+                "cx_note": "Note từ CX",
                 "so_tien_de_xuat": 40000000,
                 "ghi_chu": "Làm event lớn vượt mức ước lượng",
                 "status": "H"
@@ -281,6 +285,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "hoat_dong_id": "tracking_chi_phi_tp_m_session",
                 "ten_hoat_dong": "Đào tạo CMSP (M.Session)",
                 "ngan_sach_uoc_luong": 70000000,
+                "cx_note": "",
                 "so_tien_de_xuat": null,
                 "ghi_chu": null,
                 "status": null
@@ -304,6 +309,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "manv_crm": "MR1035",
             "so_tien_de_xuat": 40000000,
             "ghi_chu": "Làm event lớn vượt mức ước lượng",
+            "cx_note": "Note từ CX",
             "status": "H",
             "applyfor": "2026-01-01T00:00:00",
             "inserted_at": "2026-01-15T09:30:00"
@@ -316,6 +322,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "manv_crm": "MR1035",
             "so_tien_de_xuat": 60000000,
             "ghi_chu": null,
+            "cx_note": "",
             "status": "H",
             "applyfor": "2026-01-01T00:00:00",
             "inserted_at": "2026-01-15T09:30:00"
@@ -363,6 +370,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "ten_hoat_dong": "Hội nghị KH",
                 "so_tien_de_xuat": 40000000,
                 "ghi_chu": "Làm event lớn vượt mức ước lượng",
+                "cx_note": "Note từ CX",
                 "so_tien_duyet_crd": null,
                 "so_tien_duyet_cxd": null,
                 "status": "H",

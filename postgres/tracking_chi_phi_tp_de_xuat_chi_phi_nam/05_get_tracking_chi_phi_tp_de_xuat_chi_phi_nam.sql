@@ -44,6 +44,7 @@ BEGIN
                 tr.ten_hoat_dong,
                 tr.so_tien_de_xuat,
                 tr.ghi_chu,
+                tr.cx_note,
                 tr.so_tien_duyet_crd,
                 tr.so_tien_duyet_cxd,
                 tr.status,

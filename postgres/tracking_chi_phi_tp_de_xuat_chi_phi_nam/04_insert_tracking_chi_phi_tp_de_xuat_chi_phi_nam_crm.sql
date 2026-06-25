@@ -21,6 +21,7 @@ BEGIN
             (el->>'manv_crm')::text AS manv_crm,
             (el->>'so_tien_de_xuat')::numeric AS so_tien_de_xuat,
             (el->>'ghi_chu')::text AS ghi_chu,
+            (el->>'cx_note')::text AS cx_note,
             'H'::text AS status,
             (el->>'applyfor')::date AS applyfor,
             COALESCE((el->>'inserted_at')::timestamp, CURRENT_TIMESTAMP) AS inserted_at
@@ -95,15 +96,16 @@ BEGIN
        5. NẾU PASS → UPSERT DỮ LIỆU
        ============================================================== */
     INSERT INTO public.tracking_chi_phi_tp_de_xuat_chi_phi_nam (
-        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, status, applyfor, inserted_at
+        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
     )
     SELECT 
-        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, status, applyfor, inserted_at
+        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
     FROM input_raw
     ON CONFLICT (id) DO UPDATE 
     SET 
         so_tien_de_xuat = EXCLUDED.so_tien_de_xuat,
         ghi_chu = EXCLUDED.ghi_chu,
+        cx_note = EXCLUDED.cx_note,
         status = 'H', -- Luôn reset về Hold khi CRM update
         inserted_at = EXCLUDED.inserted_at;
 

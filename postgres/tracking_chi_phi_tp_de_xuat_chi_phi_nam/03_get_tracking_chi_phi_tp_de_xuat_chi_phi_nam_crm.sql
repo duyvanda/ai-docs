@@ -31,7 +31,8 @@ BEGIN
                 (el->>'ngan_sach')::numeric AS ngan_sach,
                 (el->>'hoat_dong_id')::text AS hoat_dong_id,
                 (el->>'ten_hoat_dong')::text AS ten_hoat_dong,
-                (el->>'ngan_sach_uoc_luong')::numeric AS ngan_sach_uoc_luong
+                (el->>'ngan_sach_uoc_luong')::numeric AS ngan_sach_uoc_luong,
+                (el->>'cx_note')::text AS cx_note
             FROM settings s, jsonb_array_elements(s.js->'nt_options') AS el
         ),
         nt_options_filtered AS (
@@ -42,7 +43,7 @@ BEGIN
             LEFT JOIN public.d_users u ON u.supid = n.ma_crm OR u.manv = n.ma_crm
             WHERE STRPOS(COALESCE(u.manv, '') || COALESCE(u.supid, ''), p_manv) > 0
                OR n.ma_crm = p_manv
-            GROUP BY n.applyfor, n.makhdms, n.ten_kh, n.ma_crm, n.ten_crm, n.ngan_sach, n.hoat_dong_id, n.ten_hoat_dong, n.ngan_sach_uoc_luong
+            GROUP BY n.applyfor, n.makhdms, n.ten_kh, n.ma_crm, n.ten_crm, n.ngan_sach, n.hoat_dong_id, n.ten_hoat_dong, n.ngan_sach_uoc_luong, n.cx_note
         ),
         rows_data AS (
             SELECT 
@@ -53,6 +54,7 @@ BEGIN
                 nt.hoat_dong_id,
                 nt.ten_hoat_dong,
                 nt.ngan_sach_uoc_luong,
+                nt.cx_note,
                 tr.so_tien_de_xuat,
                 tr.ghi_chu,
                 tr.status
