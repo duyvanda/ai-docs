@@ -28,6 +28,18 @@ BEGIN
     SELECT COUNT(*)
     INTO v_check_1
     FROM input_raw
+    WHERE cxd_approved_manv <> 'MR1214' OR cxd_approved_manv IS NULL;
+
+    IF v_check_1 > 0 THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', 'Mã người duyệt chốt không hợp lệ. Ràng buộc: cxd_approved_manv phải là MR1214.'
+        );
+    END IF;
+
+    SELECT COUNT(*)
+    INTO v_check_1
+    FROM input_raw
     WHERE status = 'R' AND (ly_do_tu_choi IS NULL OR ly_do_tu_choi = '');
 
     IF v_check_1 > 0 THEN

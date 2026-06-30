@@ -23,8 +23,20 @@ BEGIN
     );
 
     /* ==============================================================
-       3. VALIDATE (Ví dụ: Từ chối thì phải có lý do)
+       3. VALIDATE
        ============================================================== */
+    SELECT COUNT(*)
+    INTO v_check_1
+    FROM input_raw
+    WHERE crd_approved_manv <> 'MR0485' OR crd_approved_manv IS NULL;
+
+    IF v_check_1 > 0 THEN
+        RETURN jsonb_build_object(
+            'status', 'fail',
+            'error_message', 'Mã người duyệt không hợp lệ. Ràng buộc: crd_approved_manv phải là MR0485.'
+        );
+    END IF;
+
     SELECT COUNT(*)
     INTO v_check_1
     FROM input_raw
