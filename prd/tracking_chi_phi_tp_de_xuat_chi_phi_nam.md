@@ -39,7 +39,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 1. CX chọn **năm áp dụng** (`applyfor`) trên giao diện trước khi upload (VD: `2026`). Đây là khóa để upsert settings và lọc dữ liệu về sau.
 2. CX chuẩn bị file Excel gồm 2 sheet:
-   - **Sheet `nt_options`:** Danh sách KH mục tiêu, gồm: Mã KH, Tên KH, Mã/Tên CRM phụ trách, Tỉnh, Tổng ngân sách được duyệt, và Danh sách các hoạt động được gắn kèm **mức ngân sách ước lượng** của từng hoạt động, cùng với **Ghi chú** của CX (`cx_note`).
+   - **Sheet `nt_options`:** Danh sách KH mục tiêu, gồm: Mã KH, Tên KH, Mã/Tên CRM phụ trách, Danh sách các hoạt động được gắn kèm **mức ngân sách ước lượng** của từng hoạt động, cùng với **Ghi chú** của CX (`cx_note`). *(Lưu ý: Tổng ngân sách định mức của KH sẽ được hệ thống tự động tính bằng tổng các `ngan_sach_uoc_luong` của KH đó)*.
    - **Sheet `hoat_dong_options`:** Danh mục các loại hoạt động đầu tư, gồm: Loại (Chiến lược / Commercial), `ten_hoat_dong`, `hoat_dong_id`.
 3. CX chọn file và nhấn Upload. Frontend xử lý 2 sheet thành JSON, gắn `applyfor` từ bước 1, rồi gọi hàm `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_settings`. Dữ liệu ghi vào `settings_data`.
 
@@ -47,7 +47,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 1. CRM mở form. Hệ thống load danh sách KH thuộc quyền quản lý của CRM (lọc theo `ma_crm` trong settings).
 2. Với mỗi KH, hệ thống hiển thị:
-   - Tổng ngân sách định mức được duyệt (`ngan_sach`).
+   - Tổng ngân sách định mức được duyệt *(Frontend tự động cộng tổng `ngan_sach_uoc_luong` của các hoạt động thuộc KH đó để hiển thị)*.
    - Tổng tiền CRM đã đề xuất.
    - Số dư ngân sách tổng còn lại.
    - Danh sách các hoạt động được gắn kèm **ngân sách ước lượng được duyệt** cho từng loại hoạt động.
@@ -253,6 +253,12 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 
 * **Loại:** READ
 * **Mục đích:** Lấy dữ liệu khởi tạo (Đề bài) cho CRM bao gồm danh sách KH, ngân sách tổng, và danh sách các hoạt động (ngân sách ước lượng) được phép đăng ký.
+* **JSON Input (`url_param`):**
+    ```json
+    {
+        "manv": "MR1035"
+    }
+    ```
 * **JSON Output Specification:**
     ```json
     {

@@ -59,11 +59,17 @@ BEGIN
 
     -- Gom thông tin ngân sách tổng từ settings
     CREATE TEMP TABLE calc_ngan_sach_tong ON COMMIT DROP AS
+    WITH latest_settings AS (
+        SELECT js
+        FROM public.settings_data
+        WHERE appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+        ORDER BY inserted_at DESC
+        LIMIT 1
+    )
     SELECT 
         (el->>'makhdms')::text AS custid,
-        SUM((el->>'ngan_sach')::numeric) AS ngan_sach_tong
-    FROM public.settings_data s, jsonb_array_elements(s.js->'nt_options') AS el
-    WHERE s.appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+        SUM((el->>'ngan_sach_uoc_luong')::numeric) AS ngan_sach_tong
+    FROM latest_settings s, jsonb_array_elements(s.js->'nt_options') AS el
     GROUP BY (el->>'makhdms')::text;
 
     -- Bảng kết hợp validate (request + db_cũ > ngân_sach)

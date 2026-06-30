@@ -15,20 +15,25 @@ BEGIN
     WHERE msnvcsmmoi = p_manv;
 
     RETURN (
-        WITH calc_ngan_sach_tong AS (
+        WITH latest_settings AS (
+            SELECT js
+            FROM public.settings_data
+            WHERE appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+            ORDER BY inserted_at DESC
+            LIMIT 1
+        ),
+        calc_ngan_sach_tong AS (
             SELECT 
                 (el->>'makhdms')::text AS custid,
-                SUM((el->>'ngan_sach')::numeric) AS ngan_sach
-            FROM public.settings_data s, jsonb_array_elements(s.js->'nt_options') AS el
-            WHERE s.appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+                SUM((el->>'ngan_sach_uoc_luong')::numeric) AS ngan_sach
+            FROM latest_settings s, jsonb_array_elements(s.js->'nt_options') AS el
             GROUP BY (el->>'makhdms')::text
         ),
         hoat_dong_options AS (
             SELECT 
                 (el->>'hoat_dong_id')::text AS hoat_dong_id,
                 (el->>'loai')::text AS loai_hoat_dong
-            FROM public.settings_data s, jsonb_array_elements(s.js->'hoat_dong_options') AS el
-            WHERE s.appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+            FROM latest_settings s, jsonb_array_elements(s.js->'hoat_dong_options') AS el
         ),
         rows_data AS (
             SELECT 

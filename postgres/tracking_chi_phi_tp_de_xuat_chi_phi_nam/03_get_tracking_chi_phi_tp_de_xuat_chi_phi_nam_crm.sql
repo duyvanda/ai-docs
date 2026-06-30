@@ -28,29 +28,33 @@ BEGIN
                 (el->>'ten_kh')::text AS ten_kh,
                 (el->>'ma_crm')::text AS ma_crm,
                 (el->>'ten_crm')::text AS ten_crm,
-                (el->>'ngan_sach')::numeric AS ngan_sach,
                 (el->>'hoat_dong_id')::text AS hoat_dong_id,
-                (el->>'ten_hoat_dong')::text AS ten_hoat_dong,
                 (el->>'ngan_sach_uoc_luong')::numeric AS ngan_sach_uoc_luong,
                 (el->>'cx_note')::text AS cx_note
             FROM settings s, jsonb_array_elements(s.js->'nt_options') AS el
         ),
+        hoat_dong_options AS (
+            SELECT 
+                (hd->>'hoat_dong_id')::text AS hoat_dong_id,
+                (hd->>'ten_hoat_dong')::text AS ten_hoat_dong
+            FROM settings s, jsonb_array_elements(s.js->'hoat_dong_options') AS hd
+        ),
         nt_options_filtered AS (
-            SELECT n.*
+            SELECT n.*, h.ten_hoat_dong
             FROM nt_options_raw n
+            LEFT JOIN hoat_dong_options h ON h.hoat_dong_id = n.hoat_dong_id
             -- Filter theo quy định STRPOS: CRM chỉ thấy data của chính mình hoặc cấp dưới
             -- Giả định ma_crm trong settings_data map với d_users.supid hoặc d_users.manv
             LEFT JOIN public.d_users u ON u.supid = n.ma_crm OR u.manv = n.ma_crm
             WHERE STRPOS(COALESCE(u.manv, '') || COALESCE(u.supid, ''), p_manv) > 0
                OR n.ma_crm = p_manv
-            GROUP BY n.applyfor, n.makhdms, n.ten_kh, n.ma_crm, n.ten_crm, n.ngan_sach, n.hoat_dong_id, n.ten_hoat_dong, n.ngan_sach_uoc_luong, n.cx_note
+            GROUP BY n.applyfor, n.makhdms, n.ten_kh, n.ma_crm, n.ten_crm, n.hoat_dong_id, h.ten_hoat_dong, n.ngan_sach_uoc_luong, n.cx_note
         ),
         rows_data AS (
             SELECT 
                 nt.makhdms,
                 nt.ten_kh,
                 kh.statedescr AS tinh,
-                nt.ngan_sach,
                 nt.hoat_dong_id,
                 nt.ten_hoat_dong,
                 nt.ngan_sach_uoc_luong,
