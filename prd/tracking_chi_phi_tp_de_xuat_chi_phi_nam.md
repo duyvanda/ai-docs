@@ -393,6 +393,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 #### Function: `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crd`
 
 * **Mục đích:** CRD duyệt (cập nhật status thành `C`) hoặc từ chối (`R`), đồng thời ghi nhận số tiền do CRD duyệt.
+* **Ràng buộc:** `crd_approved_manv` bắt buộc phải đúng mã là `MR0485`.
 * **JSON Input (`body`):** 
     ```json
     [
@@ -401,7 +402,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "status": "C",
             "so_tien_duyet_crd": 35000000,
             "ly_do_tu_choi": null,
-            "crd_approved_manv": "MR0001",
+            "crd_approved_manv": "MR0485",
             "crd_approved_at": "2026-01-20T14:00:00"
         }
     ]
@@ -415,6 +416,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 
 * **Loại:** WRITE (Update Status)
 * **Mục đích:** CXD duyệt chốt cuối cùng (thành `D`) hoặc từ chối (`R`), chốt số tiền duyệt.
+* **Ràng buộc:** `cxd_approved_manv` bắt buộc phải đúng mã là `MR1214`.
 * **JSON Input (`body`):** 
     ```json
     [
@@ -423,7 +425,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "status": "D",
             "so_tien_duyet_cxd": 35000000,
             "ly_do_tu_choi": null,
-            "cxd_approved_manv": "CXD001",
+            "cxd_approved_manv": "MR1214",
             "cxd_approved_at": "2026-01-21T09:00:00"
         }
     ]
