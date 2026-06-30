@@ -297,7 +297,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
 #### Function: `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm`
 
 * **Loại:** WRITE (Upsert)
-* **Logic:** Thực hiện Upsert (Insert hoặc Update) dữ liệu vào bảng `tracking_chi_phi_tp_de_xuat_chi_phi_nam` dựa trên khóa chính `id` (`ON CONFLICT (id) DO UPDATE...`). Các record sẽ luôn được set `status = 'H'`.
+* **Logic:** Thực hiện Upsert (Insert hoặc Update) dữ liệu vào bảng `tracking_chi_phi_tp_de_xuat_chi_phi_nam` dựa trên khóa chính `id` (`ON CONFLICT (id) DO UPDATE...`). Các record sẽ luôn được set `status = 'H'`. id: `{custid}_{hoat_dong_id}_{yyyy}`
 * **JSON Input (`body`):**
     ```json
     [
