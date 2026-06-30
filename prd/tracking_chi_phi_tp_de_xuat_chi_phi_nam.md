@@ -204,9 +204,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                         "ten_kh": "CT DP Hồng Đào - TP Cà Mau",
                         "ma_crm": "MR1035",
                         "ten_crm": "Nguyễn Thanh Tài",
-                        "ngan_sach": 100000000,
                         "hoat_dong_id": "tracking_chi_phi_tp_conference",
-                        "ten_hoat_dong": "Hội nghị KH",
                         "ngan_sach_uoc_luong": 30000000,
                         "cx_note": "Note từ CX"
                     },
@@ -215,9 +213,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                         "ten_kh": "CT DP Hồng Đào - TP Cà Mau",
                         "ma_crm": "MR1035",
                         "ten_crm": "Nguyễn Thanh Tài",
-                        "ngan_sach": 100000000,
                         "hoat_dong_id": "tracking_chi_phi_tp_m_session",
-                        "ten_hoat_dong": "Đào tạo CMSP (M.Session)",
                         "ngan_sach_uoc_luong": 70000000,
                         "cx_note": ""
                     }

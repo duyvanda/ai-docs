@@ -2,6 +2,7 @@ import psycopg2
 import json
 import os
 import sys
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
 sys.stdout.reconfigure(encoding='utf-8')
