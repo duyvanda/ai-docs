@@ -25,9 +25,10 @@ BEGIN
         calc_ngan_sach_tong AS (
             SELECT 
                 (el->>'makhdms')::text AS custid,
+                (el->>'hoat_dong_id')::text AS hoat_dong_id,
                 SUM((el->>'ngan_sach_uoc_luong')::numeric) AS ngan_sach
             FROM latest_settings s, jsonb_array_elements(s.js->'nt_options') AS el
-            GROUP BY (el->>'makhdms')::text
+            GROUP BY (el->>'makhdms')::text, (el->>'hoat_dong_id')::text
         ),
         hoat_dong_options AS (
             SELECT 
@@ -63,7 +64,7 @@ BEGIN
             FROM public.tracking_chi_phi_tp_de_xuat_chi_phi_nam tr
             LEFT JOIN public.d_master_khachhang kh ON kh.custid = tr.custid
             LEFT JOIN public.d_users u ON u.manv = tr.manv_crm
-            LEFT JOIN calc_ngan_sach_tong ns ON ns.custid = tr.custid
+            LEFT JOIN calc_ngan_sach_tong ns ON ns.custid = tr.custid AND ns.hoat_dong_id = tr.hoat_dong_id
             LEFT JOIN hoat_dong_options hd ON hd.hoat_dong_id = tr.hoat_dong_id
             WHERE (p_status IS NULL OR p_status = '' OR tr.status = p_status)
               AND (
