@@ -74,7 +74,8 @@ BEGIN
             'status', 'ok',
             'chucdanhengtitlesum', v_chucdanh,
             'applyfor', (SELECT applyfor FROM settings),
-            'nt_options', COALESCE((SELECT jsonb_agg(f) FROM rows_data f), '[]'::jsonb)
+            'nt_options', COALESCE((SELECT jsonb_agg(f) FROM rows_data f), '[]'::jsonb),
+            'hoat_dong_options', COALESCE((SELECT jsonb_agg(h) FROM hoat_dong_options h), '[]'::jsonb)
         )
     );
 EXCEPTION WHEN OTHERS THEN

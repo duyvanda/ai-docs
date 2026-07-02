@@ -293,6 +293,16 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "ghi_chu": null,
                 "status": null
             }
+        ],
+        "hoat_dong_options": [
+            {
+                "hoat_dong_id": "tracking_chi_phi_tp_conference",
+                "ten_hoat_dong": "Hội nghị KH"
+            },
+            {
+                "hoat_dong_id": "tracking_chi_phi_tp_m_session",
+                "ten_hoat_dong": "Đào tạo CMSP (M.Session)"
+            }
         ]
     }
     ```
