@@ -137,6 +137,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `hoat_dong_id` | text | Mã loại hoạt động đầu tư (VD: `tracking_chi_phi_tp_conference`) |
 | `ten_hoat_dong` | text | Tên loại hoạt động đầu tư (VD: `Hội nghị KH`) |
 | `manv_crm` | text | Mã CRM tạo đề xuất |
+| `thoi_gian_du_kien_thuc_hien` | text | Thời gian dự kiến thực hiện từ CRM *(nullable)* |
 | `so_tien_de_xuat` | numeric | Số tiền CRM đề xuất |
 | `ghi_chu` | text | Ghi chú của CRM cho hoạt động này *(nullable)* |
 | `cx_note` | text | Ghi chú của CX cho hoạt động này *(nullable)* |
@@ -274,6 +275,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "ten_hoat_dong": "Hội nghị KH",
                 "ngan_sach_uoc_luong": 30000000,
                 "cx_note": "Note từ CX",
+                "thoi_gian_du_kien_thuc_hien": "Tháng 05/2026",
                 "so_tien_de_xuat": 40000000,
                 "ghi_chu": "Làm event lớn vượt mức ước lượng",
                 "status": "H"
@@ -286,6 +288,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "ten_hoat_dong": "Đào tạo CMSP (M.Session)",
                 "ngan_sach_uoc_luong": 70000000,
                 "cx_note": "",
+                "thoi_gian_du_kien_thuc_hien": null,
                 "so_tien_de_xuat": null,
                 "ghi_chu": null,
                 "status": null
@@ -307,6 +310,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "hoat_dong_id": "tracking_chi_phi_tp_conference",
             "ten_hoat_dong": "Hội nghị KH",
             "manv_crm": "MR1035",
+            "thoi_gian_du_kien_thuc_hien": "Tháng 05/2026",
             "so_tien_de_xuat": 40000000,
             "ghi_chu": "Làm event lớn vượt mức ước lượng",
             "cx_note": "Note từ CX",
@@ -320,6 +324,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "hoat_dong_id": "tracking_chi_phi_tp_m_session",
             "ten_hoat_dong": "Đào tạo CMSP (M.Session)",
             "manv_crm": "MR1035",
+            "thoi_gian_du_kien_thuc_hien": "Quý 3/2026",
             "so_tien_de_xuat": 60000000,
             "ghi_chu": null,
             "cx_note": "",
@@ -368,6 +373,7 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
                 "hoat_dong_id": "tracking_chi_phi_tp_conference",
                 "loai_hoat_dong": "Chiến lược",
                 "ten_hoat_dong": "Hội nghị KH",
+                "thoi_gian_du_kien_thuc_hien": "Tháng 05/2026",
                 "so_tien_de_xuat": 40000000,
                 "ghi_chu": "Làm event lớn vượt mức ước lượng",
                 "cx_note": "Note từ CX",
@@ -404,6 +410,14 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "ly_do_tu_choi": null,
             "crd_approved_manv": "MR0485",
             "crd_approved_at": "2026-01-20T14:00:00"
+        },
+        {
+            "id": "000691_tracking_chi_phi_tp_m_session_2026",
+            "status": "R",
+            "so_tien_duyet_crd": null,
+            "ly_do_tu_choi": "Ngân sách không đủ",
+            "crd_approved_manv": "MR0485",
+            "crd_approved_at": "2026-01-20T14:15:00"
         }
     ]
     ```
@@ -427,6 +441,14 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "ly_do_tu_choi": null,
             "cxd_approved_manv": "MR1214",
             "cxd_approved_at": "2026-01-21T09:00:00"
+        },
+        {
+            "id": "000691_tracking_chi_phi_tp_m_session_2026",
+            "status": "R",
+            "so_tien_duyet_cxd": null,
+            "ly_do_tu_choi": "Tạm hoãn hoạt động này",
+            "cxd_approved_manv": "MR1214",
+            "cxd_approved_at": "2026-01-21T09:30:00"
         }
     ]
     ```

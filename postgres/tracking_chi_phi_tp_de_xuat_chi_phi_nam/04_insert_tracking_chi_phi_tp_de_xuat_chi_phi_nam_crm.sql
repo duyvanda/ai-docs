@@ -18,6 +18,7 @@ BEGIN
             (el->>'custid')::text AS custid,
             (el->>'hoat_dong_id')::text AS hoat_dong_id,
             (el->>'ten_hoat_dong')::text AS ten_hoat_dong,
+            (el->>'thoi_gian_du_kien_thuc_hien')::text AS thoi_gian_du_kien_thuc_hien,
             (el->>'manv_crm')::text AS manv_crm,
             (el->>'so_tien_de_xuat')::numeric AS so_tien_de_xuat,
             (el->>'ghi_chu')::text AS ghi_chu,
@@ -102,14 +103,15 @@ BEGIN
        5. NẾU PASS → UPSERT DỮ LIỆU
        ============================================================== */
     INSERT INTO public.tracking_chi_phi_tp_de_xuat_chi_phi_nam (
-        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
+        id, custid, hoat_dong_id, ten_hoat_dong, thoi_gian_du_kien_thuc_hien, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
     )
     SELECT 
-        id, custid, hoat_dong_id, ten_hoat_dong, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
+        id, custid, hoat_dong_id, ten_hoat_dong, thoi_gian_du_kien_thuc_hien, manv_crm, so_tien_de_xuat, ghi_chu, cx_note, status, applyfor, inserted_at
     FROM input_raw
     ON CONFLICT (id) DO UPDATE 
     SET 
         so_tien_de_xuat = EXCLUDED.so_tien_de_xuat,
+        thoi_gian_du_kien_thuc_hien = EXCLUDED.thoi_gian_du_kien_thuc_hien,
         ghi_chu = EXCLUDED.ghi_chu,
         cx_note = EXCLUDED.cx_note,
         status = 'H', -- Luôn reset về Hold khi CRM update

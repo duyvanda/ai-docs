@@ -59,6 +59,7 @@ BEGIN
                 nt.ten_hoat_dong,
                 nt.ngan_sach_uoc_luong,
                 nt.cx_note,
+                tr.thoi_gian_du_kien_thuc_hien,
                 tr.so_tien_de_xuat,
                 tr.ghi_chu,
                 tr.status

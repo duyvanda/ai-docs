@@ -29,10 +29,10 @@ except Exception as e:
 
 try:
     cursor.execute("""
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'settings_data';
+    ALTER TABLE public.tracking_chi_phi_tp_de_xuat_chi_phi_nam 
+    ADD COLUMN thoi_gian_du_kien_thuc_hien text;
     """)
-    print("settings_data columns:", cursor.fetchall())
+    conn.commit()
+    print("Added thoi_gian_du_kien_thuc_hien column.")
 except Exception as e:
     print(e)

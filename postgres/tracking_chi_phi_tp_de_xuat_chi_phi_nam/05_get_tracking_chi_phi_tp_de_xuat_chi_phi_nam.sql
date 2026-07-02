@@ -48,6 +48,7 @@ BEGIN
                 tr.hoat_dong_id,
                 hd.loai_hoat_dong,
                 tr.ten_hoat_dong,
+                tr.thoi_gian_du_kien_thuc_hien,
                 tr.so_tien_de_xuat,
                 tr.ghi_chu,
                 tr.cx_note,
