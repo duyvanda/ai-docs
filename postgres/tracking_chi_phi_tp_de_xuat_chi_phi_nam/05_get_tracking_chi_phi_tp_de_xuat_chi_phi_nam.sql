@@ -61,7 +61,10 @@ BEGIN
                 tr.crd_approved_at,
                 tr.crd_approved_manv,
                 tr.cxd_approved_at,
-                tr.cxd_approved_manv
+                tr.cxd_approved_manv,
+                tr.url_zip_file,
+                tr.url_zip_image,
+                tr.submitted_at
             FROM public.tracking_chi_phi_tp_de_xuat_chi_phi_nam tr
             LEFT JOIN public.d_master_khachhang kh ON kh.custid = tr.custid
             LEFT JOIN public.d_users u ON u.manv = tr.manv_crm

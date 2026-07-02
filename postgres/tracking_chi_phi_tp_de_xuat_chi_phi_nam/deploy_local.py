@@ -22,7 +22,9 @@ files = [
     "04_insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crm.sql",
     "05_get_tracking_chi_phi_tp_de_xuat_chi_phi_nam.sql",
     "06_insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_crd.sql",
-    "07_insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_cxd.sql"
+    "07_insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_cxd.sql",
+    "08_get_tracking_chi_phi_tp_de_xuat_chi_phi_nam_kh_options.sql",
+    "09_insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_chung_tu.sql"
 ]
 
 for f in files:

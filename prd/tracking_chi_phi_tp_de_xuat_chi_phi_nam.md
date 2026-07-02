@@ -80,9 +80,10 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `H` | Hold | CRM đã gửi đề xuất, chờ CRD duyệt | CRM |
 | `C` | Confirmed | CRD đã duyệt, đang chờ CXD duyệt chốt | CRD |
 | `D` | Done | CXD đã duyệt chốt thành công | CXD |
+| `U` | Updated | CRM đã nộp chứng từ sau khi sự kiện hoàn tất | CRM |
 | `R` | Rejected | Bị CRD hoặc CXD từ chối | CRD / CXD |
 
-**Luồng trạng thái:** `H` → `C` → `D` hoặc `H` → `R` hoặc `C` → `R`
+**Luồng trạng thái:** `H` → `C` → `D` → `U` hoặc `H` → `R` hoặc `C` → `R`
 
 ---
 
@@ -143,7 +144,9 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `cx_note` | text | Ghi chú của CX cho hoạt động này *(nullable)* |
 | `so_tien_duyet_crd` | numeric | Số tiền CRD duyệt *(nullable, điền khi status = C)* |
 | `so_tien_duyet_cxd` | numeric | Số tiền CXD duyệt chốt *(nullable, điền khi status = D)* |
-| `status` | text | Trạng thái: `H` (Hold), `C` (Confirmed), `D` (Done), `R` (Rejected) |
+| `url_zip_file` | text | Đường dẫn các file PDF hóa đơn, phân cách bằng dấu phẩy *(nullable)* |
+| `url_zip_image` | text | Đường dẫn các hình ảnh chứng từ, phân cách bằng dấu phẩy *(nullable)* |
+| `status` | text | Trạng thái: `H` (Hold), `C` (Confirmed), `D` (Done), `U` (Updated), `R` (Rejected) |
 | `applyfor` | date | Năm/kỳ áp dụng (VD: `2026-01-01`) |
 | **--- SYSTEM ---** | | |
 | `inserted_at` | timestamp | Thời gian tạo (Mặc định: Current ICT time) |
@@ -152,6 +155,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `crd_approved_manv` | text | Mã CRD thực hiện duyệt/từ chối *(nullable)* |
 | `cxd_approved_at` | timestamp | Thời điểm CXD duyệt/từ chối *(nullable)* |
 | `cxd_approved_manv` | text | Mã CXD thực hiện duyệt/từ chối *(nullable)* |
+| `submitted_at` | timestamp | Thời gian nộp chứng từ (`U`) *(nullable)* |
 
 ---
 
@@ -461,4 +465,66 @@ URL post: `https://bi.meraplion.com/local/post_data/<ten_ham>`
             "cxd_approved_at": "2026-01-21T09:30:00"
         }
     ]
+    ```
+
+---
+
+### 7.5. Nhóm Nộp chứng từ (CRM)
+
+#### Function: `insert_tracking_chi_phi_tp_de_xuat_chi_phi_nam_chung_tu`
+
+* **Loại:** WRITE (Update Status)
+* **Mục đích:** CRM nộp chứng từ sau sự kiện: upload file PDF, hình ảnh và chuyển trạng thái sang `U`.
+* **Bảng ảnh hưởng:** `tracking_chi_phi_tp_de_xuat_chi_phi_nam`.
+* **Validation:** KHÔNG CÓ VALIDATION.
+* **Logic:** UPDATE `status = 'U'`, `url_zip_file`, `url_zip_image`, `submitted_at` từ input, theo `id`.
+
+* **Input:** `multipart/form-data` (không phải JSON body thuần) //
+
+| Field | Type | Mô tả |
+| :--- | :--- | :--- |
+| `data` | string (JSON) | Array 1 phần tử – xem bên dưới |
+| `files` | File | File zip PDF hóa đơn (`pdfs_zip_file`) |
+| `files` | File | File zip hình ảnh (`images_zip_file`) |
+| `file_metadata_other` | string (JSON) | Metadata lưu file – xem bên dưới |
+
+* **`formData.data`** – *Array chỉ có duy nhất 1 phần tử:*
+    ```json
+    [
+        {
+            "id": "000691_tracking_chi_phi_tp_conference_2026",
+            "status": "U",
+            "url_zip_file": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_de_xuat_chi_phi_nam/0_000691_tracking_chi_phi_tp_conference_2026.zip",
+            "url_zip_image": "https://bi.meraplion.com/DMS/tracking_chi_phi_tp_de_xuat_chi_phi_nam/1_000691_tracking_chi_phi_tp_conference_2026.zip",
+            "submitted_at": "2026-04-23T10:00:00.000"
+        }
+    ]
+    ```
+
+* **`formData.file_metadata_other`:**
+    ```json
+    {
+        "folder_to_save": "tracking_chi_phi_tp_de_xuat_chi_phi_nam",
+        "file_rename_field": "id"
+    }
+    ```
+
+* **Frontend gửi:**
+    ```js
+    import JSZip from 'jszip';
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(data));
+    formData.append('files', pdfs_zip_file);    // index 0 → server đặt tên: 0_{id}.zip → url_zip_file
+    formData.append('files', images_zip_file);  // index 1 → server đặt tên: 1_{id}.zip → url_zip_image
+    formData.append('file_metadata_other', JSON.stringify(file_metadata_other));
+    ```
+
+    > **Lưu ý thứ tự file:** Server loop qua `files` theo index append. File ở index `0` được đặt tên `0_{id}.zip` và URL được inject vào `url_zip_file`; file ở index `1` được đặt tên `1_{id}.zip` → `url_zip_image`. Do đó **bắt buộc** append `pdfs_zip_file` trước, `images_zip_file` sau.
+
+* **JSON Output:**
+    ```json
+    {
+        "status": "ok",
+        "success_message": "Đã nộp chứng từ thành công!"
+    }
     ```
