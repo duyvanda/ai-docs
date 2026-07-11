@@ -19,6 +19,7 @@ BEGIN
             SELECT applyfor, js
             FROM public.settings_data
             WHERE appid = 'tracking_chi_phi_tp_de_xuat_chi_phi_nam'
+            ORDER BY inserted_at DESC
             LIMIT 1
         ),
         nt_options_raw AS (

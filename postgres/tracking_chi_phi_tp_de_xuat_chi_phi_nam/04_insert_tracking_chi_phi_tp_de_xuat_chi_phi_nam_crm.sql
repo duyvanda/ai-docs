@@ -27,8 +27,8 @@ BEGIN
             (el->>'applyfor')::date AS applyfor,
             COALESCE((el->>'inserted_at')::timestamp, CURRENT_TIMESTAMP) AS inserted_at
         FROM jsonb_array_elements(json_input) AS el
-        -- Bỏ qua nếu so_tien_de_xuat là NULL hoặc 0 để không insert dòng rác
-        WHERE (el->>'so_tien_de_xuat')::numeric > 0 
+        -- Bỏ qua nếu so_tien_de_xuat là NULL để không insert dòng rác (Cho phép = 0 để huỷ đề xuất)
+        WHERE (el->>'so_tien_de_xuat')::numeric >= 0 
     );
 
     /* ==============================================================
