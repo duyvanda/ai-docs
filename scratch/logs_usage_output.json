@@ -1,0 +1,95 @@
+{
+  "count": 5,
+  "functions": [
+    {
+      "name": "delete_planning_collect_hcp_gm",
+      "snippets": [
+        [
+          "58:     /* ==============================================================",
+          "59:        5. NẾU PASS → THỰC HIỆN LOGIC (INSERT LOG & DELETE)",
+          "60:        ============================================================== */",
+          "61:     ",
+          "62:     /* Insert toàn bộ dữ liệu sắp xóa vào bảng log */",
+          "63:     INSERT INTO s.internal_logs (manv, result_name, js_value, inserted_at)",
+          "64:     VALUES (p_manv, 'planning_collect_hcp_gm', v_deleted_json, CURRENT_TIMESTAMP);",
+          "65: ",
+          "66:     /* Thực hiện xóa dữ liệu trong bảng chính bằng data từ temp table */",
+          "67:     DELETE FROM planning_collect_hcp_gm",
+          "68:     WHERE manv IN (SELECT manv FROM calc_data_to_delete);"
+        ]
+      ]
+    },
+    {
+      "name": "delete_planning_collect_hcp_gm",
+      "snippets": [
+        [
+          "58:     /* ==============================================================",
+          "59:        5. NẾU PASS → THỰC HIỆN LOGIC (INSERT LOG & DELETE)",
+          "60:        ============================================================== */",
+          "61:     ",
+          "62:     /* Insert toàn bộ dữ liệu sắp xóa vào bảng log */",
+          "63:     INSERT INTO s.internal_logs (result_name, js_value, inserted_at)",
+          "64:     VALUES ('deleted_planning_collect_hcp_gm', v_deleted_json, CURRENT_TIMESTAMP);",
+          "65: ",
+          "66:     /* Thực hiện xóa dữ liệu trong bảng chính bằng data từ temp table */",
+          "67:     DELETE FROM planning_collect_hcp_gm",
+          "68:     WHERE manv IN (SELECT manv FROM calc_data_to_delete);"
+        ]
+      ]
+    },
+    {
+      "name": "insert_tracking_chi_phi_tp_vttd_settings",
+      "snippets": [
+        [
+          "85:     /* ==============================================================",
+          "86:        8. RETURN SUCCESS (RETURN RULES)",
+          "87:        ============================================================== ",
+          "88:     */",
+          "89: \t    /* Insert toàn bộ dữ liệu sắp xóa vào bảng log */",
+          "90:     INSERT INTO s.internal_logs (manv, result_name, json_input, inserted_at)",
+          "91:     VALUES (p_manv, 'tracking_chi_phi_tp_vttd', v_deleted_json, CURRENT_TIMESTAMP);",
+          "92: \t",
+          "93:     RETURN jsonb_build_object(",
+          "94:         'status', 'ok',",
+          "95:         'message', 'Cập nhật cấu hình hệ thống thành công !!!'"
+        ]
+      ]
+    },
+    {
+      "name": "insert_tracking_chi_phi_tp_m_session_danh_sach_file_roi",
+      "snippets": [
+        [
+          "74:     FROM raw_input;",
+          "75: ",
+          "76:     /* ==============================================================",
+          "77:        5. LOG & RETURN SUCCESS",
+          "78:        ============================================================== */",
+          "79:     INSERT INTO s.internal_logs (manv, result_name, js_value, inserted_at)",
+          "80:     VALUES (p_manv, 'tracking_chi_phi_tp_m_session_danh_sach_file_roi', json_input, CURRENT_TIMESTAMP);",
+          "81: ",
+          "82:     RETURN jsonb_build_object(",
+          "83:         'status', 'ok',",
+          "84:         'success_message', 'Đã cập nhật danh sách thành công!'"
+        ]
+      ]
+    },
+    {
+      "name": "insert_tracking_chi_phi_tp_m_session_settings",
+      "snippets": [
+        [
+          "113:       , inserted_at = EXCLUDED.inserted_at;",
+          "114: ",
+          "115:     /* ==============================================================",
+          "116:        6. LOG & RETURN SUCCESS",
+          "117:        ============================================================== */",
+          "118:     INSERT INTO s.internal_logs (manv, result_name, js_value, inserted_at)",
+          "119:     VALUES (p_manv, 'tracking_chi_phi_tp_m_session_settings', json_input, CURRENT_TIMESTAMP);",
+          "120: ",
+          "121:     RETURN jsonb_build_object(",
+          "122:         'status', 'ok',",
+          "123:         'success_message', 'Đã cập nhật cấu hình thành công!'"
+        ]
+      ]
+    }
+  ]
+}
