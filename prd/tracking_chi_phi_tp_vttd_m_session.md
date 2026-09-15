@@ -48,6 +48,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 **B1: Chọn Nhà thuốc và xác nhận danh sách người tham gia**
 * Chọn 1 NT (CODE & TÊN NT).
+* Hệ thống tự động gọi API lấy số liệu doanh số của Nhà thuốc này (toàn bộ NT và chi tiết theo từng nhãn).
 * Hệ thống hiển thị danh sách nhân viên của NT (tổng hợp từ Zalo OA + file rời).
 * Tick chọn những người **không đi** để loại khỏi danh sách.
 * Ghi nhận số lượng sẽ tham gia.
@@ -60,6 +61,14 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 **B3: Chọn nhãn tập trung và nhãn còn lại**
 * Chọn tối đa **4 nhãn** sản phẩm tập trung cho buổi M.Session.
+* Chọn các nhãn còn lại (nếu có).
+* **Hiển thị Doanh số tham khảo:** Hệ thống hiển thị bảng/card tóm tắt doanh số:
+  * **Tổng Nhà thuốc:** Doanh số toàn bộ NT.
+  * **Các nhãn được chọn:** Tự động lọc hiển thị chi tiết các nhãn mà CRS đang tick chọn.
+  * **Tổng các nhãn chọn:** Tính tổng doanh số của các nhãn đã chọn.
+  * Hỗ trợ xem 4 mốc: **MTD** (Tháng này), **YTD** (Năm nay), **LYTD** (Cùng kỳ năm ngoái), **LY** (Cả năm trước).
+  * Hỗ trợ toggle chuyển đổi xem **Có VAT** (`_covat`) hoặc **Chưa VAT** (`_chuavat`).
+
 
 **B4: Chọn ngày diễn ra sự kiện**
 * Hiển thị date picker dạng lịch tháng để chọn ngày.
@@ -960,3 +969,89 @@ URL post: https://bi.meraplion.com/local/post_data/<ten_ham>
         "managerassistantassociateasm": "Nguyễn Thị Ngọc Diệp"
     }
     ```
+
+#### **Function:** `get_tracking_chi_phi_tp_m_session_doanh_so`
+
+* **Loại:** READ
+* **Mục đích:** Lấy số liệu doanh số tham khảo của Nhà thuốc (cả NT và chi tiết theo từng Nhãn) khi CRS/CRM chọn Nhà thuốc trên form đề xuất M.Session.
+* **Bảng liên quan:** `public.f_raw_data_sales_yoy`.
+* **Chỉ số tính toán:** MTD, YTD, LYTD (cùng kỳ năm trước), LY (toàn bộ năm trước), đầy đủ cả Có VAT (`doanhsocovat`) và Chưa VAT (`doanhsochuavat`).
+* **Validation:** Bắt buộc có `custid` khác rỗng.
+
+* **JSON Input (`url_param`):**
+    ```json
+    {
+        "custid": "000004"
+    }
+    ```
+
+* **JSON Output Specification:**
+    ```json
+    {
+        "status": "ok",
+        "custid": "000004",
+        "total_sales": {
+            "mtd_covat": 0,
+            "mtd_chuavat": 0,
+            "ytd_covat": 2262000,
+            "ytd_chuavat": 2154290,
+            "lytd_covat": 0,
+            "lytd_chuavat": 0,
+            "ly_covat": 1640900,
+            "ly_chuavat": 1562771
+        },
+        "brand_sales": [
+            {
+                "brand": "Metodex",
+                "mtd_covat": 0,
+                "mtd_chuavat": 0,
+                "ytd_covat": 540000,
+                "ytd_chuavat": 514280,
+                "lytd_covat": 0,
+                "lytd_chuavat": 0,
+                "ly_covat": 0,
+                "ly_chuavat": 0
+            },
+            {
+                "brand": "Metison",
+                "mtd_covat": 0,
+                "mtd_chuavat": 0,
+                "ytd_covat": 450000,
+                "ytd_chuavat": 428580,
+                "lytd_covat": 0,
+                "lytd_chuavat": 0,
+                "ly_covat": 300000,
+                "ly_chuavat": 285720
+            }
+        ]
+    }
+    ```
+
+* **JSON Output khi Nhà thuốc chưa có doanh số phát sinh:**
+    ```json
+    {
+        "status": "ok",
+        "custid": "999999",
+        "total_sales": {
+            "mtd_covat": 0,
+            "mtd_chuavat": 0,
+            "ytd_covat": 0,
+            "ytd_chuavat": 0,
+            "lytd_covat": 0,
+            "lytd_chuavat": 0,
+            "ly_covat": 0,
+            "ly_chuavat": 0
+        },
+        "brand_sales": []
+    }
+    ```
+
+* **Diễn giải các trường số liệu:**
+    * `total_sales`: Doanh số tổng toàn bộ Nhà thuốc.
+    * `brand_sales`: Danh sách doanh số theo từng Nhãn (`brand`).
+    * `mtd`: Tháng này (từ 01 của tháng đến ngày hiện tại).
+    * `ytd`: Năm nay (từ 01/01 đến ngày hiện tại).
+    * `lytd`: Cùng kỳ năm trước (từ 01/01 năm ngoái đến cùng ngày năm ngoái).
+    * `ly`: Toàn bộ cả năm trước (từ 01/01 đến 31/12 năm ngoái).
+    * `_covat`: Doanh số có VAT | `_chuavat`: Doanh số chưa VAT.
+
