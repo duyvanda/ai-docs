@@ -45,6 +45,7 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
         * `Loại quà`: Chọn "Quà tặng" hoặc "Giao tiếp - Mời cơm" (`text`).
         * `Khách hàng (KH Chung)`: Chọn từ dropdown (`text` - *VD: HCO123*).
         * `Số kế hoạch`: Nhập số tiền dự kiến (`float8`).
+            * *Ràng buộc hạn mức:* Áp dụng cho cả 2 loại **Quà tặng** và **Giao tiếp - Mời cơm (Tiếp khách)**, giá trị kế hoạch tính trên mỗi người tiếp/HCP bắt buộc phải **dưới 2 triệu đồng/người** (`< 2.000.000 VNĐ / người/suất`). Nếu nhập từ 2 triệu đồng/người trở lên (`>= 2.000.000 VNĐ`), hệ thống sẽ chặn và cảnh báo.
 
     * **Logic hiển thị riêng theo Phòng ban:**
         * **Trường hợp 1: Nhóm TP hoặc MT (Trade/Marketing):**
@@ -158,6 +159,7 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 API trả về JSON với các sheet data (`BMKT013`, `BMKT002`, `BMKT005`):
 - `BMKT013-KH-TH-CP`: Danh sách chi phí tổng hợp.
 - `BMKT002-DNTT`: Đề nghị thanh toán.
+    - *Quy tắc hiển thị dòng CTP:* Chỉ hiển thị dòng tổng hợp Công tác phí (CTP) khi **có dữ liệu CTP phát sinh thực tế trong kỳ** (`tong_tien > 0`). Trường hợp nhân viên không có dữ liệu CTP (không đi công tác / tổng CTP = 0) thì **không hiển thị dòng CTP** trên biểu mẫu này.
 - `BMKT005-DNTTCTP`: Đề nghị thanh toán chi phí công tác. 
     - Header mapping: Ưu tiên lấy từ các field API trả về riêng (như `bmkt005_nguoi_de_nghi`, `bmkt005_department`, `bmkt005_ly_do_thanh_toan`, `bmkt005_tong_cong_tac_phi`, `bmkt005_so_tien_bang_chu`). Nếu thiếu, sẽ dùng giá trị dự phòng từ `BMKT002`.
     - Cột mapping chi tiết cho `BMKT005`: `stt`, `noi_dung_chi_tiet`, `so_ngay`, `chi_phi_khach_san`, `phu_cap_an_uong`, `phu_cap_di_lai`, `ve_xe`, `chi_phi_giao_tiep`, `tong_tien`, `so_hoa_don`, `ngay_hoa_don`, `khoan_muc`, `nguoi_nhan_tien`, `ghi_chu`.
@@ -269,7 +271,7 @@ Lưu trữ thông tin đăng ký kế hoạch chi phí (Plan).
 | `ghi_chu` | text | Ghi chú bổ sung |
 | `ma_dip` | text | Mã dịp quà tặng (Map với Table 4) |
 | `so_ke_hoach` | float8 | Số tiền user đăng ký |
-| `max_ke_hoach` | int4 | Ngân sách trần cho phép |
+| `max_ke_hoach` | int4 | Ngân sách trần cho phép (Áp dụng cho cả Quà tặng & Tiếp khách: tính theo định mức dưới 2.000.000 VNĐ / người) |
 | `thang_chi_phi` | timestamp | Tháng ghi nhận chi phí thực tế |
 | `ky_chi_phi_kt` | timestamp | Kỳ kế toán (Ngày đầu tháng) |
 | `inserted_at` | timestamp | Thời gian tạo bản ghi |
@@ -526,15 +528,17 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             * Khác ID với phiếu đang xử lý (`a.id != b.id` - để hỗ trợ ghi đè khi thực hiện chức năng Điều chỉnh).
         * *Thông báo lỗi:* `"Dịp này khách hàng đã được nhận"`.
     4.  **Kiểm tra vượt định mức ngân sách (Budget Threshold Check):**
+        * **Phạm vi áp dụng:** Áp dụng cho cả 2 loại **"Quà tặng"** và **"Giao tiếp - Mời cơm" (Tiếp khách)**.
         * Hệ thống tính **Tổng tiền tích lũy** (Total Risk) bao gồm tổng của 3 nguồn:
             * `(1) Current`: Số tiền đang đăng ký trong phiếu hiện tại.
             * `(2) Pending/Approved`: Tổng số tiền của các phiếu khác đang chờ duyệt hoặc đã duyệt trong cùng tháng/kỳ (Loại trừ các phiếu bị Reject và **Loại trừ chính phiếu đang được điều chỉnh** `a.id != b.id`).
             * `(3) Historical`: Chi phí lịch sử Marketing đã thực hiện (Truy vấn từ bảng `d_tracking_cost_hcp_v2` với điều kiện `nam_thuc_hien` = năm hiện tại VÀ `hoat_dong` chứa từ khóa "quà tặng"). **Lưu ý:** Mục (3) chỉ được cộng dồn nếu nội dung phiếu hiện tại là "Chi phí quà tặng dịp sinh nhật".
+        * **Quy tắc giới hạn giá trị:** Chi phí tính trên mỗi người tiếp/HCP bắt buộc phải **dưới 2 triệu đồng/người** (`< 2.000.000 VNĐ / người/suất`).
         * So sánh Tổng tiền tích lũy với **Định mức trần (Cap)**:
-            * Nhóm HCP: **2.000.000 VNĐ** / suất.
+            * Nhóm HCP / Tiếp khách cá nhân: **Dưới 2.000.000 VNĐ** / suất (`< 2.000.000 × số_người`). Nếu tổng tích lũy `>= 2.000.000 × số_người` thì chặn lỗi.
             * Nhóm TP: **4.000.000 VNĐ** / suất.
             * Nhóm Khác: **50.000.000 VNĐ** / suất.
-        * *Thông báo lỗi:* `"Số tiền kế hoạch vượt định mức"`.
+        * *Thông báo lỗi:* `"Số tiền kế hoạch vượt định mức. Giá trị phải dưới 2 triệu đồng/người"`.
 
 * **Logic (Quy trình xử lý dữ liệu):**
 
@@ -625,14 +629,21 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         ```json
         {
             "status": "ok",
-            "success_message": "Đã lưu kế hoạch thành công."
+            "success_message": "Đã nhận thành công"
         }
         ```
-      * **Trường hợp Lỗi (Ví dụ):**
+      * **Trường hợp Lỗi vượt định mức (Ví dụ):**
         ```json
         {
             "status": "fail",
-            "error_message": "Khách hàng HCP01 đã nhận quà sinh nhật trong năm nay rồi."
+            "error_message": "Số tiền kế hoạch vượt định mức. Tổng chi phí: 2,000,000 VNĐ (Phiếu này: 2,000,000 VNĐ, Đã gửi trong tháng: 0 VNĐ, Lịch sử Marketing v2: 0 VNĐ). Định mức cho phép: Dưới 2,000,000 VNĐ"
+        }
+        ```
+      * **Trường hợp Lỗi trùng dịp quà tặng (Ví dụ):**
+        ```json
+        {
+            "status": "fail",
+            "error_message": "Dịp này khách hàng [PHAN NGUYỄN ANH KHOA] đã được nhận"
         }
         ```
 
@@ -1053,38 +1064,50 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
 
   * **Loại:** WRITE
   * **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
-  * **Mục đích:** User thực hiện hoàn tác (bỏ duyệt) cho kế hoạch đã được duyệt.
+  * **Mục đích:** User thực hiện hoàn tác cho đề nghị chi phí.
   * **Validation:**
-      * Chỉ cho phép hoàn tác khi trạng thái khác 'H' (Chờ duyệt). (FE đã chặn, Server có thể double check).
+      * **Chỉ cho phép hoàn tác tại 2 trạng thái:**
+          1. **Đã claim chi phí (`status = 'I'`)**
+          2. **Duyệt hóa đơn (`status = 'D'`)**
+      * Nếu bản ghi gửi lên có trạng thái khác (`H`, `C`, `R`...), hệ thống sẽ từ chối thực hiện và trả về lỗi: `"Chỉ cho phép thực hiện hoàn tác tại 2 trạng thái Đã claim chi phí (I) và Duyệt hóa đơn (D)."`.
   * **Logic (Thứ tự thực hiện theo Code):**
     1.  **Khởi tạo dữ liệu:**
           * Phân tích chuỗi JSON input thành bảng tạm bao gồm: `id`, `manv`, `status`, `inserted_at`.
-    2.  **Cập nhật trạng thái (Step-back Update):**
-          * Hệ thống xác định hành động lùi bước (step-back) dựa trên trạng thái hiện tại của phiếu:
-          * **Trạng thái 'C' (Đã duyệt) hoặc 'R' (Từ chối):** Lùi về 'H' (Chờ duyệt). Cập nhật `status` = 'H', xóa `approved_manv`, `approved_at`, `approved_so_ke_hoach`.
-          * **Trạng thái 'I' (Đã gắn HĐ):** Lùi về 'C' (Đã duyệt). Cập nhật `status` = 'C', `so_tien_claim_hoa_don` = null. Đồng thời thực hiện xóa các hóa đơn tương ứng trong `form_claim_chi_phi_hoa_don` (`khid` = `id`).
-          * **Trạng thái 'D' (CRM duyệt HĐ) hoặc 'E' (CRM từ chối HĐ):** Lùi về 'I' (Đã gắn HĐ). Cập nhật `status` = 'I', xóa `claim_approved_at`.
-    3.  **Trả kết quả:** Trả về thông báo thành công.
+    2.  **Kiểm tra tính hợp lệ trạng thái:**
+          * Kiểm tra nếu có bất kỳ bản ghi nào có `status NOT IN ('I', 'D')`, dừng và trả về thông báo lỗi validation.
+    3.  **Cập nhật trạng thái (Step-back Update):**
+          * Hệ thống chỉ thực hiện lùi bước cho 2 trạng thái được phép:
+          * **Trạng thái 'I' (Đã claim chi phí):** Lùi về 'C' (Đã duyệt). Cập nhật `status` = 'C', `so_tien_claim_hoa_don` = null. Đồng thời thực hiện xóa các hóa đơn tương ứng trong `form_claim_chi_phi_hoa_don` (`khid` = `id`) để trả lại hóa đơn tự do.
+          * **Trạng thái 'D' (Duyệt hóa đơn):** Lùi về 'I' (Đã claim chi phí). Cập nhật `status` = 'I', xóa `claim_approved_at`. Hóa đơn vẫn được giữ nguyên.
+    4.  **Trả kết quả:** Trả về thông báo thành công.
 
   * **JSON Input (`body` - Array):**
     ```json
     [
         {
             "id": "CCP001",
-            "manv": "AM001",
-            "status": "C",
+            "manv": "MR0673",
+            "status": "I",
             "inserted_at": "2025-10-12 14:30:00"
         }
     ]
     ```
 
   * **JSON Output:**
-    ```json
-    {
-        "status": "ok",
-        "success_message": "Hoàn tác thành công!"
-    }
-    ```
+    * **Thành công:**
+      ```json
+      {
+          "status": "ok",
+          "success_message": "Hoàn tác thành công!"
+      }
+      ```
+    * **Thất bại (Sai trạng thái):**
+      ```json
+      {
+          "status": "fail",
+          "error_message": "Chỉ cho phép thực hiện hoàn tác tại 2 trạng thái Đã claim chi phí (I) và Duyệt hóa đơn (D)."
+      }
+      ```
 
 -----
 
@@ -1194,8 +1217,9 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     - **Thông tin chung (Header):**
         - Điền tự động: Người đề nghị, Bộ phận, Lý do thanh toán vào phần đầu của phiếu.
     - **Danh sách chi tiết:**
-        - **Cơ chế dòng động:** Tương tự BMKT013, hệ thống chèn dòng mới bắt đầu từ dòng số 9 để chứa dữ liệu chi tiết.
+        - **Cơ chế dòng động:** Tương tự BMKT013, hệ thống chèn dòng mới bắt đầu từ dòng số 9 để chứa dữ liệu chi tiết từ mảng `BMKT002`.
         - **Thông tin hiển thị:** STT, Nội dung, Số tiền, Số hóa đơn, Ngày hóa đơn...
+        - **Quy tắc hiển thị dòng CTP:** Chỉ hiển thị dòng "Công tác phí tháng: [MM-YYYY]" khi mảng `BMKT002` có dữ liệu CTP (`tong_tien > 0`). Nếu nhân viên không phát sinh chi phí CTP trong kỳ, dòng này hoàn toàn không được chèn vào biểu mẫu.
     - **Dòng tổng cộng & Chữ ký (Footer):**
         - **Vị trí thông minh:** Hệ thống tự động tính toán vị trí dòng tổng cộng luôn nằm **ngay sau** dòng dữ liệu cuối cùng (Logic: `Start Row + Số dòng dữ liệu`).
         - **Giá trị:**
@@ -1271,7 +1295,12 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
           | Nguồn dữ liệu | Loại chi phí | Logic lọc (Filter Criteria) | Logic hiển thị |
           | :--- | :--- | :--- | :--- |
           | **Nguồn 1**<br>(`ds_chi_phi_tiep_khach`) | **Tiếp khách / Quà tặng**<br>(Từ Sales) | **Status:** Chỉ lấy Status = 'D' (Đã duyệt)<br>**Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Hiển thị 1 dòng tổng thanh toán chi phí giao tiếp tháng. |
-          | **Nguồn 2**<br>(`tong_hop_ctp`) | **Tổng hợp Công tác phí**<br>(Đi lại + Ăn uống + Vé xe + KS) | **Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`). | Gom thành 1 dòng tổng quát: "Công tác phí tháng: [MM-YYYY]". |
+          | **Nguồn 2**<br>(`tong_hop_ctp`) | **Tổng hợp Công tác phí**<br>(Đi lại + Ăn uống + Vé xe + KS) | **Thời gian:** Lọc theo **KHOẢNG** (`ky_chi_phi_kt` \>= `fromDate` VÀ \<= `toDate`).<br>**Điều kiện phát sinh:** Bắt buộc có dữ liệu CTP (`tong_tien > 0` hoặc tồn tại bản ghi trong `lst_cong_tac_phi`). | **Chỉ hiển thị khi có dữ liệu CTP:** Gom thành 1 dòng tổng quát: "Công tác phí tháng: [MM-YYYY]". Nếu không có dữ liệu CTP thì **loại bỏ (không đưa vào BMKT002)**. |
+
+          > [!IMPORTANT]
+          > **Quy tắc hiển thị có điều kiện:** 
+          > - Dòng Nguồn 2 (Công tác phí) chỉ được đưa vào mảng `BMKT002` khi có dữ liệu CTP thực tế phát sinh trong kỳ (`tong_tien > 0`).
+          > - Nếu nhân viên không có dữ liệu CTP (không đi công tác / tổng CTP = 0), mảng `BMKT002` sẽ chỉ có duy nhất 1 dòng của Nguồn 1 (Giao tiếp/Quà tặng).
 
           **Ví dụ nguồn 1:**
 
@@ -1279,7 +1308,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
         | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
         | **** | **Thanh toán chi phí giao tiếp tháng: [MM-YYYY]** | **6,950,000** | **Trống** | **Trống** | **Trước ngày 20 tháng sau** | **MR0673 - Hồ Thị Hồng Gấm** | **Bảng kê chi tiết đính kèm** |
 
-          **Ví dụ nguồn 2:**
+          **Ví dụ nguồn 2 (Chỉ xuất hiện khi có phát sinh CTP):**
 
         | STT (No.) | Nội dung chi tiết (Detailed content) | Số tiền (Amount) | Số chứng từ (Document number) | Ngày chứng từ (Issuance date) | Thời gian đề nghị chi (Proposed advance payment date) | Người nhận/đơn vị nhận tiền (Recipient/entity receiving payment) | Ghi chú (Notes) |
         | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -1296,7 +1325,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
               * `bmkt005_so_tien_bang_chu`: Số tiền công tác phí viết bằng chữ.
               * `bmkt002_ly_do_thanh_toan`: Chuỗi `"Thanh toán chi phí giao tiếp tháng: [MM-YYYY]"`.
               * `bmkt005_ly_do_thanh_toan`: Chuỗi `"Thanh toán tiền công tác phí tháng: [MM-YYYY]"`.
-              * `send_email_info`: Cấu trúc JSON chứa thông tin gửi email, bao gồm danh sách người nhận (email_to) và nội dung HTML template sẵn có.
+              * `send_email_info`: Cấu trúc JSON chứa thông tin gửi email, bao gồm danh sách người nhận (email_to) và nội dung HTML template sẵn có (dòng thông tin số tiền CTP trong nội dung email cũng tự động ẩn khi không có chi phí CTP).
     
   * **JSON Input (`url_param`):**
     ```json
@@ -1308,11 +1337,11 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     }
     ```
   * **JSON Output:**
+    * **Cấu trúc JSON tổng thể (Theo đúng Server PostgreSQL):**
     ```json
     {
-    "id": "MR0055_2026-06-01",
-    "time": "2026-06-08T17:45:06.997607",
     "status": "ok",
+    "id": "MR0055_2026-06-01",
     "BMKT002": [
         {
         "stt": 1,
@@ -1474,9 +1503,28 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     "bmkt005_so_tien_bang_chu": "bốn triệu năm trăm năm mươi sáu nghìn tám trăm bốn mươi chín đồng",
     "bmkt013_tong_tien_ke_hoach": "7,800,000",
     "bmkt013_tong_tien_thuc_hien": "2,831,004",
-    "bmkt005_tong_cong_tac_phi": "4,556,849"
+    "bmkt005_tong_cong_tac_phi": "4,556,849",
+    "time": "2026-06-08T17:45:06.997607"
     }
     ```
+
+    * **Quy cách mảng `BMKT002` theo Server DB:**
+      - **Trường hợp có CTP (`tong_tien > 0`):** Mảng `BMKT002` gồm 2 dòng (STT 1: Giao tiếp, STT 2: Công tác phí) như cấu trúc trên.
+      - **Trường hợp KHÔNG có CTP (`tong_tien = 0`):** Server tự động lọc bỏ qua điều kiện `WHERE tong_tien > 0`, mảng `BMKT002` chỉ trả về duy nhất 1 dòng (Giao tiếp), template Excel sẽ không chèn và không hiển thị dòng CTP:
+        ```json
+        "BMKT002": [
+            {
+                "stt": 1,
+                "ghi_chu": "Bảng kê chi tiết đính kèm",
+                "so_tien": 2831004,
+                "noi_dung": "Thanh toán chi phí giao tiếp tháng: 06-2026",
+                "so_hoa_don": null,
+                "ngay_hoa_don": null,
+                "nguoi_nhan_tien": "MR0055 - Phan Thị Bình Khê",
+                "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
+            }
+        ]
+        ```
 
 #### **Function:** `insert_form_claim_chi_phi_chung_tu`
 
