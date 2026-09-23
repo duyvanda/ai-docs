@@ -151,9 +151,13 @@ Dữ liệu được tích hợp với hệ thống BI để báo cáo và hệ 
 
 **User Flow**: 
     1. Vào mục duyệt hóa đơn, chọn kỳ chi phí và bấm "Chốt HĐ / Tải Biểu Mẫu".
-    2. **Call API:** `post_form_claim_chi_phi_excel_form` (Method: POST) để sinh báo cáo Excel tổng hợp và hiển thị nút "Tải xuống dữ liệu".
-    3. User bấm nút **"✍️ Tôi đã xem và tiến hành ký số thông qua MLID"** để xác nhận chốt sổ gửi email.
-    4. **Call API:** `insert_form_claim_chi_phi_chung_tu` (Method: POST) để ghi nhận hoàn tất và gửi email thông báo cho hệ thống.
+    2. **Call API song song:**
+       - `post_form_claim_chi_phi_excel` (Method: POST) để sinh file Excel tải về.
+       - `post_form_claim_chi_phi_signature_form` (Method: GET) để tổng hợp dữ liệu 3 biểu mẫu (`BMKT002`, `BMKT013`, `BMKT005`) thành cấu trúc chuẩn ký số eOffice lưu vào `signature_form_data`.
+    3. User kiểm tra thông tin và bấm nút **"✍️ Tôi đã xem và tiến hành ký số thông qua MLID"**.
+    4. **Call API:** 
+       - `insert_form_claim_chi_phi_internal_signature_form` (Method: POST) để lưu thông tin trình ký vào DB và kích hoạt Webhook bắn lệnh ký số sang eOffice.
+       - `insert_form_claim_chi_phi_chung_tu` (Method: POST) nếu có kèm file chứng từ.
 
 **Excel Export Logic**:
 API trả về JSON với các sheet data (`BMKT013`, `BMKT002`, `BMKT005`):
@@ -163,6 +167,29 @@ API trả về JSON với các sheet data (`BMKT013`, `BMKT002`, `BMKT005`):
 - `BMKT005-DNTTCTP`: Đề nghị thanh toán chi phí công tác. 
     - Header mapping: Ưu tiên lấy từ các field API trả về riêng (như `bmkt005_nguoi_de_nghi`, `bmkt005_department`, `bmkt005_ly_do_thanh_toan`, `bmkt005_tong_cong_tac_phi`, `bmkt005_so_tien_bang_chu`). Nếu thiếu, sẽ dùng giá trị dự phòng từ `BMKT002`.
     - Cột mapping chi tiết cho `BMKT005`: `stt`, `noi_dung_chi_tiet`, `so_ngay`, `chi_phi_khach_san`, `phu_cap_an_uong`, `phu_cap_di_lai`, `ve_xe`, `chi_phi_giao_tiep`, `tong_tien`, `so_hoa_don`, `ngay_hoa_don`, `khoan_muc`, `nguoi_nhan_tien`, `ghi_chu`.
+
+### 4.7. Quy trình Hoàn tác & Chỉnh sửa Hóa đơn (Rollback & Edit Invoice)
+
+**Mục đích:** Cho phép Sales/Quản lý chủ động điều chỉnh lại chứng từ hoặc thu hồi đề nghị khi phát hiện sai sót mà không làm gián đoạn luồng duyệt.
+
+* **Phạm vi áp dụng:** Chỉ cho phép thực hiện tại 2 trạng thái:
+  1. `I` (Đã gắn hóa đơn)
+  2. `D` (Đã duyệt hóa đơn)
+  *(Các trạng thái khác bị chặn không cho hoàn tác).*
+
+* **Quy tắc nghiệp vụ theo trạng thái:**
+
+  * **1. Hoàn tác tại trạng thái `D` (Đã duyệt hóa đơn):**
+    * Hệ thống lùi đề nghị về trạng thái `I`.
+    * Giữ nguyên toàn bộ hóa đơn và chứng từ để người dùng hoặc quản lý rà soát lại.
+
+  * **2. Hoàn tác tại trạng thái `I` (Bổ sung / Thay đổi hóa đơn):**
+    * Hệ thống lùi đề nghị về trạng thái `C` (Kế hoạch đã duyệt) và tự động chuyển người dùng sang màn hình **Gắn Hóa Đơn**.
+    * **Tự động điền lại (Pre-fill):** Mở sẵn danh sách hóa đơn cũ, đưa các hóa đơn đã chọn lên **đầu danh sách**, giữ nguyên số tiền và hình thức thanh toán (TM/CK).
+    * **Xử lý chứng từ cũ:**
+      * *Giữ nguyên:* Hệ thống tái sử dụng chứng từ đã upload trước đó, người dùng không cần tải lại file.
+      * *Thay mới:* Người dùng bấm **"Xóa & tải lại từ đầu"** nếu muốn nộp bộ chứng từ khác (bắt buộc tải tối thiểu 2 file mới).
+    * **Thao tác cho phép:** Người dùng có thể bỏ bớt hóa đơn, chọn thêm hóa đơn mới, hoặc sửa số tiền claim trước khi bấm **"Xác nhận & Tải Lên"** để hoàn tất nộp lại.
 
 -----
 
@@ -1547,6 +1574,113 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
     ```
   * **JSON Output:** `{"status": "ok", "success_message": "Đã nhận thành công"}`
 
+#### **Function:** `post_form_claim_chi_phi_signature_form`
+
+* **Loại:** READ / DATA PREPARATION (Adapter chuẩn hóa cấu trúc trình ký eOffice)
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy toàn bộ dữ liệu báo cáo chi phí từ `get_form_claim_chi_phi_excel_form`, sau đó chuyển đổi và đóng gói thành cấu trúc JSON chuẩn của quy trình Ký số nội bộ eOffice (`event_name: 'internal_signature_form'`) gồm biểu mẫu tổng hợp `BMKT002-DNTT` và các biểu mẫu đính kèm `BMKT013-KH-TH-CP`, `BMKT005-DNTTCTP`. Dữ liệu này được Frontend lưu vào state `signature_form_data` để chuẩn bị trình ký khi người dùng bấm nút chốt biểu mẫu.
+* **Nguyên tắc & Logic xử lý:**
+  1. **Gọi hàm tổng hợp gốc:**
+     - Truyền `url_param` xuống hàm `public.get_form_claim_chi_phi_excel_form(url_param)` để lấy toàn bộ dữ liệu 3 biểu mẫu kế hoạch, hóa đơn và công tác phí.
+     - Nếu hàm gốc trả về lỗi (`status <> 'ok'`), lập tức return kết quả lỗi.
+  2. **Xử lý thông tin hiển thị:**
+     - Parse `fromDate` (mặc định `'1900-01-01'`) để tạo chuỗi tháng năm `MM-YYYY`.
+     - Tách tên nhân viên từ `bmkt002_nguoi_de_nghi` (loại bỏ tiền tố `manv - `).
+  3. **Đóng gói Payload ký số eOffice:**
+     - `event_name`: `'internal_signature_form'`
+     - `file_id`: Chuỗi định danh tài liệu dạng `{manv}_{YYYY-MM-DD}` (Ví dụ: `MR2366_2026-10-01`).
+     - `bm_tong_hop`: Dữ liệu biểu mẫu **BMKT002-DNTT** (Giấy đề nghị thanh toán), bao gồm: `ma_bieu_mau`, `ten_bieu_mau`, `ma_nv`, `ten_nv`, `ma_nv_kt`, `department`, `ma_quan_ly`, `nguoi_nhan`, `tong_so_tien`, `nguoi_de_nghi`, `ma_nguoi_duyet`, `tong_tien_duyet`, `ly_do_thanh_toan`, `so_tien_bang_chu`, và mảng chi tiết `ds_chi_tiet` (từ `BMKT002`).
+     - `bm_dinh_kem`: Mảng chứa 2 biểu mẫu chi tiết:
+       - **BMKT013-KH-TH-CP**: Kế hoạch & Thực hiện chi phí quà tặng/giao tiếp tháng, bao gồm `tong_tien_duyet`, `tong_tien_ke_hoach`, `tong_tien_thuc_hien` và `ds_chi_tiet` (từ `BMKT013`).
+       - **BMKT005-DNTTCTP**: Bảng kê chi tiết công tác phí tháng, bao gồm `tong_tien`, `ly_do_thanh_toan`, `so_tien_bang_chu` và `ds_chi_tiet` (từ `BMKT005`).
+
+* **JSON Input (`url_param` qua GET API):**
+  ```json
+  {
+      "manv": "MR2366",
+      "fromDate": "2026-10-01",
+      "toDate": "2026-10-31",
+      "file_id": "MR2366_2026-10-01"
+  }
+  ```
+
+* **JSON Output Specification:**
+  ```json
+  {
+      "event_name": "internal_signature_form",
+      "data": [
+          {
+              "file_id": "MR2366_2026-10-01",
+              "bm_tong_hop": {
+                  "ma_bieu_mau": "BMKT002-DNTT",
+                  "ten_bieu_mau": "GIẤY ĐỀ NGHỊ THANH TOÁN",
+                  "ma_nv": "MR2366",
+                  "ten_nv": "Vũ Thị Thu Hải",
+                  "ma_nv_kt": "MR2931",
+                  "department": "HCP",
+                  "ma_quan_ly": "MR1391",
+                  "nguoi_nhan": "MR2366 - Vũ Thị Thu Hải",
+                  "tong_so_tien": "400,120",
+                  "nguoi_de_nghi": "MR2366 - Vũ Thị Thu Hải",
+                  "ma_nguoi_duyet": "MR2931",
+                  "tong_tien_duyet": "400,120",
+                  "ly_do_thanh_toan": "Thanh toán chi phí giao tiếp tháng: 10-2026",
+                  "so_tien_bang_chu": "bốn trăm nghìn một trăm hai mươi đồng",
+                  "ds_chi_tiet": [
+                      {
+                          "stt": 1,
+                          "ghi_chu": "Bảng kê chi tiết đính kèm",
+                          "so_tien": 400120,
+                          "noi_dung": "Thanh toán chi phí giao tiếp tháng: 10-2026",
+                          "so_hoa_don": null,
+                          "ngay_hoa_don": null,
+                          "nguoi_nhan_tien": "MR2366 - Vũ Thị Thu Hải",
+                          "thoi_gian_de_nghi": "Trước ngày 20 tháng sau"
+                      }
+                  ]
+              },
+              "bm_dinh_kem": [
+                  {
+                      "ma_bieu_mau": "BMKT013-KH-TH-CP",
+                      "ten_bieu_mau": "KẾ HOẠCH & THỰC HIỆN CHI PHÍ QUÀ TẶNG/GIAO TIẾP THÁNG: 10-2026",
+                      "ma_nv": "MR2366",
+                      "ten_nv": "Vũ Thị Thu Hải",
+                      "tong_tien_duyet": "3,500,000",
+                      "tong_tien_ke_hoach": "3,500,000",
+                      "tong_tien_thuc_hien": "400,120",
+                      "ds_chi_tiet": [
+                          {
+                              "kenh": "CLC & INS (5:5)",
+                              "ma_kh": "003982",
+                              "supid": "MR1391",
+                              "ten_kh": "PK NGUYỄN THANH THỦY - HN",
+                              "so_khid": "CCP20260919090219146",
+                              "duyet_kh": 3500000,
+                              "noi_dung": "Chi phí gặp gỡ giao tiếp trao đổi thông tin",
+                              "so_hoa_don": "000009099",
+                              "ngay_thuc_hien": "2026-08-26",
+                              "tong_tien_thuc_hien": 400120
+                          }
+                      ]
+                  },
+                  {
+                      "ma_bieu_mau": "BMKT005-DNTTCTP",
+                      "ten_bieu_mau": "BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG 10-2026",
+                      "ma_nv": "MR2366",
+                      "ten_nv": "Vũ Thị Thu Hải",
+                      "tong_tien": "0",
+                      "ly_do_thanh_toan": "Thanh toán tiền công tác phí tháng: 10-2026",
+                      "so_tien_bang_chu": "không đồng",
+                      "ds_chi_tiet": []
+                  }
+              ]
+          }
+      ],
+      "status": "ok",
+      "time": "2026-10-01T10:00:00.000000"
+  }
+  ```
+
 #### **Function:** `insert_form_claim_chi_phi_internal_signature_form`
 
 * **Loại:** WRITE (UPSERT theo ID) vào bảng `form_claim_chi_phi_internal_signature_form`
@@ -1605,6 +1739,93 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
           }
       }
       ```
+
+#### **Function:** `get_form_claim_chi_phi_forward_data_internal_sign`
+
+* **Loại:** READ (Forward Request đến eOffice API)
+* **Standard:** Tuân thủ tuyệt đối `write_get_function.md`
+* **Mục đích:** Lấy trạng thái phê duyệt, tiến độ ký số và link chứng từ PDF đính kèm của các biểu mẫu trình ký nội bộ (`BMKT002-DNTT`, `BMKT013-KH-TH-CP`, `BMKT005-DNTTCTP`) từ hệ thống eOffice dựa trên mã nhân viên (`manv`) và kỳ chi phí (`ky_chi_phi`).
+* **Nguyên tắc & Logic xử lý:**
+  1. **Parse Input Parameters (Không bắt buộc check dữ liệu):**
+     * `manv`: Mã nhân viên (tùy chọn, nếu truyền thì lọc theo nhân viên, không truyền thì lấy tất cả hồ sơ ký số trong kỳ).
+     * `ky_chi_phi`: Kỳ chi phí kế toán (tùy chọn, hỗ trợ định dạng `YYYY-MM`, `YYYY-MM-DD`, hoặc `timestamp` ISO; nếu không truyền thì tự động lấy tháng hiện tại). Không chặn bắt lỗi validation.
+  2. **Tự động quy đổi ngày đầu và cuối tháng của kỳ chi phí:**
+     * Chuyển đổi `ky_chi_phi` thành `v_date` chuẩn (nếu để trống thì mặc định là `CURRENT_DATE`).
+     * Tự động tính ngày đầu tháng: `date_start = TO_CHAR(date_trunc('month', v_date), 'YYYY-MM-DD')` (Ví dụ: `2026-10-01`).
+     * Tự động tính ngày cuối tháng: `date_end = TO_CHAR((date_trunc('month', v_date) + interval '1 month - 1 day')::date, 'YYYY-MM-DD')` (Ví dụ: `2026-10-31`).
+  3. **Forward Request đến eOffice API:**
+     * Gọi endpoint nội bộ của eOffice qua helper `public.get_python_eo_data`:
+       * URL: `https://eoffice.meraplion.com/admincp/api/api/raw/data-internal-sign`
+       * Params:
+         * `date_start`: Ngày bắt đầu tháng (VD: `2026-10-01`).
+         * `date_end`: Ngày kết thúc tháng (VD: `2026-10-31`).
+         * `user_code`: Mã nhân viên `manv` (chỉ đính kèm nếu `manv` có giá trị).
+         * `limit`: `1000`.
+  4. **Lọc và Chuẩn hóa Output:**
+     * Trích xuất mảng dữ liệu từ API response (`data`).
+     * Chỉ chọn lọc các trường thông tin cần thiết:
+       * `form_code`: Mã biểu mẫu (VD: `BMKT005-DNTTCTP`, `BMKT013-KH-TH-CP`, `BMKT002-DNTT`).
+       * `form_name`: Tên biểu mẫu (VD: `BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG`, ...).
+       * `created_at`: Thời gian khởi tạo văn bản ký số.
+       * `updated_at`: Thời gian cập nhật trạng thái mới nhất.
+       * `created_code`: Mã nhân viên lập biểu mẫu.
+       * `created_name`: Tên nhân viên lập biểu mẫu.
+       * `current_step_status`: Trạng thái bước ký hiện tại (rất quan trọng: `pending`, `approved`, `rejected`...).
+       * `attachment_name`: Tên file đính kèm/file ký số hoàn tất.
+       * `attachment_url`: Đường dẫn URL tải file ký số hoàn tất.
+     * Sắp xếp: Theo `created_at DESC`.
+
+* **JSON Input (`url_param`):**
+  ```json
+  {
+      "manv": "MR2366",
+      "ky_chi_phi": "2026-10-01"
+  }
+  ```
+  *(Hoặc `ky_chi_phi: "2026-10"`)*
+
+* **JSON Output Specification:**
+  ```json
+  {
+      "status": "ok",
+      "rows": 3,
+      "data": [
+          {
+              "form_code": "BMKT005-DNTTCTP",
+              "form_name": "BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG",
+              "created_at": "2026-09-19 09:17:27",
+              "updated_at": "2026-09-19 09:17:28",
+              "created_code": "MR2366",
+              "created_name": "Vũ Thị Thu Hải",
+              "current_step_status": "pending",
+              "attachment_name": null,
+              "attachment_url": null
+          },
+          {
+              "form_code": "BMKT013-KH-TH-CP",
+              "form_name": "KẾ HOẠCH & THỰC HIỆN CHI PHÍ QUÀ TẶNG/GIAO TIẾP THÁNG",
+              "created_at": "2026-09-19 09:17:27",
+              "updated_at": "2026-09-19 09:17:27",
+              "created_code": "MR2366",
+              "created_name": "Vũ Thị Thu Hải",
+              "current_step_status": "pending",
+              "attachment_name": null,
+              "attachment_url": null
+          },
+          {
+              "form_code": "BMKT002-DNTT",
+              "form_name": "GIẤY ĐỀ NGHỊ THANH TOÁN",
+              "created_at": "2026-09-19 09:17:26",
+              "updated_at": "2026-09-19 11:47:06",
+              "created_code": "MR2366",
+              "created_name": "Vũ Thị Thu Hải",
+              "current_step_status": "pending",
+              "attachment_name": "bmkt002_dntt_19_09_2026_11_47_04_signed_mr1326_tep3.pdf",
+              "attachment_url": "https://eoffice.meraplion.com/admincp/api/storage/files/mlp/signatures/bmkt002-dntt/2026-09/bmkt002_dntt_19_09_2026_11_47_04_signed_mr1326_tep3.pdf"
+          }
+      ]
+  }
+  ```
 
 -----
 
