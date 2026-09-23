@@ -1590,9 +1590,11 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
      - `event_name`: `'internal_signature_form'`
      - `file_id`: Chuỗi định danh tài liệu dạng `{manv}_{YYYY-MM-DD}` (Ví dụ: `MR2366_2026-10-01`).
      - `bm_tong_hop`: Dữ liệu biểu mẫu **BMKT002-DNTT** (Giấy đề nghị thanh toán), bao gồm: `ma_bieu_mau`, `ten_bieu_mau`, `ma_nv`, `ten_nv`, `ma_nv_kt`, `department`, `ma_quan_ly`, `nguoi_nhan`, `tong_so_tien`, `nguoi_de_nghi`, `ma_nguoi_duyet`, `tong_tien_duyet`, `ly_do_thanh_toan`, `so_tien_bang_chu`, và mảng chi tiết `ds_chi_tiet` (từ `BMKT002`).
-     - `bm_dinh_kem`: Mảng chứa 2 biểu mẫu chi tiết:
-       - **BMKT013-KH-TH-CP**: Kế hoạch & Thực hiện chi phí quà tặng/giao tiếp tháng, bao gồm `tong_tien_duyet`, `tong_tien_ke_hoach`, `tong_tien_thuc_hien` và `ds_chi_tiet` (từ `BMKT013`).
-       - **BMKT005-DNTTCTP**: Bảng kê chi tiết công tác phí tháng, bao gồm `tong_tien`, `ly_do_thanh_toan`, `so_tien_bang_chu` và `ds_chi_tiet` (từ `BMKT005`).
+     - `bm_dinh_kem`: Mảng chứa các biểu mẫu đính kèm chi tiết:
+       - **BMKT013-KH-TH-CP**: Kế hoạch & Thực hiện chi phí quà tặng/giao tiếp tháng, bao gồm `tong_tien_duyet`, `tong_tien_ke_hoach`, `tong_tien_thuc_hien` và `ds_chi_tiet` (từ `BMKT013`). Biểu mẫu này luôn được tạo trong danh sách đính kèm.
+       - **BMKT005-DNTTCTP (Có điều kiện loại trừ)**: Bảng kê chi tiết công tác phí tháng, bao gồm `tong_tien`, `ly_do_thanh_toan`, `so_tien_bang_chu` và `ds_chi_tiet` (từ `BMKT005`).
+         > [!IMPORTANT]
+         > **Quy tắc loại trừ biểu mẫu công tác phí rác:** Biểu mẫu `BMKT005-DNTTCTP` **chỉ được đính kèm vào `bm_dinh_kem` khi thực sự có phát sinh chi phí công tác** (tức `bmkt005_tong_cong_tac_phi` khác `'0'`/khác rỗng VÀ `jsonb_array_length(BMKT005) > 0`). Nếu nhân viên không có chi phí công tác trong tháng (`tong_tien = '0'` hoặc danh sách chi tiết rỗng), hàm sẽ **loại bỏ hoàn toàn phần tử `BMKT005-DNTTCTP`** khỏi mảng `bm_dinh_kem` (lúc này mảng `bm_dinh_kem` chỉ có duy nhất 1 phần tử là `BMKT013`) để tránh gửi biểu mẫu rác 0 đồng lên eOffice bắt người dùng và quản lý ký duyệt.
 
 * **JSON Input (`url_param` qua GET API):**
   ```json
@@ -1605,6 +1607,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   ```
 
 * **JSON Output Specification:**
+  
+  **Trường hợp 1: Nhân viên KHÔNG có phát sinh Công tác phí (CTP = 0, `bm_dinh_kem` chỉ có 1 phần tử BMKT013):**
   ```json
   {
       "event_name": "internal_signature_form",
@@ -1662,16 +1666,59 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
                               "tong_tien_thuc_hien": 400120
                           }
                       ]
+                  }
+              ]
+          }
+      ],
+      "status": "ok",
+      "time": "2026-10-01T10:00:00.000000"
+  }
+  ```
+
+  **Trường hợp 2: Nhân viên CÓ phát sinh Công tác phí (CTP > 0, `bm_dinh_kem` đính kèm thêm BMKT005-DNTTCTP):**
+  ```json
+  {
+      "event_name": "internal_signature_form",
+      "data": [
+          {
+              "file_id": "MR2366_2026-10-01",
+              "bm_tong_hop": {
+                  "ma_bieu_mau": "BMKT002-DNTT",
+                  "ten_bieu_mau": "GIẤY ĐỀ NGHỊ THANH TOÁN",
+                  "tong_so_tien": "1,900,120",
+                  "ds_chi_tiet": [ "..." ]
+              },
+              "bm_dinh_kem": [
+                  {
+                      "ma_bieu_mau": "BMKT013-KH-TH-CP",
+                      "ten_bieu_mau": "KẾ HOẠCH & THỰC HIỆN CHI PHÍ QUÀ TẶNG/GIAO TIẾP THÁNG: 10-2026",
+                      "tong_tien_thuc_hien": "400,120",
+                      "ds_chi_tiet": [ "..." ]
                   },
                   {
                       "ma_bieu_mau": "BMKT005-DNTTCTP",
                       "ten_bieu_mau": "BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG 10-2026",
                       "ma_nv": "MR2366",
                       "ten_nv": "Vũ Thị Thu Hải",
-                      "tong_tien": "0",
+                      "tong_tien": "1,500,000",
                       "ly_do_thanh_toan": "Thanh toán tiền công tác phí tháng: 10-2026",
-                      "so_tien_bang_chu": "không đồng",
-                      "ds_chi_tiet": []
+                      "so_tien_bang_chu": "một triệu năm trăm nghìn đồng",
+                      "ds_chi_tiet": [
+                          {
+                              "stt": 1,
+                              "noi_dung": "Chi phí vé xe đi tỉnh Nam Định",
+                              "so_tien": 500000,
+                              "ngay_di": "2026-10-05",
+                              "ngay_ve": "2026-10-06"
+                          },
+                          {
+                              "stt": 2,
+                              "noi_dung": "Khách sạn và lưu trú",
+                              "so_tien": 1000000,
+                              "ngay_di": "2026-10-05",
+                              "ngay_ve": "2026-10-06"
+                          }
+                      ]
                   }
               ]
           }
@@ -1761,19 +1808,25 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
          * `date_end`: Ngày kết thúc tháng (VD: `2026-10-31`).
          * `user_code`: Mã nhân viên `manv` (chỉ đính kèm nếu `manv` có giá trị).
          * `limit`: `1000`.
-  4. **Lọc và Chuẩn hóa Output:**
-     * Trích xuất mảng dữ liệu từ API response (`data`).
-     * Chỉ chọn lọc các trường thông tin cần thiết:
-       * `form_code`: Mã biểu mẫu (VD: `BMKT005-DNTTCTP`, `BMKT013-KH-TH-CP`, `BMKT002-DNTT`).
-       * `form_name`: Tên biểu mẫu (VD: `BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG`, ...).
-       * `created_at`: Thời gian khởi tạo văn bản ký số.
-       * `updated_at`: Thời gian cập nhật trạng thái mới nhất.
-       * `created_code`: Mã nhân viên lập biểu mẫu.
-       * `created_name`: Tên nhân viên lập biểu mẫu.
-       * `current_step_status`: Trạng thái bước ký hiện tại (rất quan trọng: `pending`, `approved`, `rejected`...).
-       * `attachment_name`: Tên file đính kèm/file ký số hoàn tất.
-       * `attachment_url`: Đường dẫn URL tải file ký số hoàn tất.
-     * Sắp xếp: Theo `created_at DESC`.
+   4. **Lọc, Chuẩn hóa Output và Tính toán Khóa gửi ký (`allow_send_data_internal_sign`):**
+      * Trích xuất mảng dữ liệu từ API response (`data`).
+      * Bổ sung các trường thông tin:
+        * `form_code`: Mã biểu mẫu (VD: `BMKT005-DNTTCTP`, `BMKT013-KH-TH-CP`, `BMKT002-DNTT`).
+        * `form_name`: Tên biểu mẫu (VD: `BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG`, ...).
+        * `is_signed`: Trạng thái ký số nhị phân (`1`: Đã ký, `0`: Chưa ký).
+        * `status_signed`: Trạng thái hiển thị ký số (`"Đã ký"` hoặc `"Chưa ký"`).
+        * `created_at`: Thời gian khởi tạo văn bản ký số.
+        * `updated_at`: Thời gian cập nhật trạng thái mới nhất.
+        * `created_code`: Mã nhân viên lập biểu mẫu.
+        * `created_name`: Tên nhân viên lập biểu mẫu.
+        * `current_step_status`: Trạng thái bước ký hiện tại (`pending`, `approved`, `reject`, `cancel`...).
+        * `attachment_name`: Tên file đính kèm/file ký số hoàn tất.
+        * `attachment_url`: Đường dẫn URL tải file ký số hoàn tất.
+      * **Key `allow_send_data_internal_sign` (1 | 0) tại cấp Root:**
+        > [!IMPORTANT]
+        > **Quy tắc cho phép gửi ký:**
+        > - `allow_send_data_internal_sign = 1`: Khi **cả 3 biểu mẫu đều chưa tồn tại** trong kỳ (chưa từng gửi hồ sơ ký số) HOẶC **tất cả các mẫu hiện có đều ở trạng thái bị từ chối/hủy** (`reject`, `cancel`, `rejected`, `cancelled`). Lúc này Frontend cho phép mở nút gửi ký.
+        > - `allow_send_data_internal_sign = 0`: Khi có ít nhất một biểu mẫu đang trong quy trình xử lý (`pending`, `approved`, `signed`...). Lúc này Frontend sẽ disable nút gửi ký để chống gửi trùng lặp hồ sơ.
 
 * **JSON Input (`url_param`):**
   ```json
@@ -1789,10 +1842,13 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   {
       "status": "ok",
       "rows": 3,
+      "allow_send_data_internal_sign": 0,
       "data": [
           {
               "form_code": "BMKT005-DNTTCTP",
               "form_name": "BẢNG KÊ CHI TIẾT CÔNG TÁC PHÍ THÁNG",
+              "is_signed": 0,
+              "status_signed": "Chưa ký",
               "created_at": "2026-09-19 09:17:27",
               "updated_at": "2026-09-19 09:17:28",
               "created_code": "MR2366",
@@ -1804,6 +1860,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
           {
               "form_code": "BMKT013-KH-TH-CP",
               "form_name": "KẾ HOẠCH & THỰC HIỆN CHI PHÍ QUÀ TẶNG/GIAO TIẾP THÁNG",
+              "is_signed": 0,
+              "status_signed": "Chưa ký",
               "created_at": "2026-09-19 09:17:27",
               "updated_at": "2026-09-19 09:17:27",
               "created_code": "MR2366",
@@ -1815,6 +1873,8 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
           {
               "form_code": "BMKT002-DNTT",
               "form_name": "GIẤY ĐỀ NGHỊ THANH TOÁN",
+              "is_signed": 1,
+              "status_signed": "Đã ký",
               "created_at": "2026-09-19 09:17:26",
               "updated_at": "2026-09-19 11:47:06",
               "created_code": "MR2366",
