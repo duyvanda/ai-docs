@@ -168,6 +168,19 @@
   - Duyệt ghi nhận `status = 'D'`.
   - Từ chối ghi nhận `status = 'E'` và xóa HĐ khỏi `form_claim_chi_phi_hoa_don` để giải phóng HĐ cho nhân viên gắn lại.
 
+- [ ] **BE-2.6. Cập nhật Stored Function `get_form_claim_chi_phi_excel_form`: Ưu tiên tiền vé xe từ Invoice**
+  - **Mục tiêu**: Khi sinh dữ liệu chi tiết công tác phí biểu mẫu `BMKT005-DNTTCTP`, nếu nhân viên đã gắn hóa đơn vé xe (`cost_type = 'transport'` trong bảng `form_claim_chi_phi_hoa_don`), hệ thống phải **ưu tiên lấy tổng số tiền claim thực tế từ hóa đơn** thay vì chỉ lấy số tiền đề xuất dự kiến ban đầu trong bảng `form_cong_tac_phi`.
+  - **Logic xử lý chi tiết**:
+    - Truy vấn bảng `form_claim_chi_phi_hoa_don` theo `khid = cp.khid` và `cost_type = 'transport'`.
+    - Tính số tiền vé xe:
+      ```sql
+      COALESCE(
+          NULLIF((SELECT SUM(so_tien_claim) FROM public.form_claim_chi_phi_hoa_don WHERE khid = cp.khid AND cost_type = 'transport'), 0),
+          COALESCE(cp.ve_xe_cong_tac, 0) + COALESCE(cp.tong_tien_ve_xe, 0)
+      ) AS ve_xe
+      ```
+    - Đồng bộ tính lại tổng tiền công tác phí trên toàn bộ biểu mẫu `BMKT005-DNTTCTP` và giấy đề nghị thanh toán `BMKT002-DNTT` khi trình ký.
+
 ---
 
 ### 3. Xây Dựng 02 Stored Functions & Endpoints Mới Cho Kế Toán

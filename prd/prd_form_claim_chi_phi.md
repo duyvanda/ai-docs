@@ -891,6 +891,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
   * **Loại:** WRITE
   * **Standard:** Tuân thủ tuyệt đối `write_insert_function.md`
   * **Mục đích:** Mapping danh sách hóa đơn vào Plan chi phí và cập nhật trạng thái/tổng tiền cho Plan.
+  * **Quy tắc đặt tên file chứng từ:** FE gom ảnh của mỗi HĐ thành 1 ZIP `upload_<id_duy_nhat_cua_hoa_don>.zip` và gửi kèm `"rename_mode": "per_file"` trong `file_metadata_other`; gateway lưu thành `{id_duy_nhat_cua_hoa_don}.zip` (VD: `019ea5bb498f71379cb0c8e7d8875221.zip`). Không gửi flag → giữ kiểu cũ `{idx}_{khid}.zip`.
   * **Logic & Validation (Thứ tự thực hiện theo Code):**
     1.  **Chuẩn bị dữ liệu:**
           * Hệ thống tự động gán giá trị mặc định `check_tm = 1` cho các bản ghi chi tiết.
@@ -934,7 +935,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "tong_tien_thanh_toan": 330000,
             "id_duy_nhat_cua_hoa_don": "019ea5bb498f71379cb0c8e7d8875221",
             "original_so_tien_claim": 330000,
-            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/0_CCP20260608170549642.zip"
+            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/019ea5bb498f71379cb0c8e7d8875221.zip"
         },
         {
             "stt": 13,
@@ -951,7 +952,7 @@ Hệ thống hoạt động theo mô hình: Frontend gọi API -\> API Gateway g
             "tong_tien_thanh_toan": 220000,
             "id_duy_nhat_cua_hoa_don": "019ea5bb498d7367990ff54cd36eb274",
             "original_so_tien_claim": 220000,
-            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/1_CCP20260608170549642.zip"
+            "zip_file_url": "https://bi.meraplion.com/DMS/form_claim_chi_phi_proof/019ea5bb498d7367990ff54cd36eb274.zip"
         }
         ],
         "status": "I",
