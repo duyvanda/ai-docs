@@ -128,6 +128,36 @@ Dữ liệu được tích hợp chặt chẽ với:
   - `New`: Nhà thuốc mới bổ sung trong tháng này.
   - `Renew`: Nhà thuốc cũ từ tháng trước được tự động gia hạn tiếp tục.
   - `Stop`: Nhà thuốc cũ nhưng CRM chủ động loại bỏ, không tham gia trong tháng mới.
+  - `Add`: Nhà thuốc cũ, gia hạn và phân bổ thêm lượt (từ T11/2026, xem mục 4.5).
+
+---
+
+### 4.5. Thay đổi từ Tháng 11/2026: 4 trạng thái & cộng dồn lượt còn lại
+
+> Áp dụng từ kỳ đăng ký T11/2026 (cập nhật 23/10/2026). Hướng dẫn FE: [`tracking_chi_phi_tp_medigo_dang_ky_fe_t11.md`](tracking_chi_phi_tp_medigo_dang_ky_fe_t11.md).
+
+Lượt chưa dùng của tháng trước được **chuyển sang** tháng mới (trước đây mỗi tháng phân bổ lại từ đầu).
+
+* **Còn lại tháng trước** = `so_luot_dang_ky_thang_cu − so_luot_su_dung_thang_cu` (tối thiểu 0).
+* **Tổng lượt tháng mới** = `so_luot_dang_ky`.
+
+| Trạng thái | Mã | Ý nghĩa | `so_luot_pb_them` | `so_luot_dang_ky` (Tổng lượt) |
+| :--- | :---: | :--- | :--- | :--- |
+| Mới | `New` | NT thêm qua nút "Thêm NT mới", chưa từng tham gia | Số CRM nhập | = PB thêm |
+| Gia hạn | `Renew` | Tiếp tục, không phân bổ thêm | 0 | = Còn lại tháng trước |
+| Phân bổ thêm | `Add` | Tiếp tục và cấp thêm lượt | Số CRM nhập (> 0) | = Còn lại + PB thêm |
+| Ngưng tham gia | `Stop` | Ngưng; vẫn lưu dòng để kế toán tra cứu | 0 | = 0 |
+
+* **Thao tác của CRM:** chỉ có 2 nút **+ Thêm mới** (`New`) và **Ngưng** (`Stop`), cùng ô nhập **PB thêm**. Với NT tháng trước, FE tự suy ra trạng thái: PB thêm = 0 → `Renew`, PB thêm > 0 → `Add`.
+* **Điều kiện PB thêm:** ô PB thêm chỉ mở khi `phan_tram_used` của **tháng liền trước** ≥ 50%. Dưới 50% thì khóa ô = 0, NT chỉ có thể Gia hạn hoặc Ngưng.
+* **NT Ngưng ở T10 (7 NT, 145 lượt):** ngưng theo quy định cũ nên vẫn giữ số lượt, không về 0. Từ T11 không còn hiện trong danh sách mẫu; muốn tham gia lại thì CRM dùng "+ Thêm mới".
+* **Phân công:** FE tính Còn lại / Tổng lượt, kiểm tra điều kiện 50% và post `so_luot_dang_ky` + `so_luot_pb_them`. BE lưu đúng số FE gửi, không tính lại.
+* **Nguồn số đã dùng (`so_luot_su_dung`):** Google Sheets do Medigo nhập, đồng bộ vào DB bằng `D:\postgres\py\SYNC_MEDIGO_USAGE_FROM_GDOCS.py` (chỉ cập nhật `so_luot_su_dung`, `phan_tram_used`). Tỷ lệ 50% tính theo số đang có trong DB tại thời điểm CRM đăng ký.
+* **Thay đổi BE (23/10/2026):**
+  - Bảng: thêm cột `so_luot_pb_them integer NOT NULL DEFAULT 0`. Dữ liệu T9, T10 để 0 (chưa áp dụng cộng dồn).
+  - `insert_tracking_chi_phi_tp_medigo_chot_danh_sach`: lưu thêm `so_luot_pb_them`.
+  - `get_tracking_chi_phi_tp_medigo_danh_sach`: trả thêm `so_luot_pb_them`. Case 1 (chưa có dữ liệu tháng mới) nay cũng điền `so_luot_dang_ky_thang_cu`, `so_luot_su_dung_thang_cu` → FE chỉ cần đọc 3 field `_thang_cu` + `phan_tram_used` ở mọi trường hợp.
+  - Sửa lỗi Case 1: trước đây lọc nhầm `status != 'Stop'` nên NT đã Ngưng vẫn bị kéo sang tháng sau; nay lọc `trang_thai_nt <> 'Stop'`.
 
 ---
 
@@ -185,11 +215,12 @@ Dữ liệu được tích hợp chặt chẽ với:
 | `sdt_nha_thuoc` | text | Số ĐT Nhà thuốc (dùng làm username Medigo) |
 | `ten_dai_dien_nt` | text | Tên đại diện NT |
 | `sdt_tdv` | text | Số ĐT TDV phụ trách |
-| `so_luot_dang_ky` | integer | Số lượt tư vấn đăng ký cài đặt trong tháng |
+| `so_luot_dang_ky` | integer | Số lượt tư vấn đăng ký cài đặt trong tháng. Từ T11/2026 = **Tổng lượt** (Còn lại tháng trước + PB thêm) |
+| `so_luot_pb_them` | integer | Số lượt phân bổ mới trong tháng *(default 0, thêm 23/10/2026)* |
 | `so_luot_su_dung` | integer | Số lượt tư vấn đã sử dụng thực tế (Used) *(default 0)* |
 | `phan_tram_used` | numeric(5,2) | Tỷ lệ % used (`so_luot_su_dung / so_luot_dang_ky * 100`) *(default 0)* |
 | `ghi_chu` | text | Ghi chú *(nullable)* |
-| `trang_thai_nt` | text | Trạng thái NT trong tháng: `New`, `Renew`, `Stop` |
+| `trang_thai_nt` | text | Trạng thái NT trong tháng: `New`, `Renew`, `Stop`, `Add` (từ T11/2026) |
 | `status` | text | Trạng thái phê duyệt: `H` (Chờ duyệt), `C` (Đã duyệt), `R` (Từ chối) |
 | `ly_do_tu_choi` | text | Lý do từ chối *(nullable, điền khi status = R)* |
 | **--- SYSTEM ---** | | |
