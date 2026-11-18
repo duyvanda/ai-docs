@@ -19,18 +19,18 @@ Trên màn hình:
   - Mới: Tổng lượt = PB thêm.
   - NT tháng trước: Tổng lượt = Còn lại + PB thêm (PB thêm = 0 thì Tổng lượt = Còn lại, tức Gia hạn).
   - Ngưng: Tổng lượt = 0.
-- Chỉ được PB thêm khi **tỷ lệ thực hiện / PB của tháng trước ≥ 50%**. Thấp hơn thì không cho phân bổ thêm.
+- Chỉ được PB thêm khi **tỷ lệ thực hiện / PB của tháng trước ≥ 40%** (ban đầu 50%, business đổi xuống 40% ngày 18/11/2026). Thấp hơn thì không cho phân bổ thêm.
 
 **Ví dụ:** đăng ký T11 cho 4 nhà thuốc.
 
 | NT | T10: lượt | T10: đã dùng | % dùng T10 | Còn lại | CRM thao tác | PB thêm (CRM nhập) | **Tổng lượt T11** | Trạng thái (FE tự suy ra) |
 |---|---|---|---|---|---|---|---|---|
 | A | – | – | – | – | Bấm **+ Thêm mới** | 20 | **20** | Mới |
-| B | 20 | 5 | 25% | 15 | Không làm gì | 0 (khóa vì < 50%) | **15** | Gia hạn |
+| B | 20 | 5 | 25% | 15 | Không làm gì | 0 (khóa vì < 40%) | **15** | Gia hạn |
 | C | 30 | 18 | 60% | 12 | Nhập PB thêm | 10 | **22** | Phân bổ thêm |
 | D | 20 | 2 | 10% | 18 | Bấm **Ngưng** | 0 | **0** (vẫn lưu dòng) | Ngưng tham gia |
 
-NT B (25%) và D (10%) dưới 50% nên ô PB thêm bị khóa. Nếu C để PB thêm = 0 thì C thành Gia hạn.
+NT B (25%) và D (10%) dưới 40% nên ô PB thêm bị khóa. Nếu C để PB thêm = 0 thì C thành Gia hạn.
 
 ## 1. Điểm mới
 
@@ -45,7 +45,7 @@ CRM chỉ có **2 nút**: **+ Thêm mới** và **Ngưng**. Ngoài ra CRM chỉ 
 | Không bấm gì, PB thêm > 0 | tự tính | CRM nhập | = Còn lại + PB thêm | `Add` (Phân bổ thêm) |
 | Bấm **Ngưng** | tự tính | 0 (khóa ô) | = 0 | `Stop` |
 
-- Ô **PB thêm** của NT tháng trước chỉ mở khi `phan_tram_used >= 50`. Dưới 50 thì khóa ô = 0, NT tự thành Gia hạn (gợi ý tooltip: "Tỷ lệ dùng tháng trước < 50%, không được phân bổ thêm").
+- Ô **PB thêm** của NT tháng trước chỉ mở khi `phan_tram_used >= 40`. Dưới 40 thì khóa ô = 0, NT tự thành Gia hạn (gợi ý tooltip: "Tỷ lệ dùng tháng trước < 40%, không được phân bổ thêm").
 - Bấm **Ngưng** lần nữa (bỏ ngưng) thì NT quay lại Gia hạn / Phân bổ thêm theo số PB thêm.
 - Mặc định khi mở form: PB thêm = 0 → Gia hạn.
 
@@ -70,7 +70,7 @@ Từ dòng này FE tính 3 thứ:
 | Hiển thị | Cách tính | NT C |
 |---|---|---|
 | Còn lại | `so_luot_dang_ky_thang_cu − so_luot_su_dung_thang_cu` | 30 − 18 = **12** |
-| Mở ô PB thêm? | `phan_tram_used >= 50` | 60 ≥ 50 → **mở** |
+| Mở ô PB thêm? | `phan_tram_used >= 40` | 60 ≥ 40 → **mở** |
 | Tổng lượt | theo bảng mục 1 | CRM nhập PB thêm 10 → 12 + 10 = **22** (Phân bổ thêm) |
 
 NT đã Ngưng ở tháng trước sẽ không có trong danh sách tháng mới.
@@ -96,6 +96,8 @@ Validation phía FE trước khi post:
 - `New`: `so_luot_pb_them > 0`.
 - `trang_thai_nt` suy ra đúng bảng mục 1: không Ngưng, không Mới → `so_luot_pb_them > 0` là `Add`, `= 0` là `Renew`.
 - `Stop`: vẫn gửi dòng lên (không xóa) để lưu lịch sử, `so_luot_dang_ky = 0`.
+- Muốn **xóa hẳn** 1 NT chưa duyệt (vd thêm nhầm NT Mới): gửi dòng `{ "custid": "...", "status": "X" }` → BE xóa dòng đó. NT đã duyệt `C` không xóa được.
+- BE **không kiểm tra lại** các điều kiện trên, FE phải chặn trước khi gửi.
 - Các field bắt buộc cũ (SĐT, thời gian mở cửa, đại diện NT...) giữ nguyên.
 
 ## 4. Màn duyệt (MR0485)

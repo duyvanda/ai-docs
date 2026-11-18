@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup modal điều chỉnh Medigo</title>
+<style>
+  :root {
+    --teal: #0f9fa0; --teal-d: #0b7f80; --teal-bg: #ecfeff; --teal-bd: #a5e9ea;
+    --bg: #eef1f4; --card: #f8f8f8; --line: #e3e6ea; --text: #1f2933; --muted: #6b7785;
+    --orange: #ff7a45; --green: #16a34a; --green-bg: #f0fdf4; --blue: #2563eb; --blue-bg: #eff6ff;
+    --red: #dc2626; --red-bg: #fef2f2; --disabled: #eceff2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  .note { max-width: 860px; margin: 16px auto 0; padding: 0 16px; color: var(--muted); font-size: 13px; }
+  .note b { color: var(--text); }
+  h2 { max-width: 860px; margin: 20px auto 8px; padding: 0 16px; font-size: 15px; }
+
+  /* ===== Card hiện tại + nút mới ===== */
+  .page { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+  .card { background: var(--card); border-radius: 10px; padding: 16px; border: 1px solid var(--line); }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .nt-name { font-weight: 700; font-size: 15px; }
+  .nt-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-size: 12px; padding: 3px 8px; border-radius: 6px; }
+  .b-new { background: var(--blue-bg); color: var(--blue); }
+  .b-ok { background: var(--green-bg); color: var(--green); }
+  .btn-adjust { border: 1px solid var(--teal); color: var(--teal); background: #fff; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; position: relative; }
+  .btn-adjust::after { content: "MỚI"; position: absolute; top: -9px; right: -8px; background: var(--orange); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 4px; }
+  .faded { opacity: .45; margin-top: 12px; font-size: 12px; color: var(--muted); }
+
+  /* ===== Modal ===== */
+  .overlay { max-width: 860px; margin: 0 auto 32px; padding: 24px 16px; background: rgba(15, 23, 42, .45); border-radius: 12px; }
+  .modal { background: #fff; border-radius: 12px; max-width: 520px; margin: 0 auto; box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; }
+  .m-head { background: linear-gradient(90deg, var(--teal), var(--teal-d)); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .m-title { font-weight: 700; font-size: 15px; }
+  .m-sub { font-size: 12px; opacity: .85; margin-top: 3px; }
+  .m-close { font-size: 20px; line-height: 1; opacity: .8; }
+  .m-body { padding: 16px 18px; }
+  .sec-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin: 0 0 8px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px; text-align: center; }
+  .stat .v { font-size: 20px; font-weight: 700; }
+  .stat .k { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat.hl { background: var(--teal-bg); border-color: var(--teal-bd); }
+  .stat.hl .v { color: var(--teal-d); }
+  .stat.low .v { color: var(--orange); }
+
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
+  .seg div { border: 1px solid var(--line); border-radius: 8px; padding: 9px; text-align: center; font-weight: 600; }
+  .seg .on { border-color: var(--teal); background: var(--teal-bg); color: var(--teal-d); }
+  .seg .off { background: var(--disabled); color: #a0a8b2; }
+  .seg .stop { color: var(--red); }
+  .hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .hint b { color: var(--orange); }
+
+  .row { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .row label { font-weight: 600; font-size: 13px; }
+  .input { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; background: #fff; }
+  .input.num { font-weight: 700; color: var(--teal-d); border-color: var(--teal-bd); }
+  .input small { color: var(--muted); font-weight: 400; }
+  .input.ph { color: #a0a8b2; }
+
+  .preview { margin-top: 14px; border: 1px dashed var(--teal-bd); border-radius: 8px; padding: 10px 12px; background: #fbffff; }
+  .preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .preview th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; padding: 3px 0; }
+  .preview td { padding: 3px 0; }
+  .preview td:nth-child(3) { font-weight: 700; color: var(--teal-d); }
+  .arrow { color: var(--muted); padding: 0 6px; }
+
+  .m-foot { border-top: 1px solid var(--line); padding: 12px 18px; display: flex; justify-content: flex-end; gap: 8px; }
+  .btn { border-radius: 8px; padding: 8px 16px; font-weight: 600; border: 1px solid var(--line); background: #fff; }
+  .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<h2>① Card NT hiện tại – thêm 1 nút "Điều chỉnh"</h2>
+<div class="note">Nút chỉ hiện với NT <b>đã duyệt</b> của <b>tháng hiện tại</b> và không phải Ngưng.</div>
+<div class="page" style="margin-top:8px">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="nt-name">NT Phúc Lộc - Quận 12 - HCM</div>
+        <div class="nt-sub">015598 · 12 Dương Thị Mười, Khu Phố 1, Phường Tân Chánh Hiệp, Quận 12, TP Hồ Chí Minh</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-new">Mới</span>
+        <span class="badge b-ok">Đã duyệt</span>
+        <button class="btn-adjust">⚙ Điều chỉnh</button>
+      </div>
+    </div>
+    <div class="faded">… phần còn lại của card giữ nguyên (Tháng trước, % Used, Còn lại, PB thêm, Tổng lượt, SĐT…) …</div>
+  </div>
+</div>
+
+<h2>② Modal mở ra khi bấm "Điều chỉnh"</h2>
+<div class="note">Ví dụ NT 015598 tháng 11: 10 lượt, đã dùng 1 (10%) → dưới 40% nên nút <b>Tăng</b> bị khóa. CRM chọn <b>Giảm 3</b>.</div>
+<div class="overlay" style="margin-top:8px">
+  <div class="modal">
+    <div class="m-head">
+      <div>
+        <div class="m-title">Điều chỉnh lượt – NT Phúc Lộc - Quận 12 - HCM</div>
+        <div class="m-sub">015598 · Tháng 11/2026</div>
+      </div>
+      <div class="m-close">×</div>
+    </div>
+
+    <div class="m-body">
+      <div class="sec-label">Tháng này</div>
+      <div class="stats">
+        <div class="stat"><div class="v">10</div><div class="k">Tổng lượt</div></div>
+        <div class="stat"><div class="v">1</div><div class="k">Đã dùng</div></div>
+        <div class="stat hl"><div class="v">9</div><div class="k">Còn lại</div></div>
+        <div class="stat low"><div class="v">10%</div><div class="k">% dùng</div></div>
+      </div>
+
+      <div class="sec-label">Điều chỉnh</div>
+      <div class="seg">
+        <div class="off" title="% dùng tháng này < 40%, chưa được tăng">＋ Tăng</div>
+        <div class="on">－ Giảm</div>
+        <div class="stop">⏹ Ngưng</div>
+      </div>
+      <div class="hint">Tăng bị khóa: % dùng tháng này <b>10% &lt; 40%</b>.</div>
+
+      <div class="row">
+        <label>Số lượt giảm</label>
+        <div class="input num">3 <small>(tối đa 9 = còn lại)</small></div>
+      </div>
+      <div class="row">
+        <label>Ghi chú</label>
+        <div class="input ph">NT ít khách, giảm bớt lượt…</div>
+      </div>
+
+    </div>
+
+    <div class="m-foot">
+      <button class="btn">Hủy</button>
+      <button class="btn primary">Xác nhận điều chỉnh</button>
+    </div>
+  </div>
+</div>
+
+<h2>Ghi chú cho FE</h2>
+<div class="note" style="margin-bottom:32px; line-height:1.7">
+  • Mở modal: GET <code>get_tracking_chi_phi_tp_medigo_dieu_chinh?manv=&amp;custid=</code> → lấy <code>custname</code>, <code>custid</code>, <code>thang</code>, <code>so_luot_dang_ky</code>, <code>so_luot_su_dung_thang_nay</code>, <code>so_luot_con_lai_thang_nay</code>, <code>phan_tram_used_thang_nay</code>.<br>
+  • Tăng: mở khi % dùng ≥ 40. Giảm: mở khi còn lại &gt; 0, tối đa = còn lại. Ngưng: ẩn ô số lượt.<br>
+  • Xác nhận: POST <code>insert_tracking_chi_phi_tp_medigo_dieu_chinh</code> với <code>manv, thang, custid, loai (TANG/GIAM/NGUNG), so_luot, ghi_chu</code> → đóng modal, tải lại danh sách.
+</div>
+
+</body>
+</html>

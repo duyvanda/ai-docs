@@ -12,7 +12,7 @@ Module **Đăng ký Tư vấn Eclinic Medigo** trên Portal Web Merap cho phép 
 * **Tự động gia hạn (Auto-renewal):** Kế thừa toàn bộ danh sách Nhà thuốc của tháng liền kề trước đó nếu CRM không can thiệp chỉnh sửa.
 * **Đánh giá & Điều chỉnh (Review & Update):** CRM có thể xem xét tỷ lệ sử dụng lượt tư vấn (`% Used`) của tháng cũ kết hợp với **Doanh số tháng cũ** và **Doanh số lũy kế đầu năm (YTD)** của Nhà thuốc để đưa ra quyết định: tăng/giảm số lượt tư vấn, giữ nguyên gia hạn (`Renew`), hoặc ngưng tham gia (`Stop`).
 * **Mở rộng tham gia (Add New):** CRM lựa chọn thêm các Nhà thuốc mới thuộc tuyến quản lý vào danh sách tháng mới (`New`).
-* **Quy trình Phê duyệt (Approval Workflow):** CRM hoàn tất và "Chốt danh sách", chuyển cấp Quản lý (GĐBH / Admin) phê duyệt và khóa dữ liệu trước khi chuyển giao dữ liệu sang MEDIGO kích hoạt tài khoản.
+* **Quy trình Phê duyệt (Approval Workflow):** CRM hoàn tất và "Chốt danh sách", chuyển CRD (anh Viển `MR0485`) phê duyệt và khóa dữ liệu trước khi chuyển giao dữ liệu sang MEDIGO kích hoạt tài khoản.
 
 Dữ liệu được tích hợp chặt chẽ với:
 * **Hệ thống nhân sự (`d_users`):** Xác thực CRM, phân quyền theo chi nhánh và nhân sự cấp dưới.
@@ -27,7 +27,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 * **[Mục tiêu 1]: Số hóa 100% quy trình đăng ký & gia hạn gói tư vấn Medigo:** Thay thế hoàn toàn việc cập nhật thủ công trên Google Sheets, tránh sai lệch và trùng lặp dữ liệu.
 * **[Mục tiêu 2]: Tối ưu hóa hiệu quả phân bổ ngân sách (Data-driven Decision):** Cung cấp trực quan chỉ số `% Used` của tháng trước và doanh số bán hàng của Nhà thuốc giúp CRM ra quyết định giữ lại, điều chỉnh số lượt, hoặc loại bỏ các NT không hiệu quả.
 * **[Mục tiêu 3]: Tự động hóa kế thừa dữ liệu (Zero-effort Renewal):** Giảm thiểu thao tác nhập liệu định kỳ hàng tháng cho CRM thông qua cơ chế tự động gia hạn các NT cũ.
-* **[Mục tiêu 4]: Chuẩn hóa quy trình kiểm duyệt và tích hợp 2 chiều với Medigo:** Đảm bảo danh sách được phê duyệt chặt chẽ bởi cấp Quản lý (GĐBH/Admin) trước khi chuyển giao cho kỹ thuật Medigo tạo tài khoản.
+* **[Mục tiêu 4]: Chuẩn hóa quy trình kiểm duyệt và tích hợp 2 chiều với Medigo:** Đảm bảo danh sách được phê duyệt chặt chẽ bởi CRD (anh Viển `MR0485`) trước khi chuyển giao cho kỹ thuật Medigo tạo tài khoản.
 
 ---
 
@@ -36,7 +36,7 @@ Dữ liệu được tích hợp chặt chẽ với:
 | Vai trò | Mô tả nghiệp vụ trên hệ thống |
 | :--- | :--- |
 | **CRM (Quản lý Bán hàng)** | - Truy cập module hàng tháng (chu kỳ đăng ký tháng tiếp theo, ví dụ: lập danh sách cho Tháng 10).<br>- Xem danh sách tự động gia hạn từ tháng trước kèm `% Used`, Doanh số tháng cũ, Doanh số YTD.<br>- Sửa thông tin hoặc đánh dấu ngưng tham gia (`Stop`) với NT cũ.<br>- Thêm mới các NT trong tuyến (`New`) và nhập các thông tin vận hành bắt buộc.<br>- Bấm **"Chốt danh sách"** gửi lên cấp trên phê duyệt. |
-| **CRD - Anh Viển `MR0045` / Admin (Cấp Phê duyệt)** | - Xem toàn bộ danh sách đăng ký theo từng CRM / Chi nhánh.<br>- Kiểm tra tổng số NT, tổng số lượt tư vấn đề xuất.<br>- **Phê duyệt (`C`)** hoặc **Từ chối (`R`)** chi tiết theo từng Nhà thuốc `(thang, custid)`. |
+| **CRD - Anh Viển `MR0485` (Cấp Phê duyệt)** | - Xem toàn bộ danh sách đăng ký theo từng CRM / Chi nhánh (`MR2458` và `admin` cũng xem được toàn bộ, nhưng **không** duyệt được).<br>- Kiểm tra tổng số NT, tổng số lượt tư vấn đề xuất.<br>- **Phê duyệt (`C`)** hoặc **Từ chối (`R`)** chi tiết theo từng Nhà thuốc `(thang, custid)`. |
 
 ---
 
@@ -83,11 +83,12 @@ Dữ liệu được tích hợp chặt chẽ với:
 * Nhà thuốc mới thêm được gắn cờ trạng thái **`New`**.
 
 #### **Bước 4: Chốt danh sách gửi duyệt**
-* **Điều kiện hợp lệ (Validation):**
-  - Danh sách phải có ít nhất 1 Nhà thuốc có trạng thái hoạt động (`New` hoặc `Renew`).
+* **Điều kiện hợp lệ (Validation) – FE kiểm tra trước khi gửi, BE không kiểm tra lại:**
+  - Danh sách phải có ít nhất 1 Nhà thuốc có trạng thái hoạt động (`New`, `Renew` hoặc `Add`).
   - Tất cả các trường bắt buộc của từng dòng NT không được để trống.
   - SĐT Nhà thuốc và SĐT TDV phải đúng định dạng 10 chữ số.
-  - Số lượt đăng ký phải là số nguyên dương $> 0$.
+  - Số lượt: `New` và `Add` có PB thêm $> 0$; `Renew` có thể = 0 (khi tháng trước đã dùng hết); `Stop` = 0 (xem mục 4.5).
+* **Xóa NT chưa duyệt:** gửi dòng NT với `status = 'X'` → BE **xóa hẳn** dòng đó (chỉ NT của chính CRM, chưa duyệt `C`). Khác với `Stop` (vẫn lưu dòng).
 * **Ghi nhận dữ liệu:**
   - Toàn bộ danh sách được gửi lưu vào database với trạng thái **`H` (Chờ duyệt / PENDING)**.
   - Dữ liệu bị khóa đối với CRM (không cho phép chỉnh sửa) khi đang ở trạng thái `H` hoặc đã duyệt `C`. CRM chỉ được mở khóa để chỉnh sửa lại các Nhà thuốc bị từ chối (`R`).
@@ -97,17 +98,17 @@ Dữ liệu được tích hợp chặt chẽ với:
 
 ---
 
-### 4.3. Luồng Phê duyệt cấp trên (CRD – Anh Viển `MR0045` / Admin)
+### 4.3. Luồng Phê duyệt cấp trên (CRD – Anh Viển `MR0485`)
 
 1. **Xem danh sách chờ duyệt:**
-   * CRD (Anh Viển `MR0045`) xem danh sách tổng hợp theo từng CRM/Chi nhánh.
+   * CRD (Anh Viển `MR0485`) xem danh sách tổng hợp theo từng CRM/Chi nhánh.
    * Kiểm tra tổng số NT tham gia (số lượng New, Renew, Stop) và Tổng số lượt tư vấn đề xuất.
 2. **Ra quyết định chi tiết theo từng Nhà thuốc `(thang, custid)` (Duyệt từng phần):**
    * **Phê duyệt (`C` - Đã duyệt / APPROVED):** Phê duyệt các Nhà thuốc hợp lệ để khóa dữ liệu.
    * **Từ chối / Mở lại (`R` - Từ chối / REJECTED):** Nhập lý do từ chối cho Nhà thuốc cụ thể. Dòng NT đó chuyển sang trạng thái `R`, mở khóa để CRM chỉnh sửa và chốt lại.
 3. **Quy tắc Duyệt từng phần & Chốt lại (Partial Approval & Re-submit):**
    * Trong danh sách của 1 CRM, CRD có thể duyệt một số NT (`C`) và từ chối một số NT (`R` kèm lý do).
-   * Các NT đã duyệt (`C`): Bị khóa cố định (read-only), CRM không được quyền chỉnh sửa.
+   * Các NT đã duyệt (`C`): Bị khóa với luồng đăng ký (read-only). Riêng trong tháng đang chạy, CRM được tăng / giảm / ngưng qua luồng **Điều chỉnh** (mục 4.6).
    * Các NT bị từ chối (`R`): CRM chỉ được sửa các NT này (hoặc chuyển sang `Stop`), sau đó bấm "Chốt danh sách" lại.
    * Khi CRM chốt lại: Hệ thống chỉ cập nhật các NT đang bị `R` sang `H` (Chờ duyệt lại), toàn bộ các NT đã `C` được giữ nguyên vẹn.
 
@@ -118,8 +119,8 @@ Dữ liệu được tích hợp chặt chẽ với:
 | Status | Tên | Diễn giải | Ai set |
 | :---: | :--- | :--- | :--- |
 | `H` | Chờ duyệt (Pending) | CRM vừa chốt danh sách đăng ký tháng mới, chờ CRD duyệt | CRM |
-| `C` | Đã duyệt (Approved) | CRD (Anh Viển `MR0045` / Admin) đã duyệt, bản ghi chính thức được khóa | CRD (`MR0045`) |
-| `R` | Từ chối (Rejected) | CRD (Anh Viển `MR0045` / Admin) từ chối đề xuất (kèm lý do), mở lại cho CRM sửa và chốt lại | CRD (`MR0045`) |
+| `C` | Đã duyệt (Approved) | CRD (Anh Viển `MR0485`) đã duyệt, bản ghi chính thức được khóa | CRD (`MR0485`) |
+| `R` | Từ chối (Rejected) | CRD (Anh Viển `MR0485`) từ chối đề xuất (kèm lý do), mở lại cho CRM sửa và chốt lại | CRD (`MR0485`) |
 
 **Luồng trạng thái chính:** `Chưa chốt` → `H` → `C`  
 **Luồng từ chối:** `H` → `R` → `H`
@@ -149,15 +150,38 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 | Ngưng tham gia | `Stop` | Ngưng; vẫn lưu dòng để kế toán tra cứu | 0 | = 0 |
 
 * **Thao tác của CRM:** chỉ có 2 nút **+ Thêm mới** (`New`) và **Ngưng** (`Stop`), cùng ô nhập **PB thêm**. Với NT tháng trước, FE tự suy ra trạng thái: PB thêm = 0 → `Renew`, PB thêm > 0 → `Add`.
-* **Điều kiện PB thêm:** ô PB thêm chỉ mở khi `phan_tram_used` của **tháng liền trước** ≥ 50%. Dưới 50% thì khóa ô = 0, NT chỉ có thể Gia hạn hoặc Ngưng.
+* **Điều kiện PB thêm:** ô PB thêm chỉ mở khi `phan_tram_used` của **tháng liền trước** ≥ **40%** (đổi từ 50% xuống 40% ngày 18/11/2026). Dưới 40% thì khóa ô = 0, NT chỉ có thể Gia hạn hoặc Ngưng.
 * **NT Ngưng ở T10 (7 NT, 145 lượt):** ngưng theo quy định cũ nên vẫn giữ số lượt, không về 0. Từ T11 không còn hiện trong danh sách mẫu; muốn tham gia lại thì CRM dùng "+ Thêm mới".
-* **Phân công:** FE tính Còn lại / Tổng lượt, kiểm tra điều kiện 50% và post `so_luot_dang_ky` + `so_luot_pb_them`. BE lưu đúng số FE gửi, không tính lại.
-* **Nguồn số đã dùng (`so_luot_su_dung`):** Google Sheets do Medigo nhập, đồng bộ vào DB bằng `D:\postgres\py\SYNC_MEDIGO_USAGE_FROM_GDOCS.py` (chỉ cập nhật `so_luot_su_dung`, `phan_tram_used`). Tỷ lệ 50% tính theo số đang có trong DB tại thời điểm CRM đăng ký.
+* **Phân công:** FE tính Còn lại / Tổng lượt, kiểm tra điều kiện 40% và post `so_luot_dang_ky` + `so_luot_pb_them`. BE lưu đúng số FE gửi, không tính lại.
+* **Nguồn số đã dùng (`so_luot_su_dung`):** Google Sheets do Medigo nhập, đồng bộ vào DB bằng `D:\postgres\.local\SYNC_MEDIGO_USAGE_FROM_GDOCS.py` (file cá nhân, không có trên git). Script đọc mọi tháng trên sheet, chỉ cập nhật `so_luot_su_dung`, `phan_tram_used`, `sdt_nha_thuoc`, `sdt_tdv`; SĐT trên sheet trống hoặc không đủ 10 số thì giữ số trong DB. Không đổi số lượt đã duyệt. Tỷ lệ 40% tính theo số đang có trong DB tại thời điểm CRM đăng ký.
 * **Thay đổi BE (23/10/2026):**
   - Bảng: thêm cột `so_luot_pb_them integer NOT NULL DEFAULT 0`. Dữ liệu T9, T10 để 0 (chưa áp dụng cộng dồn).
   - `insert_tracking_chi_phi_tp_medigo_chot_danh_sach`: lưu thêm `so_luot_pb_them`.
   - `get_tracking_chi_phi_tp_medigo_danh_sach`: trả thêm `so_luot_pb_them`. Case 1 (chưa có dữ liệu tháng mới) nay cũng điền `so_luot_dang_ky_thang_cu`, `so_luot_su_dung_thang_cu` → FE chỉ cần đọc 3 field `_thang_cu` + `phan_tram_used` ở mọi trường hợp.
   - Sửa lỗi Case 1: trước đây lọc nhầm `status != 'Stop'` nên NT đã Ngưng vẫn bị kéo sang tháng sau; nay lọc `trang_thai_nt <> 'Stop'`.
+
+---
+
+### 4.6. Điều chỉnh trong tháng sau khi duyệt (từ 18/11/2026)
+
+> Hướng dẫn FE: [`tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh.md`](tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh.md) + mockup [`tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html).
+
+Đăng ký tháng sau giữ nguyên (mục 4.2–4.5). Bổ sung: sau khi anh Viển duyệt, **trong tháng đang chạy** CRM phụ trách NT được **điều chỉnh từng NT**, so với số liệu **của chính tháng hiện tại**, **không cần duyệt lại**. Đây là ngoại lệ của quy tắc "NT đã duyệt `C` bị khóa" ở mục 4.3.
+
+| Điều chỉnh | Điều kiện | Tổng lượt mới | `trang_thai_nt` |
+| :--- | :--- | :--- | :--- |
+| Tăng | % dùng tháng này ≥ 40%, số lượt nhập ≥ 1 | Tổng + số lượt | `Renew` → `Add`, trạng thái khác giữ nguyên |
+| Giảm | 1 ≤ số lượt ≤ còn lại (không giảm dưới số đã dùng) | Tổng − số lượt | Giữ nguyên |
+| Ngưng | – | **= số đã dùng** (còn lại = 0) | `Stop` |
+
+* Chỉ áp dụng cho dòng **tháng hiện tại**, `status = 'C'`, chưa `Stop`, thuộc CRM (`manv`). MR0485 / MR2458 / admin điều chỉnh được mọi CRM.
+* BE tự tính: `so_luot_dang_ky` mới, `so_luot_pb_them` cộng / trừ theo phần chênh (có thể âm khi giảm), `phan_tram_used` tính lại. Giữ `status = 'C'`, `approved_at`, `approved_by`.
+* **Ngưng giữa tháng** khác **ngưng lúc đăng ký**: tổng = số đã dùng (lượt đã dùng là có thật) thay vì 0.
+* Mỗi lần điều chỉnh BE append 1 phần tử vào `lich_su_dieu_chinh`: `{ngay, manv, loai, so_luot (chênh, có dấu), tong_truoc, tong_sau, da_dung, ghi_chu}`. Phục vụ kế toán, FE không hiển thị.
+* API:
+  - `GET get_tracking_chi_phi_tp_medigo_dieu_chinh?manv=&custid=` (cả 2 bắt buộc) → `{"status":"ok","data":[ 1 NT ]}`: `thang`, `custid`, `custname`, `trang_thai_nt`, `so_luot_dang_ky`, `so_luot_su_dung_thang_nay`, `so_luot_con_lai_thang_nay`, `phan_tram_used_thang_nay`.
+  - `POST insert_tracking_chi_phi_tp_medigo_dieu_chinh` body `[{"manv","thang","custid","loai":"TANG|GIAM|NGUNG","so_luot","ghi_chu"}]` → `{"status":"ok","success_message","so_luot_dang_ky"}`. `thang` bắt buộc, phải là tháng hiện tại.
+  - Lỗi trả `{"status":"fail","error_message":"..."}` → gateway rollback + HTTP 400.
 
 ---
 
@@ -180,8 +204,9 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 | `custname` | text | Tên khách hàng |
 | `address` | text | Địa chỉ Nhà thuốc |
 | `statedescr` | text | Tỉnh/Thành |
-| `so_gpp` | text | Số giấy phép GPP |
-| `ngay_het_han_gpp` | text | Ngày hết hạn GPP |
+| `oricustid` | text | Số giấy phép GPP (VD `14/GPP`) → API trả `so_giay_gpp` |
+| `legaldate` | text | Ngày hết hạn GPP (VD `2028-05-16`) → API trả `ngay_het_han_gpp` |
+| `branchname` | text | Tên pháp nhân / chi nhánh Merap → API trả `ten_chi_nhanh` |
 
 **Table `d_users`** (Nhân sự)
 | Column Name | Data Type | Description |
@@ -193,10 +218,12 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 **Table `public.f_raw_data_sales_yoy`** (Doanh số)
 | Column Name | Data Type | Description |
 | :--- | :--- | :--- |
-| `custid` | text | **PK** - Mã khách hàng |
-| `thang` | text | Tháng phát sinh doanh số |
+| `makhdms` | text | Mã khách hàng (= `custid` NT) |
+| `year` | integer | Năm phát sinh doanh số |
+| `thang` | date | Tháng phát sinh doanh số |
 | `doanhsocovat` | numeric | Doanh số có VAT |
-| `ytd_covat` | numeric | Doanh số lũy kế đầu năm có VAT |
+
+*Doanh số YTD không có cột sẵn: API tự cộng `doanhsocovat` từ đầu năm đến tháng cũ.*
 
 ---
 
@@ -216,7 +243,7 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 | `ten_dai_dien_nt` | text | Tên đại diện NT |
 | `sdt_tdv` | text | Số ĐT TDV phụ trách |
 | `so_luot_dang_ky` | integer | Số lượt tư vấn đăng ký cài đặt trong tháng. Từ T11/2026 = **Tổng lượt** (Còn lại tháng trước + PB thêm) |
-| `so_luot_pb_them` | integer | Số lượt phân bổ mới trong tháng *(default 0, thêm 23/10/2026)* |
+| `so_luot_pb_them` | integer | Số lượt phân bổ mới trong tháng *(default 0, thêm 23/10/2026)*. Điều chỉnh sau duyệt cộng / trừ vào đây, có thể âm khi giảm |
 | `so_luot_su_dung` | integer | Số lượt tư vấn đã sử dụng thực tế (Used) *(default 0)* |
 | `phan_tram_used` | numeric(5,2) | Tỷ lệ % used (`so_luot_su_dung / so_luot_dang_ky * 100`) *(default 0)* |
 | `ghi_chu` | text | Ghi chú *(nullable)* |
@@ -229,13 +256,16 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 | `approved_at` | timestamp | Thời gian Quản lý duyệt (`C`) *(nullable)* |
 | `approved_by` | text | Mã Quản lý duyệt *(nullable)* |
 | `rejected_at` | timestamp | Thời gian Quản lý từ chối (`R`) *(nullable)* |
+| `lich_su_dieu_chinh` | jsonb | Lịch sử CRM điều chỉnh trong tháng sau duyệt (mục 4.6) *(default `[]`, thêm 18/11/2026)* |
 
 ---
 
-### View Báo cáo & Bàn giao Medigo (Reporting & Export View)
+### View Báo cáo & Bàn giao Medigo (Reporting & Export View) – CHƯA TRIỂN KHAI
+
+> ⚠️ Kiểm tra 18/11/2026: view này **chưa có trên DB**. Hiện bàn giao Medigo qua Google Sheets; báo cáo lấy trực tiếp từ API `get_tracking_chi_phi_tp_medigo_danh_sach` (MR0485 / admin). Phần dưới là thiết kế dự kiến.
 
 **View: `v_tracking_chi_phi_tp_medigo_dang_ky_bao_cao`**
-*View này tự động JOIN bảng `tracking_chi_phi_tp_medigo_dang_ky` với các bảng danh mục hệ thống để mapping đầy đủ các cột phục vụ báo cáo BI và xuất file bàn giao cho kỹ thuật Medigo:*
+*View này (dự kiến) tự động JOIN bảng `tracking_chi_phi_tp_medigo_dang_ky` với các bảng danh mục hệ thống để mapping đầy đủ các cột phục vụ báo cáo BI và xuất file bàn giao cho kỹ thuật Medigo:*
 
 | Cột trong View | Nguồn Mapping | Mô tả |
 | :--- | :--- | :--- |
@@ -244,10 +274,10 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 | `ma_chi_nhanh` | JOIN `d_master_khachhang` / `d_users` | Mã chi nhánh phụ trách (HYN017, HCM001, DNG013) |
 | `ma_crm`, `ten_crm` | JOIN `api_f_thongtin_tuyen_mcp_tp_pcl` + `d_users` | Quản lý phụ trách tuyến NT |
 | `manv_tdv`, `ten_tdv` | JOIN `api_f_thongtin_tuyen_mcp_tp_pcl` + `d_users` | Trình dược viên phụ trách tuyến NT |
-| `so_gpp`, `ngay_het_han_gpp` | JOIN `d_master_khachhang` | Số GPP và Hạn GPP lưu trên DMS |
+| `so_giay_gpp`, `ngay_het_han_gpp` | JOIN `d_master_khachhang` (`oricustid`, `legaldate`) | Số GPP và Hạn GPP lưu trên DMS |
 * **`public.f_raw_data_sales_yoy`**: Dữ liệu doanh số bán hàng lịch sử để lấy:
-  * Doanh số tháng cũ có VAT: tổng doanh số của NT trong tháng $M-1$.
-  * Doanh số YTD có VAT: `ytd_covat`.
+  * Doanh số tháng cũ có VAT: tổng `doanhsocovat` của NT trong tháng $M-1$.
+  * Doanh số YTD có VAT: tổng `doanhsocovat` từ đầu năm đến tháng $M-1$.
 
 ---
 
@@ -278,13 +308,15 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
      - `thang_dang_ky`: Ngày đầu **Tháng Mới** đang lập kế hoạch (VD: `2026-10-01`).
      - `thang_cu`: Ngày đầu **Tháng Cũ** liền trước để làm dữ liệu tham chiếu đối soát (VD: `2026-09-01`).
   3. **Phân biệt dữ liệu của Tháng Mới vs Tháng Cũ trong từng dòng `data`:**
-     - **Dữ liệu Tháng Mới (`thang_dang_ky` - 10/2026):** gồm `thang`, `custid`, `so_luot_dang_ky`, `ghi_chu`, `trang_thai_nt` (`New`, `Renew`, `Stop`), `status` (`H`, `C`, `R` hoặc `null`), `ly_do_tu_choi`.
-     - **Dữ liệu tham chiếu Tháng Cũ (`thang_cu` - 09/2026):** gồm `so_luot_dang_ky_thang_cu`, `so_luot_su_dung_thang_cu`, `phan_tram_used`, `doanh_so_thang_cu_covat`, `doanh_so_ytd_covat`.
+     - **Dữ liệu Tháng Mới (`thang_dang_ky` - 10/2026):** gồm `thang`, `custid`, `so_luot_dang_ky`, `so_luot_pb_them`, `ghi_chu`, `trang_thai_nt` (`New`, `Renew`, `Add`, `Stop`), `status` (`H`, `C`, `R` hoặc `null`), `ly_do_tu_choi`, `approved_at`, `approved_by`, `rejected_at`.
+     - **Dữ liệu tham chiếu Tháng Cũ (`thang_cu` - 09/2026):** gồm `so_luot_dang_ky_thang_cu`, `so_luot_su_dung_thang_cu`, `phan_tram_used`, `doanh_so_thang_cu_covat`, `doanh_so_ytd_covat`. **Có ở cả Case 1 và Case 2** (từ 23/10/2026); NT `New` không có tháng cũ → `null`.
+     - **Thông tin NT:** `custname`, `dia_chi_nt`, `ten_chi_nhanh`, `so_giay_gpp`, `ngay_het_han_gpp`, `thoi_gian_mo_cua`, `sdt_nha_thuoc`, `ten_dai_dien_nt`, `manv_tdv`, `ten_tdv`, `sdt_tdv`. Nhánh MR0485 / MR2458 / admin có thêm `ma_crm`, `ten_crm`.
   4. Kiểm tra dữ liệu tháng mới trong `tracking_chi_phi_tp_medigo_dang_ky` WHERE `thang = thang_dang_ky AND manv = ma_crm`:
      - **Case 1: Nếu CHƯA CÓ trong DB (Lần đầu CRM vào form tháng mới `2026-10-01`):**
        - Hệ thống truy vấn trực tiếp danh sách NT hoạt động từ tháng cũ trong DB (`WHERE thang = thang_cu ('2026-09-01')`).
        - Vì các bản ghi này thuộc về tháng cũ trong DB, trường `thang` trả về chính là **`2026-09-01`**.
-       - Các trường `so_luot_dang_ky`, `so_luot_su_dung`, `phan_tram_used` trong dòng này chính là dữ liệu gốc của **Tháng 9/2026**.
+       - Các trường `so_luot_dang_ky`, `so_luot_su_dung`, `phan_tram_used` trong dòng này chính là dữ liệu gốc của **Tháng 9/2026**; `so_luot_dang_ky_thang_cu`, `so_luot_su_dung_thang_cu` cũng mang cùng số đó (FE chỉ cần đọc các field `_thang_cu`), `so_luot_pb_them = 0`.
+       - NT có `trang_thai_nt = 'Stop'` ở tháng cũ **không** được nạp sang.
        - Trạng thái mặc định: `trang_thai_nt = 'Renew'`, `status = null` (chưa lưu/chưa chốt cho tháng 10), `ly_do_tu_choi = null`.
        - Frontend dựa vào `thang = '2026-09-01'` (khác `thang_dang_ky`) để nhận biết danh sách đang ở chế độ kế thừa đề xuất từ tháng trước; ô nhập số lượt tháng mới sẽ mặc định gợi ý bằng `so_luot_dang_ky` của tháng cũ.
      - **Case 2: Nếu ĐÃ CÓ trong DB (CRM đã bấm "Chốt danh sách" tháng mới `2026-10-01` hoặc đang được duyệt):**
@@ -320,6 +352,9 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
               "so_luot_dang_ky": 20,            // Quota đã đăng ký của Tháng 09/2026
               "so_luot_su_dung": 18,            // Số lượt thực tế đã dùng Tháng 09/2026
               "phan_tram_used": 90.0,           // Tỷ lệ % used Tháng 09/2026
+              "so_luot_dang_ky_thang_cu": 20,   // = so_luot_dang_ky (từ 23/10/2026)
+              "so_luot_su_dung_thang_cu": 18,   // = so_luot_su_dung (từ 23/10/2026)
+              "so_luot_pb_them": 0,
               "doanh_so_thang_cu_covat": 15400000, // Doanh số Tháng 09/2026 có VAT
               "doanh_so_ytd_covat": 142000000,  // Doanh số YTD có VAT đến hết Tháng 09/2026
               "ghi_chu": "",
@@ -475,8 +510,8 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
 * **Mục đích:** CRM hoàn tất danh sách (gồm các NT `Renew`, nhóm `New` mới thêm, và các NT bị gắn cờ `Stop`) và bấm **"Chốt danh sách"**. API được thiết kế linh động cho phép chỉnh sửa nhiều lần (kể cả khi đang ở `H` hoặc sau khi bị từ chối `R`): **nếu trùng cặp khóa chính `(thang, custid)` thì thực hiện `DELETE` bản ghi cũ và `INSERT` bản ghi mới**, đồng thời đưa trạng thái sang **`H` (Chờ duyệt / PENDING)**.
 * **Validation & Bảo vệ dữ liệu đã duyệt (Partial Approval):**
   1. Kiểm tra trạng thái: **Tuyệt đối không ghi đè hoặc sửa đổi các Nhà thuốc đã được phê duyệt (`status = 'C'`)**. API chỉ xử lý các dòng NT chưa có trong DB, đang chờ duyệt (`status = 'H'`), hoặc bị từ chối (`status = 'R'`).
-  2. Danh sách phải có ít nhất 1 NT có trạng thái hoạt động (`New` hoặc `Renew`).
-  3. Mỗi dòng NT phải có đầy đủ: `custid`, `sdt_nha_thuoc` (định dạng 10 số), `thoi_gian_mo_cua`, `ten_dai_dien_nt`, `sdt_tdv`, `so_luot_dang_ky` ($> 0$).
+  2. Các điều kiện còn lại (ít nhất 1 NT hoạt động, đủ trường bắt buộc, SĐT 10 số, số lượt hợp lệ theo trạng thái) **do FE kiểm tra** trước khi gửi – xem mục 4.2 Bước 4. BE không kiểm tra lại.
+  3. Dòng có `status = 'X'` → xóa hẳn dòng `(thang, custid)` của chính CRM nếu chưa duyệt `C`, không insert lại.
 * **Logic xử lý (Linh động cho sửa & Duyệt từng phần):**
   1. Nhận mảng danh sách các Nhà thuốc từ Frontend.
   2. Với mỗi Nhà thuốc trong `data`:
@@ -517,9 +552,10 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
                   "sdt_nha_thuoc": "0333045663",
                   "ten_dai_dien_nt": "Lê Thị Hoài Thương",
                   "sdt_tdv": "0777550699",
+                  "so_luot_pb_them": 7,
                   "so_luot_dang_ky": 25,
-                  "ghi_chu": "Tăng lượt từ 20 lên 25 do dùng tốt",
-                  "trang_thai_nt": "Renew"
+                  "ghi_chu": "Còn lại 18 + PB thêm 7",
+                  "trang_thai_nt": "Add"
               },
               {
                   "custid": "N01108025",
@@ -528,7 +564,8 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
                   "sdt_nha_thuoc": "0905625866",
                   "ten_dai_dien_nt": "ds Mến",
                   "sdt_tdv": "0364773789",
-                  "so_luot_dang_ky": 10,
+                  "so_luot_pb_them": 0,
+                  "so_luot_dang_ky": 0,
                   "ghi_chu": "Không dùng hết lượt cũ",
                   "trang_thai_nt": "Stop"
               },
@@ -539,20 +576,28 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
                   "sdt_nha_thuoc": "0985127863",
                   "ten_dai_dien_nt": "Nguyễn Thị A",
                   "sdt_tdv": "0985127863",
+                  "so_luot_pb_them": 75,
                   "so_luot_dang_ky": 75,
                   "ghi_chu": "NT mới tham gia",
                   "trang_thai_nt": "New"
+              },
+              {
+                  "custid": "TN73O405",
+                  "status": "X"
               }
           ]
       }
   ]
   ```
+  *`so_luot_dang_ky` = Tổng lượt FE đã tính, `so_luot_pb_them` = PB thêm (từ T11/2026, xem mục 4.5). Dòng `"status": "X"` = xóa hẳn NT chưa duyệt.*
 * **Output Specification:**
   ```json
   {
       "status": "ok",
-      "success_message": "Đã chốt danh sách đăng ký Tháng 10/2026 thành công! Đang chờ Quản lý phê duyệt.",
-      "tong_so_nt": 3
+      "success_message": "Đã chốt danh sách đăng ký tháng 10/2026 thành công! Đang chờ Quản lý phê duyệt.",
+      "tong_so_nt": 3,        // số dòng đã insert (H)
+      "so_nt_da_xoa": 1,      // số dòng xóa bằng status X
+      "da_bo_qua": 0          // số dòng bỏ qua vì đã duyệt C
   }
   ```
 
@@ -560,9 +605,9 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
 
 #### **API 4: `insert_tracking_chi_phi_tp_medigo_phe_duyet`**
 * **Loại:** WRITE (POST)
-* **Mục đích:** Cấp Phê duyệt (CRD – Anh Viển `MR0045` / Admin) thực hiện Phê duyệt (`C` / `APPROVED`) hoặc Từ chối (`R` / `REJECTED`) chi tiết theo từng Nhà thuốc dựa trên cặp khóa chính `(thang, custid)`. Hỗ trợ duyệt từng NT riêng lẻ hoặc chọn nhiều NT để xử lý hàng loạt.
+* **Mục đích:** Cấp Phê duyệt (CRD – Anh Viển `MR0485`) thực hiện Phê duyệt (`C` / `APPROVED`) hoặc Từ chối (`R` / `REJECTED`) chi tiết theo từng Nhà thuốc dựa trên cặp khóa chính `(thang, custid)`. Hỗ trợ duyệt từng NT riêng lẻ hoặc chọn nhiều NT để xử lý hàng loạt.
 * **Phân quyền & Validation:**
-  - Chỉ tài khoản cấp CRD (hiện tại là anh Viển `MR0045`) hoặc Admin hệ thống mới có quyền thực thi function này. Nếu `approved_by` không phải `MR0045` hoặc Admin $\rightarrow$ Báo lỗi phân quyền truy cập.
+  - Chỉ anh Viển `MR0485` mới có quyền thực thi function này (kiểm tra `approved_by` của phần tử đầu tiên). Khác `MR0485` $\rightarrow$ trả lỗi phân quyền. Admin **không** duyệt được.
 * **Payload Input (`body`):**
   ```json
   [
@@ -570,14 +615,14 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
           "action": "APPROVE", 
           "thang": "2026-10-01",
           "custid": "N01104172",
-          "approved_by": "MR0045",
+          "approved_by": "MR0485",
           "ly_do_tu_choi": ""
       },
       {
           "action": "REJECT", 
           "thang": "2026-10-01",
           "custid": "019244",
-          "approved_by": "MR0045",
+          "approved_by": "MR0485",
           "ly_do_tu_choi": "Số lượt phân bổ 75 quá cao, yêu cầu giảm xuống 50"
       }
   ]
@@ -607,7 +652,8 @@ Tất cả các API được đóng gói dưới dạng **PostgreSQL Stored Func
   ```json
   {
       "status": "ok",
-      "success_message": "Đã cập nhật trạng thái phê duyệt thành công!"
+      "success_message": "Đã cập nhật trạng thái phê duyệt thành công!",
+      "so_ban_ghi_xu_ly": 2
   }
   ```
 
