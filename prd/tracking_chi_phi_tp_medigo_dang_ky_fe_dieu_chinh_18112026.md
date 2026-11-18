@@ -3,7 +3,7 @@
 > ✅ **API đã deploy lên production ngày 18/11/2026**, FE gọi được ngay.
 
 Tài liệu đầy đủ: [`tracking_chi_phi_tp_medigo_dang_ky.md`](tracking_chi_phi_tp_medigo_dang_ky.md). Luồng đăng ký tháng sau: [`tracking_chi_phi_tp_medigo_dang_ky_fe_t11.md`](tracking_chi_phi_tp_medigo_dang_ky_fe_t11.md).
-Mockup giao diện: [`tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html) (mở bằng trình duyệt).
+Mockup giao diện: [`tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html) (mở bằng trình duyệt).
 
 ## 0. Yêu cầu từ business
 
@@ -80,7 +80,7 @@ Lỗi (thiếu tham số, NT không thuộc CRM, chưa duyệt, không phải th
 
 ## 4. Nội dung modal
 
-Xem mockup: [`tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html).
+Xem mockup: [`tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html).
 
 ## 5. Xác nhận – `POST insert_tracking_chi_phi_tp_medigo_dieu_chinh`
 

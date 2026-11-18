@@ -164,7 +164,7 @@ Lượt chưa dùng của tháng trước được **chuyển sang** tháng mớ
 
 ### 4.6. Điều chỉnh trong tháng sau khi duyệt (từ 18/11/2026)
 
-> Hướng dẫn FE: [`tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh.md`](tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh.md) + mockup [`tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_mockup.html).
+> Hướng dẫn FE: [`tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh_18112026.md`](tracking_chi_phi_tp_medigo_dang_ky_fe_dieu_chinh_18112026.md) + mockup [`tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html`](tracking_chi_phi_tp_medigo_dieu_chinh_18112026_mockup.html).
 
 Đăng ký tháng sau giữ nguyên (mục 4.2–4.5). Bổ sung: sau khi anh Viển duyệt, **trong tháng đang chạy** CRM phụ trách NT được **điều chỉnh từng NT**, so với số liệu **của chính tháng hiện tại**, **không cần duyệt lại**. Đây là ngoại lệ của quy tắc "NT đã duyệt `C` bị khóa" ở mục 4.3.
 
